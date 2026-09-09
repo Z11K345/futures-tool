@@ -1195,6 +1195,27 @@ def main():
     parser.add_argument('--news-only', action='store_true')
     args = parser.parse_args()
 
+    _t0 = time.time()
+
+    def _lap(label):
+        print('[LAP] %-12s %5.1fs' % (label, time.time() - _t0))
+
+    def _tech_allow_stale():
+        """
+        日K每天只需补齐一次。实测新浪当日日K在 15:00 收盘后并不会立刻生成,
+        若严格要求"缓存日期 = 最新交易日", 盘中每次刷新都会全量重抓 66 个品种(约 33 秒),
+        这是刷新频率提不上去的主要瓶颈。
+
+        规则: 只在收盘后 16:00-17:00 这个窗口强制重抓一次(补齐当日日K),
+              其余时间(日盘/夜盘/凌晨/周末)一律复用已有缓存。
+              缓存缺失时该参数无效, 仍会正常抓取。
+        """
+        try:
+            _hm = datetime.now().hour * 60 + datetime.now().minute
+            return not (16 * 60 <= _hm <= 17 * 60)
+        except Exception:
+            return False
+
     # 1) 抓行情
     print('[INFO] 抓行情...')
     raw = fetch_sina_quotes()
@@ -1209,6 +1230,7 @@ def main():
         'categories': {},
     }
 
+    _lap('行情')
     # ---- 主力合约解析(标注具体合约月份, 如 RB2701) ----
     try:
         import main_contract
@@ -1283,6 +1305,7 @@ def main():
         if trading_day else ''
     )
 
+    _lap('主力合约')
     # 2) 抓新闻(股市/宏观/全球 + 新增:商品期货)
     # 先读旧 quotes.json,保留多源(tdx/wind/dzh)合并字段,避免自动刷新覆盖
     _preserved_multi_source = {'tdx': [], 'wind': [], 'dzh': []}
@@ -1340,11 +1363,13 @@ def main():
     result['lot_round_alerts'] = compute_lot_round_alerts()
     print(f'[OK] lot_round_alerts: {len(result["lot_round_alerts"])} 项取整/1手起提示')
 
+    _lap('新闻+日历')
     # 6) 期货端信号(基于当日数据自动派生,附量价仓证据)
     _oi_info = update_oi_baseline(result['categories'])
     result['future_signals'] = compute_future_signals(result['categories'], result['variety_kb'], _oi_info)
     print(f'[OK] future_signals: {len(result["future_signals"])} 个信号(含仓差/量仓比证据)')
 
+    _lap('信号')
     # 6.5) 技术指标 + 历史分位 (V3.0 新增)
     #      日K按交易日缓存, 同一交易日不重复拉取(全品种一次约 30MB)
     try:
@@ -1357,7 +1382,7 @@ def main():
             for _c, _cn, _n in _lst:
                 _sym_map[_c] = {'symbol': _c, 'cn': _cn}
         result['tech'] = tech_indicators.build_tech_map(
-            _sym_map, result.get('trading_day', ''))
+            _sym_map, result.get('trading_day', ''), allow_stale=_tech_allow_stale())
         result['tech_updated'] = time.strftime('%Y-%m-%d %H:%M:%S')
         result['tech_note'] = ('技术指标由本工具基于新浪主连日K自算(MA/MACD/RSI/KDJ/BOLL/ATR/量比),'
                                '历史分位 = 当前价在最近N根收盘价中的百分位;'
@@ -1366,6 +1391,7 @@ def main():
         print(f'[WARN] tech_indicators 失败: {_e}')
         result['tech'] = {}
 
+    _lap('技术面')
     # 6.6) 基差(现货 vs 期货主力) + 近一年基差分位 (V3.1 新增)
     #      数据源: 生意社现期表(每日全品种基差表), 历史按交易日缓存于 data/basis_days.json
     try:
@@ -1378,6 +1404,7 @@ def main():
         print(f'[WARN] basis 失败: {_e}')
         result['basis'] = {}
 
+    _lap('基差')
     # 6.7) 企业套保决策(期货 vs 期权 / 现在套不套) (V3.2 新增)
     #      依据: 价格分位(tech) + 基差分位(basis) + 波动率 + 临近事件
     try:
@@ -1394,6 +1421,7 @@ def main():
         print(f'[WARN] hedge_advisor 失败: {_e}')
         result['hedge'] = {}
 
+    _lap('套保')
     # 6.8) 期权到期日提醒 (V3.3 新增)
     #      按各交易所到期日规则推算; 已用期货公司公布的到期通知逐条核对
     try:
@@ -1405,6 +1433,7 @@ def main():
         print(f'[WARN] option_expiry 失败: {_e}')
         result['option_expiry'] = {}
 
+    _lap('期权到期')
     # 6.9) 持仓龙虎榜 (会员成交持仓排名, 交易所官网公开文件)
     #      明细数据量大(约 340KB), 单独写 data/rank.json 由前端按需加载, 不并入主 quotes.json
     try:
@@ -1423,6 +1452,7 @@ def main():
         print(f'[WARN] rank 失败: {_e}')
         result['rank_meta'] = {}
 
+    _lap('龙虎榜')
     # 6.10) 盘后复盘「涨跌归因」(基本面 + 消息面 + 板块共振 + 接下来关注)
     #      消息源: 新浪 4 路财经流 + 新浪 7×24 快讯 + 和讯期货要闻
     try:
@@ -1438,6 +1468,7 @@ def main():
         print(f'[WARN] review 失败: {_e}')
         result['review'] = {}
 
+    _lap('复盘归因')
     # 6.11) 品种产业基本面库(64 品种: base/drivers/focus/tags)
     #      供前端品种档案(renderVarietyKB)在知识库未覆盖时填充详情, 避免"通用框架"空白
     try:
@@ -1446,6 +1477,7 @@ def main():
     except Exception as _e:
         print(f'[WARN] variety_fundamentals 失败: {_e}')
 
+    _lap('基本面库')
     # 6.12) 期限结构与展期收益(主力 vs 次主力价差 -> 年化斜率 -> 多头/空头展期收益)
     #       数据质量: 远月流动性薄(thin) / 近月临近交割(near, 自然人吃不到完整展期) 均打标
     try:
@@ -1456,6 +1488,7 @@ def main():
         print(f'[WARN] term_structure 失败: {_e}')
         result['term'] = {}
 
+    _lap('期限结构')
     # 7) 写文件(原子写: 先写临时文件再 rename, 避免 15 分钟刷新瞬间读到半截 JSON 导致页面打不开)
     out_path = DATA_DIR / 'quotes.json'
     tmp_path = DATA_DIR / 'quotes.json.tmp'

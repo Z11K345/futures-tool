@@ -113,11 +113,19 @@ def fetch_daily_kline(symbol, retries=2):
     return []
 
 
-def get_bars(code, symbol, latest_trading_day, cache):
-    """带缓存: 同一交易日已抓过则直接用缓存"""
+def get_bars(code, symbol, latest_trading_day, cache, allow_stale=False):
+    """
+    带缓存: 同一交易日已抓过则直接用缓存。
+
+    allow_stale=True 时(日盘进行中, 当日日K尚未生成)允许复用上一交易日的缓存,
+    避免盘中每次刷新都全量重抓 66 个品种的日K(约 3 分钟)。
+    """
     hit = cache.get(code)
-    if hit and hit.get('date') == latest_trading_day and hit.get('bars'):
-        return hit['bars'], True
+    if hit and hit.get('bars'):
+        if hit.get('date') == latest_trading_day:
+            return hit['bars'], True
+        if allow_stale:
+            return hit['bars'], True
     bars = fetch_daily_kline(symbol)
     if bars:
         # 保留 1300 根(约 5 年), 否则 3 年/5 年历史分位会退化成同一窗口
@@ -417,9 +425,10 @@ def compute_tech(bars, last_price=None):
     }
 
 
-def build_tech_map(symbol_map, latest_trading_day, verbose=True):
+def build_tech_map(symbol_map, latest_trading_day, verbose=True, allow_stale=False):
     """
     symbol_map: {code: {'symbol': 'RB0', 'cn': '螺纹钢'}}
+    allow_stale: 日盘进行中复用上一交易日 K 线(见 get_bars)
     返回 {code: tech_dict}
     """
     cache = load_cache()
@@ -427,7 +436,7 @@ def build_tech_map(symbol_map, latest_trading_day, verbose=True):
     fetched, cached_n = 0, 0
     for code, info in symbol_map.items():
         sym = info.get('symbol') or code
-        bars, from_cache = get_bars(code, sym, latest_trading_day, cache)
+        bars, from_cache = get_bars(code, sym, latest_trading_day, cache, allow_stale)
         if not bars:
             continue
         t = compute_tech(bars)
@@ -441,5 +450,6 @@ def build_tech_map(symbol_map, latest_trading_day, verbose=True):
             time.sleep(0.12)      # 轻微限速, 避免被封
     save_cache(cache)
     if verbose:
-        print(f'[OK] tech: {len(out)} 个品种 (新抓 {fetched} / 缓存 {cached_n})')
+        tag = ' / 复用昨日K线' if (allow_stale and cached_n) else ''
+        print(f'[OK] tech: {len(out)} 个品种 (新抓 {fetched} / 缓存 {cached_n}){tag}')
     return out

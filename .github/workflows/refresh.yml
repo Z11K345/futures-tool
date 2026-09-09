@@ -1,25 +1,29 @@
 name: refresh-data
 
 # 说明: GitHub Actions 的 cron 用 UTC; 北京时间 = UTC + 8
-#   日盘 09:00-11:30 -> UTC 01:00-03:30
-#   日盘 13:30-15:00 -> UTC 05:30-07:00
-#   夜盘 21:00-23:00 -> UTC 13:00-15:00
-# 周一至周五(UTC 的 1-5 对应北京时间周一至周五)
+# 分档调度(分钟位刻意避开整点/半点, 否则 GitHub 调度高峰会延迟 10-30 分钟):
+#   快速档 每 5 分钟  UTC 00-18 -> 北京 08:00 - 次日 02:59
+#       覆盖日盘(9:00-15:00) + 夜盘(21:00-23:00, 贵金属/原油到 02:30) + 外盘主要时段
+#   常速档 每 15 分钟 UTC 19-23 -> 北京 03:00 - 07:59
+#       国内休市、美股尾盘, 主要更新外盘与新闻
+#   周末档 每 1 小时  UTC 周六/周日 -> 北京周六 08:00 - 周一 07:59
+#       国内外均休市, 只更新新闻资讯
 on:
   schedule:
-    - cron: '*/15 1-3 * * 1-5'
-    - cron: '*/15 5-7 * * 1-5'
-    - cron: '*/15 13-15 * * 1-5'
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 0-18 * * 1-5'
+    - cron: '7,22,37,52 19-23 * * 1-5'
+    - cron: '23 * * * 0,6'
   workflow_dispatch:
 
 concurrency:
   group: refresh-data
-  cancel-in-progress: false
+  # 新数据永远比排队中的旧数据有价值; 若上一次尚未跑完直接取消, 避免堆积造成延迟
+  cancel-in-progress: true
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
     permissions:
       contents: write
     # 服务器默认 UTC: 不设时区会让数据时间比北京时间早 8 小时, 前端显示成"早上6点的数据"
@@ -28,20 +32,33 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 运行间传递 K 线/基差缓存(避免每次重抓 1300 根日K)
+      # 缓存槽按"日期 + 是否收盘后"分档: 同一时段内复用同一个 key,
+      # 避免每次运行都新建一份 9MB 缓存(5 分钟一档时 3 天就会撑爆 10GB 配额)
+      - name: 计算缓存槽位
+        id: slot
+        run: |
+          D=$(TZ=Asia/Shanghai date +%Y%m%d)
+          H=$(TZ=Asia/Shanghai date +%H)
+          if [ "$H" -ge 16 ]; then P="close"; else P="intraday"; fi
+          echo "key=qb-kline-${D}-${P}" >> "$GITHUB_OUTPUT"
+          echo "缓存槽: qb-kline-${D}-${P} (北京时间 $(TZ=Asia/Shanghai date '+%F %H:%M'))"
+
       - name: 恢复缓存
         uses: actions/cache@v4
         with:
           path: |
             data/kline_cache.json
             data/basis_days.json
-          key: qb-cache-${{ github.run_id }}
-          restore-keys: qb-cache-
+          key: ${{ steps.slot.outputs.key }}
+          restore-keys: |
+            qb-kline-
 
       - name: 交易日判断
         id: day
@@ -56,12 +73,12 @@ jobs:
               print('true')
           " 2>/dev/null || echo true)
           echo "trading=$R" >> "$GITHUB_OUTPUT"
-          echo "是否交易日: $R"
+          echo "是否交易日: $R (非交易日同样抓取, 用于更新新闻与外盘)"
 
+      # 非交易日也抓取: 新闻资讯与外盘周末仍在更新
       - name: 抓取行情
-        if: steps.day.outputs.trading == 'true'
         run: |
-          python3 fetch_quotes.py 2>&1 | tail -25
+          python3 fetch_quotes.py 2>&1 | grep -E "^\[LAP\]|^\[OK\]|^\[WARN\]|^\[FATAL\]" | tail -30
         continue-on-error: true
 
       # 数据源在境外访问可能部分失败; 只有主 quotes.json 有效才发布
@@ -104,6 +121,8 @@ jobs:
           cp index.html sw.js manifest.json /tmp/pub/ 2>/dev/null || true
           cp icon-192.png icon-512.png icon.svg /tmp/pub/ 2>/dev/null || true
           cp -r data /tmp/pub/
+          # 抓取缓存不发布: 前端不加载, 且省去每次 11MB 的传输(它走 Actions cache 传递)
+          rm -f /tmp/pub/data/kline_cache.json /tmp/pub/data/basis_days.json
           cd /tmp/pub
           git init -q
           git checkout -q -b gh-pages
