@@ -2809,7 +2809,8 @@ function showVarietyDetail(code) {
   const cardTab = 'live';
   const activePane = document.querySelector('.tab-pane.active');
   if (!activePane || activePane.id !== 'tab-' + cardTab) {
-    if (typeof switchTab === 'function') switchTab(cardTab);
+    // 传 noScroll: 下面还要滚到详情卡片, 这里先滚到顶会打架
+    if (typeof switchTab === 'function') switchTab(cardTab, true);
   }
   renderVarietyKB(code);
   // 滚动到详情卡片(display:block 之后再滚才生效)
@@ -3157,11 +3158,30 @@ function renderCloseTable() {
 /* ============================================================
    Tab 切换 & 策略展示
    ============================================================ */
-function switchTab(tab) {
+function switchTab(tab, noScroll) {
   document.querySelectorAll('.tab-item').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.toggle('active', el.id === 'tab-' + tab));
   fitHeader();
   if (tab === 'post') ensureRank();     // 龙虎榜明细单独加载, 切到盘后再取
+  // 切 tab 后回到该页顶部(原先停在旧 tab 的滚动位置, 看起来像"点了没反应")
+  if (!noScroll) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ===== 滚动定位: 顶部 fixed 头部 + 该 tab 内的 sticky 模块导航条都会遮挡内容 =====
+// 只减头部高度会把卡片标题压在导航条下面, 所以这里把 sticky 导航条高度也算进去
+function stickyOffset() {
+  const h = document.querySelector('.app-header');
+  let off = (h && h.offsetHeight) || 150;
+  const pane = document.querySelector('.tab-pane.active');
+  const nav = pane ? pane.querySelector('.module-nav') : null;
+  if (nav && getComputedStyle(nav).position === 'sticky') off += nav.offsetHeight + 4;
+  return off;
+}
+
+function scrollToEl(el, gap) {
+  if (!el) return;
+  const top = el.getBoundingClientRect().top + window.pageYOffset - stickyOffset() - (gap == null ? 8 : gap);
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 }
 
 // ===== 模块标签跳转: 滚动到卡片并高亮一下 =====
@@ -3169,9 +3189,7 @@ function gotoCard(id) {
   const el = document.getElementById(id);
   if (!el) return;
   if (id === 'card-rank') ensureRank();
-  const headerH = (document.querySelector('.app-header') || {}).offsetHeight || 150;
-  const top = el.getBoundingClientRect().top + window.pageYOffset - headerH - 6;
-  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  scrollToEl(el, 8);
   el.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
   setTimeout(() => { el.style.boxShadow = ''; }, 1200);
 }
@@ -3555,9 +3573,7 @@ function filterStrategy(cat) {
     ? '.strategy-card'
     : `.strategy-card[data-cat="${cat}"]`);
   if (sel) {
-    const headerH = (document.querySelector('.app-header') || {}).offsetHeight || 150;
-    const top = sel.getBoundingClientRect().top + window.pageYOffset - headerH - 6;
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    scrollToEl(sel, 8);
     sel.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
     setTimeout(() => { sel.style.boxShadow = ''; }, 1200);
   }
