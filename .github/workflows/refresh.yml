@@ -1,0 +1,110 @@
+name: refresh-data
+
+# 说明: GitHub Actions 的 cron 用 UTC; 北京时间 = UTC + 8
+#   日盘 09:00-11:30 -> UTC 01:00-03:30
+#   日盘 13:30-15:00 -> UTC 05:30-07:00
+#   夜盘 21:00-23:00 -> UTC 13:00-15:00
+# 周一至周五(UTC 的 1-5 对应北京时间周一至周五)
+on:
+  schedule:
+    - cron: '*/15 1-3 * * 1-5'
+    - cron: '*/15 5-7 * * 1-5'
+    - cron: '*/15 13-15 * * 1-5'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 运行间传递 K 线/基差缓存(避免每次重抓 1300 根日K)
+      - name: 恢复缓存
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/kline_cache.json
+            data/basis_days.json
+          key: qb-cache-${{ github.run_id }}
+          restore-keys: qb-cache-
+
+      - name: 交易日判断
+        id: day
+        run: |
+          R=$(python3 -c "
+          import datetime, sys
+          sys.path.insert(0, '.')
+          try:
+              import fetch_quotes as fq
+              print('true' if fq.is_trading_day(datetime.date.today()) else 'false')
+          except Exception as e:
+              print('true')
+          " 2>/dev/null || echo true)
+          echo "trading=$R" >> "$GITHUB_OUTPUT"
+          echo "是否交易日: $R"
+
+      - name: 抓取行情
+        if: steps.day.outputs.trading == 'true'
+        run: |
+          python3 fetch_quotes.py 2>&1 | tail -25
+        continue-on-error: true
+
+      # 数据源在境外访问可能部分失败; 只有主 quotes.json 有效才发布
+      - name: 校验数据并生成 meta.json
+        id: check
+        run: |
+          python3 - <<'EOF'
+          import json, datetime, os, sys
+          ok = False
+          try:
+              d = json.load(open('data/quotes.json', encoding='utf-8'))
+              # 行情按板块分组存放在 categories 下, 统计品种总数
+              cats = d.get('categories') or {}
+              n = sum(len(v) for v in cats.values() if isinstance(v, list))
+              ok = bool(d.get('updated_at')) and n > 10
+              sys.stderr.write('品种数=%d 数据时间=%s\n' % (n, d.get('updated_at')))
+              if ok:
+                  # 轻量文件(几十字节): 前端轮询它判断是否有新数据,避免每次下载全量 JSON
+                  json.dump({
+                      'updated_at': d.get('updated_at'),
+                      'trading_day': d.get('trading_day_cn'),
+                      'n': n,
+                      'published_at': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                  }, open('data/meta.json', 'w', encoding='utf-8'), ensure_ascii=False)
+          except Exception as e:
+              sys.stderr.write('校验失败: %s\n' % e)
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write('ok=%s\n' % ('true' if ok else 'false'))
+          EOF
+
+      - name: 发布到 gh-pages
+        if: steps.check.outputs.ok == 'true'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          rm -rf /tmp/pub && mkdir -p /tmp/pub
+          cp index.html sw.js manifest.json /tmp/pub/ 2>/dev/null || true
+          cp icon-192.png icon-512.png icon.svg /tmp/pub/ 2>/dev/null || true
+          cp -r data /tmp/pub/
+          cd /tmp/pub
+          git init -q
+          git checkout -q -b gh-pages
+          git add -A
+          git -c user.name='github-actions[bot]' \
+              -c user.email='github-actions[bot]@users.noreply.github.com' \
+              commit -q -m "data $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" gh-pages
+          echo "已发布: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
