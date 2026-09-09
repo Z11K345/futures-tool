@@ -1,19 +1,19 @@
 name: refresh-data
 
-# 两种触发方式:
-#   1) schedule(每 5 分钟): 理想路径, 由 GitHub 自行调度, 每次只跑 1 轮。
-#   2) workflow_dispatch(手动/外部调用): 一次启动后内部跑 12 轮, 每轮间隔 5 分钟,
-#      约 60 分钟。用于 GitHub 调度未生效时由外部每小时拉起一次来维持 5 分钟刷新。
-# 分钟位刻意避开整点(3,8,13...), 否则 GitHub 调度高峰会延迟 10-30 分钟。
+# 刷新策略(北京时间):
+#   高峰期 08:00 - 次日 03:00  每 5 分钟一轮
+#       覆盖日盘(9:00-15:00)、夜盘(21:00-23:00, 贵金属/原油到 02:30)、外盘主要时段
+#   低峰期 03:00 - 08:00     每 20 分钟一轮
+#       国内休市、美股已收盘, 主要更新新闻资讯
+#
+# 为什么不用 cron 分档: 实测本仓库的 schedule 事件不触发(多次验证均为 0 次自动运行),
+# 因此改为"一个 job 连续跑若干小时, 结束前用 GITHUB_TOKEN 拉起下一班"的自接力方式,
+# 不依赖 GitHub 调度, 也不需要用户提供任何令牌。
+# 停止方法: 在 Actions 页面 Cancel 掉运行中的 job 即可(被取消时不会拉起下一班)。
 on:
   schedule:
     - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
   workflow_dispatch:
-    inputs:
-      rounds:
-        description: '本轮启动后连续刷新次数(每轮间隔 5 分钟)'
-        required: false
-        default: '12'
 
 concurrency:
   group: refresh-data
@@ -23,10 +23,11 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    # GitHub 单个 job 上限 6 小时, 这里每班最多 5.5 小时后自行交接
+    timeout-minutes: 350
     permissions:
       contents: write
-    # 服务器默认 UTC: 不设时区会让数据时间比北京时间早 8 小时, 前端显示成"早上6点的数据"
+      actions: write
     env:
       TZ: Asia/Shanghai
       REPO: ${{ github.repository }}
@@ -62,17 +63,43 @@ jobs:
           restore-keys: |
             qb-kline-
 
-      - name: 循环刷新(交易时段每 5 分钟一轮)
+      # schedule 触发时只跑一轮(交给 cron 频率); 手动/自接力触发时跑满一个班
+      - name: 循环刷新
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            ROUNDS=1
-          else
-            ROUNDS="${{ github.event.inputs.rounds }}"
-            [ -z "$ROUNDS" ] && ROUNDS=12
+            bash tools/refresh_once.sh || echo "!! 本轮出错"
+            exit 0
           fi
-          echo "触发方式=${{ github.event_name }} 轮数=$ROUNDS"
-          for i in $(seq 1 "$ROUNDS"); do
-            echo "===== 第 $i/$ROUNDS 轮 ====="
-            bash tools/refresh_once.sh || echo "!! 本轮出错, 继续下一轮"
-            if [ "$i" -lt "$ROUNDS" ]; then sleep 290; fi
+          END=$((SECONDS + 19800))   # 5.5 小时
+          N=0
+          while [ "$SECONDS" -lt "$END" ]; do
+            N=$((N + 1))
+            echo "===== 第 $N 轮 $(TZ=Asia/Shanghai date '+%F %H:%M:%S') ====="
+            bash tools/refresh_once.sh || echo "!! 本轮出错, 继续"
+            H=$(TZ=Asia/Shanghai date +%H)
+            if [ "$H" -ge 3 ] && [ "$H" -lt 8 ]; then
+              GAP=1180   # 低峰: 约 20 分钟
+            else
+              GAP=265    # 高峰: 约 5 分钟(抓取本身约 35 秒)
+            fi
+            LEFT=$((END - SECONDS))
+            if [ "$LEFT" -le "$GAP" ]; then break; fi
+            sleep "$GAP"
+          done
+          echo "本班结束, 共 $N 轮"
+
+      # 交接给下一班, 保持 5 分钟刷新不中断
+      - name: 拉起下一班
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+              -H "Authorization: token ${TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "Content-Type: application/json" \
+              -d '{"ref":"main"}' \
+              "https://api.github.com/repos/${REPO}/actions/workflows/refresh.yml/dispatches")
+            echo "拉起下一班: HTTP $code (第 $i 次)"
+            [ "$code" = "204" ] && break
+            sleep 20
           done
