@@ -99,6 +99,8 @@ jobs:
         run: |
           set -e
           rm -rf /tmp/pub && mkdir -p /tmp/pub
+          # 跳过 Jekyll 构建, 直接发布静态文件(更快, 也不会被 Jekyll 处理 HTML)
+          touch /tmp/pub/.nojekyll
           cp index.html sw.js manifest.json /tmp/pub/ 2>/dev/null || true
           cp icon-192.png icon-512.png icon.svg /tmp/pub/ 2>/dev/null || true
           cp -r data /tmp/pub/
