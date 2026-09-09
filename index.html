@@ -209,6 +209,27 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .cat-hedge { background: #1d4a2d; color: #22c55e; }
 .cat-arb { background: #4a3a1d; color: #f59e0b; }
 .cat-opt { background: #3a1d4a; color: #a78bfa; }
+/* 策略卡实时匹配 (V4.1) */
+.sl-badge {
+  font-size: 10px; color: #9ca3af; background: #131924;
+  border: 1px solid #2a3142; border-radius: 3px;
+  padding: 1px 5px; margin-right: 6px; white-space: nowrap;
+}
+.sl-box { margin-top: 8px; border-top: 1px dashed #2a3142; padding-top: 8px; }
+.sl-title {
+  font-weight: 600; color: #7dd3fc; margin: 8px 0 4px; font-size: 11.5px;
+}
+.sl-title:first-child { margin-top: 0; }
+.sl-item {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 4px 7px; margin-bottom: 3px; background: #131924;
+  border-radius: 4px; cursor: pointer; font-size: 11.5px;
+}
+.sl-item:hover { background: #1a2130; }
+.sl-name { color: #e5e7eb; font-weight: 600; white-space: nowrap; }
+.sl-metrics { color: #9ca3af; font-size: 10.5px; text-align: right; }
+.sl-more { color: #6b7280; font-size: 10.5px; padding: 2px 7px; }
+.sl-none { color: #6b7280; font-size: 11px; padding: 2px 7px; }
 .strategy-body {
   padding: 0 12px 12px;
   font-size: 12px;
@@ -915,11 +936,6 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div class="module-nav" data-page-node-id="mD49JPVbGzRl1cVOqDUBb7">
     <div class="mn-item" onclick="gotoCard('card-hedge')" data-page-node-id="bFCbjqp5h5GVx2tJF2IABM">套保决策</div>
     <div class="mn-item" onclick="gotoCard('card-match')" data-page-node-id="4AoI1YkCGAjYAWbv0bFUoO">策略×品种匹配</div>
-    <div class="mn-item" onclick="filterStrategy('spec')" data-page-node-id="MONECoSoyJPHAJx4JYmExf">投机</div>
-    <div class="mn-item" onclick="filterStrategy('hedge')" data-page-node-id="p01WAv0JEmcuhtEeBJJFKd">套保</div>
-    <div class="mn-item" onclick="filterStrategy('arb')" data-page-node-id="AZW4up6LtZjcQOQtWkBMAw">套利</div>
-    <div class="mn-item" onclick="filterStrategy('opt')" data-page-node-id="azkkftg8pCOqEeS13VI8ct">期权</div>
-    <div class="mn-item" onclick="filterStrategy('all')" data-page-node-id="1CFZ0bqAQdsWu3x0rx848I">全部</div>
   </div>
 
   <!-- 企业套保决策(V3.2 自动: 价格分位+基差分位+波动率+事件) -->
@@ -998,13 +1014,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
   </div>
 
   <!-- 投机 -->
-  <div class="strategy-card" data-cat="spec" data-page-node-id="Bu8RU4i1QbykAnZc21j84F">
+  <div class="strategy-card" data-cat="spec" data-key="trend" data-page-node-id="Bu8RU4i1QbykAnZc21j84F">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="pIgiB8ZmktZHl0fjhJe0BG">
       <div data-page-node-id="shC9Gy0ugUZtDDV8Hkux3D">
         <span class="strategy-cat cat-spec" data-page-node-id="1YsnqdiVCEIAWx3dvJvdHx">投机</span>
         <span class="strategy-name" data-page-node-id="J1ColhaSTJLSjzszYQd8Av">趋势跟踪</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="BDC1pjrl5FfojyxJWtcMNS">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="BDC1pjrl5FfojyxJWtcMNS">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="Uawr9Hc3fajy6uuVNzRt3G">
       <div class="row" data-page-node-id="DkHHugFetgC5ybUHy8Hi2d">
@@ -1026,13 +1042,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="spec" data-page-node-id="LCiv9PVqD409TC8L5v8FZP">
+  <div class="strategy-card" data-cat="spec" data-key="reversal" data-page-node-id="LCiv9PVqD409TC8L5v8FZP">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="9asVAsaKjOknuzkgTlJXrV">
       <div data-page-node-id="O5V5Q1XViEtHNBNUwAaLFx">
         <span class="strategy-cat cat-spec" data-page-node-id="jnqS3VXuBsgGDKYuk95IsR">投机</span>
         <span class="strategy-name" data-page-node-id="LWfqInHb9P3Hj9DqvA2R4R">反转交易</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="ucCCd7JlSrk3CBsWgOW9IE">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="ucCCd7JlSrk3CBsWgOW9IE">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="BgKenlBta5RbjQXsF9wf0J">
       <div class="row" data-page-node-id="Mz94ioCoZSE4w6a0d9UbWP">
@@ -1054,13 +1070,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="spec" data-page-node-id="zkOGp9WhvxbysWJjoyCNZb">
+  <div class="strategy-card" data-cat="spec" data-key="breakout" data-page-node-id="zkOGp9WhvxbysWJjoyCNZb">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="J0K23mn4WBhTyDyfVj7QSr">
       <div data-page-node-id="XPepkWfE38kQxkQi5m8dAz">
         <span class="strategy-cat cat-spec" data-page-node-id="8bBwLct999T0FMicQaOoSl">投机</span>
         <span class="strategy-name" data-page-node-id="1CcYE6qacDJefQrQsGZxAQ">突破交易</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="ErARJiJkjIVBvCR1WZJAG1">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="ErARJiJkjIVBvCR1WZJAG1">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="8Fdxv7H3WrJCPMlJf0ZZo5">
       <div class="row" data-page-node-id="XQHS2F5zGHgCLiAXj72vJA">
@@ -1079,13 +1095,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
   </div>
 
   <!-- 套保 -->
-  <div class="strategy-card" data-cat="hedge" data-page-node-id="Z5llA0EphWg0lQ91Ji7eTi">
+  <div class="strategy-card" data-cat="hedge" data-key="buy_hedge" data-page-node-id="Z5llA0EphWg0lQ91Ji7eTi">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="dxWb2gtvIVD7kOfsoWoIQs">
       <div data-page-node-id="UCwjDQAotb7strhCieIU4t">
         <span class="strategy-cat cat-hedge" data-page-node-id="246oEgM9buYoCMx5eqD7OJ">套保</span>
         <span class="strategy-name" data-page-node-id="oKFCt03FvOqRPX5SSDgLK7">买入套保（多头套保）</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="xTTGXG6h90hhVyaZ4uyVzq">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="xTTGXG6h90hhVyaZ4uyVzq">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="KrRoMoKGrQNZgV0us3OobC">
       <div class="row" data-page-node-id="a4X2EBH019URkyNEF16Tp4">
@@ -1107,13 +1123,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="hedge" data-page-node-id="4gHZGXglCOpu2JmVw90Bix">
+  <div class="strategy-card" data-cat="hedge" data-key="sell_hedge" data-page-node-id="4gHZGXglCOpu2JmVw90Bix">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="RktnwgzFNJHGGW5hqpljJQ">
       <div data-page-node-id="3OOvFoSbmDWaXGtYtMk6if">
         <span class="strategy-cat cat-hedge" data-page-node-id="RGYzZQFo99edFXrJVOcuee">套保</span>
         <span class="strategy-name" data-page-node-id="GeZOuf1GY2v35s08VcElEt">卖出套保（空头套保）</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="BmGWDwvmIyoeRfkGMarAiL">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="BmGWDwvmIyoeRfkGMarAiL">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="q1H6kXAcqAgiJQsYES0Iwg">
       <div class="row" data-page-node-id="wmc1iZ3TlB4K59mjVovOED">
@@ -1131,13 +1147,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="hedge" data-page-node-id="N7U5TB3GRSbIaT0rmmCTXf">
+  <div class="strategy-card" data-cat="hedge" data-key="delta_hedge" data-page-node-id="N7U5TB3GRSbIaT0rmmCTXf">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="tA4sNRosVNADunWLSYnwgc">
       <div data-page-node-id="0gbwKpYkVbHVAS35MPM2V9">
         <span class="strategy-cat cat-hedge" data-page-node-id="F3bccGensgp1qZXHSQYDUT">套保</span>
         <span class="strategy-name" data-page-node-id="hOORiNbpwOIUWBLYGl7cba">动态套保（Delta 套保）</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="JIIHMDcoJ5VpiB6bVnuFCp">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="JIIHMDcoJ5VpiB6bVnuFCp">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="fkYfTuimuGFd2DohDL6eCS">
       <div class="row" data-page-node-id="iFqDbiYgOJ30I5o8Ui0KaV">
@@ -1152,13 +1168,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
   </div>
 
   <!-- 套利 -->
-  <div class="strategy-card" data-cat="arb" data-page-node-id="NP7uRnBn9JcyblDCMzrY8g">
+  <div class="strategy-card" data-cat="arb" data-key="basis_arb" data-page-node-id="NP7uRnBn9JcyblDCMzrY8g">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="ANhQGJniyKlHZ9QprI3Qz7">
       <div data-page-node-id="FdBJkgpCwQ4ReQJt09ktrK">
         <span class="strategy-cat cat-arb" data-page-node-id="7EDXD1p6R7Tt3SLlnxsrxy">套利</span>
         <span class="strategy-name" data-page-node-id="iXIe31NkIwSaqiEUIibOlB">期现套利</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="j8vU6OFA32amN1upfwzDiA">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="j8vU6OFA32amN1upfwzDiA">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="jm7Dy11uHpGPjx1AOTwHpv">
       <div class="row" data-page-node-id="fTgIcMXVoYNA8aOekb5HCe">
@@ -1176,13 +1192,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="arb" data-page-node-id="54DQzTtAjPMnCce52l3c9K">
+  <div class="strategy-card" data-cat="arb" data-key="calendar_arb" data-page-node-id="54DQzTtAjPMnCce52l3c9K">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="oFyPXqICjW8nR7A3gXFOZt">
       <div data-page-node-id="D5BGCeWbFr4RsnhG0VOIbi">
         <span class="strategy-cat cat-arb" data-page-node-id="bfIxtDD82uZ9q1imHWR7PT">套利</span>
         <span class="strategy-name" data-page-node-id="D4LBkiFfBrRnU9BHxLq5rr">跨期套利</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="1k5UfsRFrlwcmg6Y6ZDyKx">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="1k5UfsRFrlwcmg6Y6ZDyKx">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="E5yvh6kp1IuakZHs2tGCER">
       <div class="row" data-page-node-id="ZpcJQfDUCQ48dOdIz04mF7">
@@ -1200,13 +1216,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="arb" data-page-node-id="8YsnxX1Uwplcf1rqKicLcR">
+  <div class="strategy-card" data-cat="arb" data-key="cross_arb" data-page-node-id="8YsnxX1Uwplcf1rqKicLcR">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="aoXR3hOvtG9NwHL6BYez9V">
       <div data-page-node-id="HAQX2AB7rcGSpGYGAozyQ1">
         <span class="strategy-cat cat-arb" data-page-node-id="MJ3Z7RyHAJfpprVx5TaBAo">套利</span>
         <span class="strategy-name" data-page-node-id="bn7fOgu0j6cjI2mffMp7lR">跨品种套利</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="WDBDcFT8wYOPLt7OUUx58L">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="WDBDcFT8wYOPLt7OUUx58L">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="EmpfFH4X8s5qFRuGgD9jG8">
       <div class="row" data-page-node-id="TgyCRJjw7jySyEgxEMQkCU">
@@ -1234,13 +1250,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
   </div>
 
   <!-- 期权 -->
-  <div class="strategy-card" data-cat="opt" data-page-node-id="90IbMQaDcVmVGx6czKynWM">
+  <div class="strategy-card" data-cat="opt" data-key="opt_dir" data-page-node-id="90IbMQaDcVmVGx6czKynWM">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="M6YyBXNCEwUQwANXqWBTfi">
       <div data-page-node-id="ZNZuHN7O0pVELJLcDMPlLN">
         <span class="strategy-cat cat-opt" data-page-node-id="uRdX42RcgfsA6KiYlWOVSy">期权</span>
         <span class="strategy-name" data-page-node-id="0GjzahtvOx2finAtBhgG8F">方向性策略</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="UidTPO82tJV6kq4ayf759r">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="UidTPO82tJV6kq4ayf759r">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="MxVpg2U8mDGJ7EYymciVwt">
       <div class="row" data-page-node-id="hUFkmpiWr10hxgJQpVDEHD">
@@ -1262,13 +1278,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="opt" data-page-node-id="tVD7wTOWQxRtR6fxMevKRL">
+  <div class="strategy-card" data-cat="opt" data-key="opt_vol" data-page-node-id="tVD7wTOWQxRtR6fxMevKRL">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="h2grkDL46abTfaOurmfPm1">
       <div data-page-node-id="BF9R9mEVWDiKOFsVdQb9hk">
         <span class="strategy-cat cat-opt" data-page-node-id="IqxatGiECYgTNMOGCNZd5g">期权</span>
         <span class="strategy-name" data-page-node-id="iyv7kvbMGNE5EAcJ0ZnxM4">波动率策略</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="fSkhyVwMgl1PIYOcp0Bcl6">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="fSkhyVwMgl1PIYOcp0Bcl6">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="piLOWCnIW9tClT4ZFco72B">
       <div class="row" data-page-node-id="4VTjvrz4GmT0Oa5bZFydtS">
@@ -1286,13 +1302,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="opt" data-page-node-id="HbttZkjlcCkKUAhypDpTHx">
+  <div class="strategy-card" data-cat="opt" data-key="opt_enhance" data-page-node-id="HbttZkjlcCkKUAhypDpTHx">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="H8UqWQGgkKeh2Ldh5RJi2t">
       <div data-page-node-id="JoTMr5hmqQKDbBWBy1XfZv">
         <span class="strategy-cat cat-opt" data-page-node-id="mXGHywXpbXc9vcy5NkrEGC">期权</span>
         <span class="strategy-name" data-page-node-id="dbtQJ7By7RvSkkbKOFwCMt">增强收益策略</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="eVzbWkEz6I161rvnF5hBAm">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="eVzbWkEz6I161rvnF5hBAm">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="JfE1D9j41kRHBSySekHvDa">
       <div class="row" data-page-node-id="aOwUBkAeWmmAVJLysmDmMT">
@@ -1306,13 +1322,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <div class="strategy-card" data-cat="opt" data-page-node-id="IP8mee4BlBelqRnXGtFte1">
+  <div class="strategy-card" data-cat="opt" data-key="opt_hedge" data-page-node-id="IP8mee4BlBelqRnXGtFte1">
     <div class="strategy-header" onclick="toggleStrategy(this)" data-page-node-id="6dOILZhZouMeD6bLbuBqEW">
       <div data-page-node-id="LtwoAFVEUFKmKefEsftqi9">
         <span class="strategy-cat cat-opt" data-page-node-id="BKmOKtPz9MGeFhQmn2HOLp">期权</span>
         <span class="strategy-name" data-page-node-id="ElGELnZO2D9PyuAaTu2OeW">对冲策略</span>
       </div>
-      <span class="strategy-toggle" data-page-node-id="gPzctE3ADmgv2aUUT7R03g">▼</span>
+      <span class="sl-badge" data-sl-badge></span><span class="strategy-toggle" data-page-node-id="gPzctE3ADmgv2aUUT7R03g">▼</span>
     </div>
     <div class="strategy-body" data-page-node-id="FYooEpzDjRqSJWltIMTG4Y">
       <div class="row" data-page-node-id="sFuQ2veRTZo7GT4hGx1Pcv">
@@ -1635,6 +1651,7 @@ function onQuotesLoaded() {
   renderTerm();
   renderBasis();
   renderHedge();
+  renderStrategyLive();
   renderRank();
   // 更新右上时间戳
   const meta = document.getElementById('data-update-time');
@@ -3284,6 +3301,206 @@ function renderTerm() {
 
 // ===== 企业套保决策渲染(价格分位+基差分位+波动率+事件) =====
 // ===== 企业套保决策渲染(带筛选: 关键词 / 板块 / 角色 / 强度) =====
+/* ========== 策略卡 · 实时匹配品种 (V4.1) ==========
+   把每张策略卡从"名词解释"变成"当前哪些品种符合该策略"。
+   数据全部取自 quotes.json 现有字段(tech/term/hedge/basis), 无新增抓取。 */
+const SL_SECTOR_CN = { metal: '有色', black: '黑色', energy: '能化', agri: '农产', finance: '金融', overseas: '外盘' };
+function slSectorMap() {
+  const q = quotesData || {}, m = {};
+  const cats = q.categories || {};
+  const put = function (nm, arr) {
+    (arr || []).forEach(function (it) { if (it && it.code) m[it.code] = nm; });
+  };
+  if (Array.isArray(cats)) {
+    cats.forEach(function (c) { put(c.name || c.title || c.key || '', c.items || c.list); });
+  } else {
+    Object.keys(cats).forEach(function (k) {
+      const v = cats[k];
+      if (Array.isArray(v)) put(SL_SECTOR_CN[k] || k, v);
+      else put(SL_SECTOR_CN[k] || v.name || v.title || k, v.items || v.list);
+    });
+  }
+  return m;
+}
+function slNum(v) { return (typeof v === 'number' && isFinite(v)) ? v : null; }
+function slP(v, d) { const n = slNum(v); return n == null ? '--' : n.toFixed(d == null ? 1 : d) + '%'; }
+function slMedian(a) {
+  const b = a.filter(function (x) { return x != null; }).sort(function (x, y) { return x - y; });
+  if (!b.length) return null;
+  const m = b.length >> 1;
+  return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2;
+}
+function slRecords() {
+  const q = quotesData || {};
+  const tech = q.tech || {}, term = q.term || {}, hedge = q.hedge || {};
+  const basis = (q.basis && q.basis.items) || {};
+  const sec = slSectorMap(), set = {};
+  [tech, term, hedge, basis].forEach(function (o) { Object.keys(o).forEach(function (c) { set[c] = 1; }); });
+  return Object.keys(set).map(function (code) {
+    const t = tech[code] || {}, tm = term[code] || {}, h = hedge[code] || {}, b = basis[code] || {};
+    return { code: code, cn: t.cn || tm.cn || h.cn || b.cn || code, t: t, tm: tm, h: h, b: b, sector: sec[code] || '' };
+  });
+}
+function slMacd(r) { return (r.t.macd && r.t.macd.signal) ? r.t.macd.signal : ''; }
+function slKdj(r) { return (r.t.kdj && r.t.kdj.signal) ? r.t.kdj.signal : ''; }
+
+function slMatch(key) {
+  const R = slRecords();
+  if (!R.length) return null;
+  const G = function (label, items, note) { return { label: label, items: items || [], note: note || '' }; };
+  const it = function (r, m) { return { code: r.code, cn: r.cn, m: m }; };
+  const dsc = function (f) { return function (a, b) { return (slNum(f(b)) || 0) - (slNum(f(a)) || 0); }; };
+  const asc = function (f) { return function (a, b) { return (slNum(f(a)) == null ? 1e9 : f(a)) - (slNum(f(b)) == null ? 1e9 : f(b)); }; };
+  switch (key) {
+    case 'trend': {
+      const up = R.filter(function (r) { return r.t.ma_arr === '多头排列' && r.t.trend === '上升趋势'; })
+        .sort(dsc(function (r) { return r.t.pct_1y; }))
+        .map(function (r) { return it(r, r.t.ma_arr + '·' + slMacd(r) + '·分位' + slP(r.t.pct_1y, 0)); });
+      const dn = R.filter(function (r) { return r.t.ma_arr === '空头排列' && r.t.trend === '下降趋势'; })
+        .sort(asc(function (r) { return r.t.pct_1y; }))
+        .map(function (r) { return it(r, r.t.ma_arr + '·' + slMacd(r) + '·分位' + slP(r.t.pct_1y, 0)); });
+      return { badge: '多' + up.length + '·空' + dn.length, groups: [G('🔴 顺势做多(均线多头+上升趋势)', up), G('🟢 顺势做空(均线空头+下降趋势)', dn)] };
+    }
+    case 'reversal': {
+      const hi = R.filter(function (r) { return (slNum(r.t.pct_1y) || 0) >= 90 && ((slNum(r.t.rsi14) || 0) >= 70 || slKdj(r) === '超买'); })
+        .sort(dsc(function (r) { return r.t.pct_1y; }))
+        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·RSI' + slP(r.t.rsi14, 0) + '·' + slKdj(r)); });
+      const lo = R.filter(function (r) { const p = slNum(r.t.pct_1y); return p != null && p <= 10 && ((r.t.rsi14 == null || r.t.rsi14 <= 30) || slKdj(r) === '超卖'); })
+        .sort(asc(function (r) { return r.t.pct_1y; }))
+        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·RSI' + slP(r.t.rsi14, 0) + '·' + slKdj(r)); });
+      return { badge: '高' + hi.length + '·低' + lo.length, groups: [G('🔻 高位超买(潜在回调, 逆势做空)', hi, '需"高分位+动能衰竭+库存累积"共振才动, 小仓快进快出'), G('🔺 低位超卖(潜在反弹, 逆势做多)', lo, '逆趋势风险高, 严格止损')] };
+    }
+    case 'breakout': {
+      const near = function (r) {
+        const c = slNum(r.t.close), hi = slNum(r.t.high_250), lo = slNum(r.t.low_250);
+        if (c == null) return null;
+        if (hi != null && hi > 0) return { up: (hi - c) / c * 100 };
+        if (lo != null && lo > 0) return { down: (c - lo) / c * 100 };
+        return null;
+      };
+      const ups = R.filter(function (r) { const n = near(r); return n && n.up != null && n.up <= 2; })
+        .sort(asc(function (r) { const n = near(r); return n ? n.up : 1e9; }))
+        .map(function (r) { const n = near(r); return it(r, '距250日高' + (n ? n.up.toFixed(1) : '--') + '%·' + (r.t.boll && r.t.boll.pos || '') + '·量比' + (slNum(r.t.vol_ratio) != null ? r.t.vol_ratio.toFixed(2) : '--')); });
+      const dns = R.filter(function (r) { const c = slNum(r.t.close), lo = slNum(r.t.low_250); return c != null && lo != null && lo > 0 && (c - lo) / c * 100 <= 2; })
+        .sort(asc(function (r) { const c = slNum(r.t.close), lo = slNum(r.t.low_250); return (c != null && lo) ? (c - lo) / c * 100 : 1e9; }))
+        .map(function (r) { const c = slNum(r.t.close), lo = slNum(r.t.low_250); return it(r, '距250日低' + ((c - lo) / c * 100).toFixed(1) + '%·' + (r.t.boll && r.t.boll.pos || '')); });
+      const med = slMedian(R.map(function (r) { return slNum(r.t.boll && r.t.boll.width); }));
+      const sq = R.filter(function (r) { const w = slNum(r.t.boll && r.t.boll.width); return w != null && med != null && w <= med; })
+        .sort(asc(function (r) { return r.t.boll.width; }))
+        .map(function (r) { return it(r, '带宽' + slP(r.t.boll.width, 1) + '·' + (r.t.pattern || '')); });
+      return { badge: '上' + ups.length + '·下' + dns.length, groups: [G('⬆️ 逼近250日新高(向上突破候选)', ups), G('⬇️ 逼近250日新低(向下破位候选)', dns), G('🌪️ 布林收口(波动压缩, 变盘蓄势)', sq, '收口只代表变盘临近, 不预示方向')] };
+    }
+    case 'buy_hedge': {
+      const l = R.filter(function (r) { return r.h.buyer && (slNum(r.h.buyer.ratio) || 0) >= 50; })
+        .sort(dsc(function (r) { return r.h.buyer.ratio; }))
+        .map(function (r) { return it(r, r.h.buyer.action + ' ' + r.h.buyer.ratio + '%·基差分位' + slP(r.h.basis_prc, 0) + '·价分位' + slP(r.h.price_pct, 0)); });
+      return { badge: '建议≥50% ' + l.length + '个', groups: [G('🏭 用料企业买保(建议比例≥50%的品种)', l, '其余品种建议比例偏低(基差位置不利), 可等基差回升再建仓')] };
+    }
+    case 'sell_hedge': {
+      const l = R.filter(function (r) { return r.h.seller && (slNum(r.h.seller.ratio) || 0) >= 50; })
+        .sort(dsc(function (r) { return r.h.seller.ratio; }))
+        .map(function (r) { return it(r, r.h.seller.action + ' ' + r.h.seller.ratio + '%·基差分位' + slP(r.h.basis_prc, 0) + '·价分位' + slP(r.h.price_pct, 0)); });
+      return { badge: '建议≥50% ' + l.length + '个', groups: [G('🏪 供货企业卖保(建议比例≥50%的品种)', l, '价格高位+基差低位=卖保双重有利')] };
+    }
+    case 'delta_hedge': {
+      const atrOf = function (r) { return slNum(r.h.atr_pct) != null ? r.h.atr_pct : slNum(r.t.atr_pct); };
+      const arr = R.filter(function (r) { return atrOf(r) != null; }).sort(dsc(atrOf));
+      const l = arr.map(function (r) { return it(r, 'ATR' + slP(atrOf(r), 2) + '·价分位' + slP(r.h.price_pct, 0) + '·' + (r.h.trend || r.t.trend || '')); });
+      return { badge: arr.length ? '最高ATR' + slP(atrOf(arr[0]), 2) : '--', groups: [G('🎚️ 波动率最高(最需动态调整/期权替代)', l, 'ATR 越高, 期货保证金压力越大, 越适合用期权或分批调整')] };
+    }
+    case 'basis_arb': {
+      const arr = R.filter(function (r) { return slNum(r.b.prc_hist) != null; })
+        .sort(dsc(function (r) { return Math.abs(r.b.prc_hist - 50); }));
+      const l = arr.map(function (r) { return it(r, '基差率' + slP(r.b.pct, 2) + '·分位' + slP(r.b.prc_hist, 0) + '·现货' + (slNum(r.b.spot) != null ? r.b.spot : '--')); });
+      return { badge: arr.length ? '最极端分位' + slP(arr[0].b.prc_hist, 0) : '--', groups: [G('⚖️ 基差分位最极端(期现偏离最大)', l, '基差分位越高越有利于卖出期货买现货(正向套利), 越低反之; 需扣除交割/仓储/资金成本')] };
+    }
+    case 'calendar_arb': {
+      const arr = R.filter(function (r) { return slNum(r.tm.ann_pct) != null; })
+        .sort(dsc(function (r) { return Math.abs(r.tm.ann_pct); }));
+      const l = arr.map(function (r) { return it(r, r.tm.c1 + '→' + r.tm.c2 + ' 年化' + slP(r.tm.ann_pct, 1) + '·' + (r.tm.struct || '') + (r.tm.thin ? '·次月薄' : '') + (r.tm.near ? '·临近交割' : '')); });
+      return { badge: arr.length ? '最陡年化' + slP(Math.abs(arr[0].tm.ann_pct), 0) : '--', groups: [G('📅 年化月差最大(跨期结构最陡)', l, 'Back(近月升水): 多头展期有正收益; Contango(远月升水): 多头展期负收益。thin/临近交割的品种流动性或自然人持仓受限')] };
+    }
+    case 'cross_arb': {
+      const bySec = {};
+      R.forEach(function (r) { if (!r.sector || r.sector === '外盘' || slNum(r.t.pct_1y) == null) return; (bySec[r.sector] = bySec[r.sector] || []).push(r); });
+      const l = [];
+      Object.keys(bySec).forEach(function (s) {
+        const arr = bySec[s];
+        if (arr.length < 3) return;
+        arr.sort(dsc(function (r) { return r.t.pct_1y; }));
+        const s1 = arr[0], s2 = arr[arr.length - 1];
+        const gap = (s1.t.pct_1y - s2.t.pct_1y);
+        l.push({ code: s1.code, cn: s + ': 强' + s1.cn + '/弱' + s2.cn, m: '分位' + slP(s1.t.pct_1y, 0) + ' vs ' + slP(s2.t.pct_1y, 0) + '(差' + gap.toFixed(0) + ')' });
+      });
+      l.sort(function (a, b) { return parseInt((b.m.match(/差(\d+)/) || [0, 0])[1], 10) - parseInt((a.m.match(/差(\d+)/) || [0, 0])[1], 10); });
+      return { badge: l.length + '组', groups: [G('🔀 同板块强弱差最大(多强空弱)', l, '仅为同板块截面强弱对比, 非统计套利价差分位(无历史价差数据), 不构成配对交易建议')] };
+    }
+    case 'opt_dir': {
+      const call = R.filter(function (r) { return r.t.ma_arr === '多头排列' && (slNum(r.t.pct_1y) || 0) >= 70; })
+        .sort(dsc(function (r) { return r.t.pct_1y; }))
+        .map(function (r) { return it(r, '买看涨·分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '(权利金)'); });
+      const put = R.filter(function (r) { return r.t.ma_arr === '空头排列' && (slNum(r.t.pct_1y) != null) && r.t.pct_1y <= 30; })
+        .sort(asc(function (r) { return r.t.pct_1y; }))
+        .map(function (r) { return it(r, '买看跌·分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '(权利金)'); });
+      return { badge: '涨' + call.length + '·跌' + put.length, groups: [G('📈 方向看涨(趋势+高位共振, 买权替代期货)', call), G('📉 方向看跌(空头+低位共振, 买权替代期货)', put), G('', [], '买权最大亏损=权利金, 适合方向明确但怕跳空的场景')] };
+    }
+    case 'opt_vol': {
+      const withAtr = R.filter(function (r) { return slNum(r.t.atr_pct) != null; });
+      const low = withAtr.slice().sort(asc(function (r) { return r.t.atr_pct; }))
+        .map(function (r) { return it(r, 'ATR' + slP(r.t.atr_pct, 2) + '·分位' + slP(r.t.pct_1y, 0)); });
+      const high = withAtr.slice().sort(dsc(function (r) { return r.t.atr_pct; }))
+        .map(function (r) { return it(r, 'ATR' + slP(r.t.atr_pct, 2) + '·分位' + slP(r.t.pct_1y, 0)); });
+      const atrs = withAtr.map(function (r) { return r.t.atr_pct; }).sort(function (a, b) { return a - b; });
+      const mn = atrs.length ? atrs[0] : null, mx = atrs.length ? atrs[atrs.length - 1] : null;
+      return { badge: '低' + slP(mn, 2) + '·高' + slP(mx, 2), groups: [G('🫧 波动率最低(权利金便宜, 适合买权/做多波动)', low), G('🔥 波动率最高(权利金贵, 适合卖权/做空波动)', high)] };
+    }
+    case 'opt_enhance': {
+      const med = slMedian(R.map(function (r) { return slNum(r.t.atr_pct); }));
+      const l = R.filter(function (r) { const a = slNum(r.t.atr_pct); return (slNum(r.t.pct_1y) || 0) >= 70 && a != null && med != null && a >= med; })
+        .sort(dsc(function (r) { return r.t.atr_pct; }))
+        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '·' + (r.t.pattern || '')); });
+      return { badge: l.length + '个', groups: [G('💰 高位+高波动(备兑/卖权增强收益候选)', l, '卖出期权收取权利金, 但上方收益被封顶, 需能接受被行权')] };
+    }
+    case 'opt_hedge': {
+      const l = R.filter(function (r) { return r.t.ma_arr === '多头排列' && (slNum(r.t.pct_1y) || 0) >= 80; })
+        .sort(dsc(function (r) { return r.t.pct_1y; }))
+        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '·' + (r.t.trend || '')); });
+      return { badge: l.length + '个', groups: [G('🛡️ 高位浮盈(买看跌保护利润候选)', l, '已有浮盈且处高位时, 用买权锁定下行, 保留上行空间')] };
+    }
+  }
+  return null;
+}
+function slRenderGroup(g) {
+  if (!g.items.length) return '<div class="sl-title">' + g.label + '</div><div class="sl-none">当前无品种符合' + (g.note ? ' · ' + g.note : '') + '</div>';
+  const n = g.items.length, show = g.items.slice(0, 6);
+  let h = '<div class="sl-title">' + g.label + ' <span style="color:#6b7280;font-weight:400;">(' + n + ')</span></div>';
+  h += show.map(function (x) {
+    return '<div class="sl-item" onclick="showVarietyDetail(\'' + x.code + '\')"><span class="sl-name">' + x.cn + '</span><span class="sl-metrics">' + x.m + '</span></div>';
+  }).join('');
+  if (n > 6) h += '<div class="sl-more">还有 ' + (n - 6) + ' 个未显示</div>';
+  if (g.note) h += '<div class="sl-more">' + g.note + '</div>';
+  return h;
+}
+function renderStrategyLive() {
+  document.querySelectorAll('.strategy-card[data-key]').forEach(function (card) {
+    const key = card.getAttribute('data-key');
+    const badge = card.querySelector('[data-sl-badge]');
+    const body = card.querySelector('.strategy-body');
+    if (!body) return;
+    let box = body.querySelector('.sl-box');
+    if (!box) { box = document.createElement('div'); box.className = 'sl-box'; body.appendChild(box); }
+    let res = null;
+    try { res = slMatch(key); } catch (e) { res = null; }
+    if (!res) {
+      if (badge) badge.textContent = '';
+      box.innerHTML = '<div class="sl-none">待行情数据加载…</div>';
+      return;
+    }
+    if (badge) badge.textContent = res.badge || '';
+    box.innerHTML = res.groups.map(slRenderGroup).join('');
+  });
+}
+
 let hedgeFilter = { q: '', cat: '全部', role: 'all', urgentOnly: false, sort: 'urgency' };
 
 function hedgeCatMap() {
@@ -3298,6 +3515,7 @@ function toggleHedgeUrgent() { hedgeFilter.urgentOnly = !hedgeFilter.urgentOnly;
 function toggleHedgeSort() {
   hedgeFilter.sort = hedgeFilter.sort === 'urgency' ? 'name' : 'urgency';
   renderHedge();
+  renderStrategyLive();
 }
 
 function renderHedgeCatBar(avail) {
