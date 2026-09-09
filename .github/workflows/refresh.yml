@@ -1,32 +1,36 @@
 name: refresh-data
 
-# 说明: GitHub Actions 的 cron 用 UTC; 北京时间 = UTC + 8
-# 分档调度(分钟位刻意避开整点/半点, 否则 GitHub 调度高峰会延迟 10-30 分钟):
-#   快速档 每 5 分钟  UTC 00-18 -> 北京 08:00 - 次日 02:59
-#       覆盖日盘(9:00-15:00) + 夜盘(21:00-23:00, 贵金属/原油到 02:30) + 外盘主要时段
-#   常速档 每 15 分钟 UTC 19-23 -> 北京 03:00 - 07:59
-#       国内休市、美股尾盘, 主要更新外盘与新闻
-#   周末档 每 1 小时  UTC 周六/周日 -> 北京周六 08:00 - 周一 07:59
-#       国内外均休市, 只更新新闻资讯
+# 两种触发方式:
+#   1) schedule(每 5 分钟): 理想路径, 由 GitHub 自行调度, 每次只跑 1 轮。
+#   2) workflow_dispatch(手动/外部调用): 一次启动后内部跑 12 轮, 每轮间隔 5 分钟,
+#      约 60 分钟。用于 GitHub 调度未生效时由外部每小时拉起一次来维持 5 分钟刷新。
+# 分钟位刻意避开整点(3,8,13...), 否则 GitHub 调度高峰会延迟 10-30 分钟。
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
   workflow_dispatch:
+    inputs:
+      rounds:
+        description: '本轮启动后连续刷新次数(每轮间隔 5 分钟)'
+        required: false
+        default: '12'
 
 concurrency:
   group: refresh-data
-  # 新数据永远比排队中的旧数据有价值; 若上一次尚未跑完直接取消, 避免堆积造成延迟
-  cancel-in-progress: true
+  # 取消进行中的长循环会造成刷新断档, 因此让新任务排队等待
+  cancel-in-progress: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 75
     permissions:
       contents: write
     # 服务器默认 UTC: 不设时区会让数据时间比北京时间早 8 小时, 前端显示成"早上6点的数据"
     env:
       TZ: Asia/Shanghai
+      REPO: ${{ github.repository }}
+      TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +42,7 @@ jobs:
           python-version: '3.11'
 
       # 缓存槽按"日期 + 是否收盘后"分档: 同一时段内复用同一个 key,
-      # 避免每次运行都新建一份 9MB 缓存(5 分钟一档时 3 天就会撑爆 10GB 配额)
+      # 避免每轮都新建一份 9MB 缓存(5 分钟一档时 3 天就会撑爆 10GB 配额)
       - name: 计算缓存槽位
         id: slot
         run: |
@@ -58,75 +62,17 @@ jobs:
           restore-keys: |
             qb-kline-
 
-      - name: 交易日判断
-        id: day
+      - name: 循环刷新(交易时段每 5 分钟一轮)
         run: |
-          R=$(python3 -c "
-          import datetime, sys
-          sys.path.insert(0, '.')
-          try:
-              import fetch_quotes as fq
-              print('true' if fq.is_trading_day(datetime.date.today()) else 'false')
-          except Exception as e:
-              print('true')
-          " 2>/dev/null || echo true)
-          echo "trading=$R" >> "$GITHUB_OUTPUT"
-          echo "是否交易日: $R (非交易日同样抓取, 用于更新新闻与外盘)"
-
-      # 非交易日也抓取: 新闻资讯与外盘周末仍在更新
-      - name: 抓取行情
-        run: |
-          python3 fetch_quotes.py 2>&1 | grep -E "^\[LAP\]|^\[OK\]|^\[WARN\]|^\[FATAL\]" | tail -30
-        continue-on-error: true
-
-      # 数据源在境外访问可能部分失败; 只有主 quotes.json 有效才发布
-      - name: 校验数据并生成 meta.json
-        id: check
-        run: |
-          python3 - <<'EOF'
-          import json, datetime, os, sys
-          ok = False
-          try:
-              d = json.load(open('data/quotes.json', encoding='utf-8'))
-              # 行情按板块分组存放在 categories 下, 统计品种总数
-              cats = d.get('categories') or {}
-              n = sum(len(v) for v in cats.values() if isinstance(v, list))
-              ok = bool(d.get('updated_at')) and n > 10
-              sys.stderr.write('品种数=%d 数据时间=%s\n' % (n, d.get('updated_at')))
-              if ok:
-                  # 轻量文件(几十字节): 前端轮询它判断是否有新数据,避免每次下载全量 JSON
-                  json.dump({
-                      'updated_at': d.get('updated_at'),
-                      'trading_day': d.get('trading_day_cn'),
-                      'n': n,
-                      'published_at': datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-                  }, open('data/meta.json', 'w', encoding='utf-8'), ensure_ascii=False)
-          except Exception as e:
-              sys.stderr.write('校验失败: %s\n' % e)
-          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
-              f.write('ok=%s\n' % ('true' if ok else 'false'))
-          EOF
-
-      - name: 发布到 gh-pages
-        if: steps.check.outputs.ok == 'true'
-        env:
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          rm -rf /tmp/pub && mkdir -p /tmp/pub
-          # 跳过 Jekyll 构建, 直接发布静态文件(更快, 也不会被 Jekyll 处理 HTML)
-          touch /tmp/pub/.nojekyll
-          cp index.html sw.js manifest.json /tmp/pub/ 2>/dev/null || true
-          cp icon-192.png icon-512.png icon.svg /tmp/pub/ 2>/dev/null || true
-          cp -r data /tmp/pub/
-          # 抓取缓存不发布: 前端不加载, 且省去每次 11MB 的传输(它走 Actions cache 传递)
-          rm -f /tmp/pub/data/kline_cache.json /tmp/pub/data/basis_days.json
-          cd /tmp/pub
-          git init -q
-          git checkout -q -b gh-pages
-          git add -A
-          git -c user.name='github-actions[bot]' \
-              -c user.email='github-actions[bot]@users.noreply.github.com' \
-              commit -q -m "data $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          git push -q -f "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git" gh-pages
-          echo "已发布: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ROUNDS=1
+          else
+            ROUNDS="${{ github.event.inputs.rounds }}"
+            [ -z "$ROUNDS" ] && ROUNDS=12
+          fi
+          echo "触发方式=${{ github.event_name }} 轮数=$ROUNDS"
+          for i in $(seq 1 "$ROUNDS"); do
+            echo "===== 第 $i/$ROUNDS 轮 ====="
+            bash tools/refresh_once.sh || echo "!! 本轮出错, 继续下一轮"
+            if [ "$i" -lt "$ROUNDS" ]; then sleep 290; fi
+          done
