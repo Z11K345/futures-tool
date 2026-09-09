@@ -37,6 +37,11 @@ if [ "$OK" != "true" ]; then
 fi
 
 echo "--- 发布 $(TZ=Asia/Shanghai date '+%F %H:%M:%S') ---"
+# 页面文件以 main 分支最新为准: 循环任务启动时 checkout 的是当次版本,
+# 之后改了页面若不重新拉取, 每轮发布都会把改动覆盖回旧版
+git fetch -q origin main 2>/dev/null \
+  && git checkout -q origin/main -- index.html sw.js manifest.json 2>/dev/null \
+  || echo "   (未取到 main 最新页面文件, 沿用本次 checkout 版本)"
 rm -rf /tmp/pub && mkdir -p /tmp/pub
 # 跳过 Jekyll 构建, 直接发布静态文件(更快, 也不会被 Jekyll 处理 HTML)
 touch /tmp/pub/.nojekyll
