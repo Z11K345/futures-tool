@@ -962,7 +962,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
       <span class="card-tag auto" data-page-node-id="oppAuto">自动</span>
     </div>
     <div style="font-size:11.5px;color:#9ca3af;margin-bottom:7px;line-height:1.6;" data-page-node-id="oppDesc">
-      按产业归类，一眼看到当前哪些品种有信号；点品种进详情。上方筛选可只看某类策略（对应原投机/套保/套利/期权入口）。
+      按产业归类，一眼看到当前哪些品种有信号；点品种进详情。上方按策略筛选（原投机/套保/套利/期权入口），下方按产业筛选，可叠加；点板块名只看该产业。
     </div>
     <div id="opp-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;" data-page-node-id="oppFilt">
       <span class="mn-item active" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
@@ -970,6 +970,10 @@ body { padding-top: 150px; padding-bottom: 16px; }
       <span class="mn-item" data-opp="hedge" onclick="setOppFilter('hedge')" data-page-node-id="oppHedge">套保</span>
       <span class="mn-item" data-opp="arb" onclick="setOppFilter('arb')" data-page-node-id="oppArb">套利</span>
       <span class="mn-item" data-opp="opt" onclick="setOppFilter('opt')" data-page-node-id="oppOpt">期权</span>
+    </div>
+    <div id="opp-sectors" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;" data-page-node-id="oppSecs"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <span class="mn-item" id="opp-strong" onclick="toggleOppStrong()" data-page-node-id="oppStrong">只看强信号(≥2)</span>
     </div>
     <div id="opp-count" style="font-size:11px;color:#6b7280;margin-bottom:4px;" data-page-node-id="oppCount">--</div>
     <div id="opp-list" style="font-size:12.5px;line-height:1.6;" data-page-node-id="oppList">--</div>
@@ -3534,10 +3538,24 @@ const SL_OPP_ORDER = ['黑色', '有色', '能化', '农产', '金融'];
 // 真正的"方向/套保/期权信号"类型(区别于波动率/跨期/跨品种等特征型)
 const SL_OPP_PRIMARY = { trend: 1, reversal: 1, breakout: 1, buy_hedge: 1, sell_hedge: 1, opt_dir: 1, opt_enhance: 1, opt_hedge: 1 };
 let oppFilter = 'all';
+let oppSecFilter = 'all';
+let oppStrong = false;
 function setOppFilter(g) {
   oppFilter = g;
   const items = document.querySelectorAll('#opp-filter .mn-item');
   items.forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-opp') === g); });
+  renderOpportunities();
+}
+function setOppSec(s) {
+  oppSecFilter = s;
+  const items = document.querySelectorAll('#opp-sectors .mn-item');
+  items.forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-sec') === s); });
+  renderOpportunities();
+}
+function toggleOppStrong() {
+  oppStrong = !oppStrong;
+  const el = document.getElementById('opp-strong');
+  if (el) el.classList.toggle('active', oppStrong);
   renderOpportunities();
 }
 function slOppAggregate() {
@@ -3566,22 +3584,45 @@ function renderOpportunities() {
   const box = document.getElementById('opp-list');
   if (!box) return;
   const map = slOppAggregate();
-  const f = oppFilter;
+  const f = oppFilter, secF = oppSecFilter, strong = oppStrong;
+  // 通过筛选的品种
   const groups = {};
   Object.keys(map).forEach(function (code) {
     const v = map[code];
     if (!v.sector || v.sector === '外盘') return;
-    if (f === 'all' && !v.opps.some(function (o) { return SL_OPP_PRIMARY[o.k]; })) return; // 全部只列有真实信号的品种
+    const prim = v.opps.filter(function (o) { return SL_OPP_PRIMARY[o.k]; }).length;
+    if (strong && prim < 2) return;                       // 只看强信号(≥2条主信号)
+    if (f === 'all' && prim === 0) return;                // 全部只列有真实信号的品种
     if (f !== 'all' && !v.opps.some(function (o) { return o.g === f; })) return;
+    if (secF !== 'all' && v.sector !== secF) return;      // 产业筛选叠加
     (groups[v.sector] = groups[v.sector] || []).push(v);
   });
+  // 板块筛选条(统计各板块在当前策略筛选下的数量)
+  const secBar = document.getElementById('opp-sectors');
+  if (secBar) {
+    let sb = '<span class="mn-item' + (secF === 'all' ? ' active' : '') + '" data-sec="all" onclick="setOppSec(\'all\')">全部板块</span>';
+    SL_OPP_ORDER.forEach(function (s) {
+      const cnt = Object.keys(map).filter(function (code) {
+        const v = map[code];
+        if (!v.sector || v.sector !== s) return false;
+        const prim = v.opps.filter(function (o) { return SL_OPP_PRIMARY[o.k]; }).length;
+        if (strong && prim < 2) return false;
+        if (f === 'all' && prim === 0) return false;
+        if (f !== 'all' && !v.opps.some(function (o) { return o.g === f; })) return false;
+        return true;
+      }).length;
+      if (!cnt) return;
+      sb += '<span class="mn-item' + (secF === s ? ' active' : '') + '" data-sec="' + s + '" onclick="setOppSec(\'' + s + '\')">' + s + ' ' + cnt + '</span>';
+    });
+    secBar.innerHTML = sb;
+  }
   let html = '', total = 0;
   SL_OPP_ORDER.forEach(function (sec) {
     const arr = groups[sec];
     if (!arr || !arr.length) return;
     arr.sort(function (a, b) { return b.opps.length - a.opps.length; });
     total += arr.length;
-    html += '<div class="opp-sec"><div class="opp-sec-h">' + sec + ' <span>' + arr.length + '</span></div>';
+    html += '<div class="opp-sec"><div class="opp-sec-h" onclick="setOppSec(\'' + sec + '\')" style="cursor:pointer;">' + sec + ' <span>' + arr.length + '</span></div>';
     html += arr.map(function (v) {
       const chips = v.opps.map(function (o) {
         const dim = SL_OPP_PRIMARY[o.k] ? '' : ' oc-dim';
@@ -3593,7 +3634,11 @@ function renderOpportunities() {
   });
   box.innerHTML = html || '<div class="empty-state">当前筛选无匹配品种</div>';
   const cnt = document.getElementById('opp-count');
-  if (cnt) cnt.textContent = '当前' + (f === 'all' ? '全部机会' : SL_OPP_GRP_CN[f]) + ' · ' + total + ' 个品种有信号';
+  if (cnt) {
+    const parts = [(secF === 'all' ? '全部板块' : secF), (f === 'all' ? '全部机会' : SL_OPP_GRP_CN[f])];
+    if (strong) parts.push('强信号≥2');
+    cnt.textContent = '当前' + parts.join(' · ') + ' · ' + total + ' 个品种有信号';
+  }
 }
 function renderStrategyLive() {
   document.querySelectorAll('.strategy-card[data-key]').forEach(function (card) {
