@@ -265,6 +265,11 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .opp-name { font-weight: 700; color: #e5e7eb; font-size: 13px; }
 .opp-name small { color: #6b7280; font-weight: 400; margin-left: 3px; font-size: 10px; }
 .opp-n { font-size: 10.5px; color: #6b7280; }
+/* 信号变化标记(机会行内) */
+.opp-chg { font-size: 9.5px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 6px; vertical-align: 1px; line-height: 1.5; }
+.opp-chg.rev { color: #fecaca; background: rgba(185,28,28,.45); border: 1px solid #b91c1c; }
+.opp-chg.weak { color: #fed7aa; background: rgba(180,83,9,.4); border: 1px solid #b45309; }
+.opp-chg.new { color: #bbf7d0; background: rgba(21,128,61,.35); border: 1px solid #15803d; }
 .opp-sigs { display: flex; flex-direction: column; gap: 3px; }
 .opp-sig { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .opp-dir { font-weight: 800; font-size: 13px; width: 14px; text-align: center; line-height: 1; }
@@ -3750,7 +3755,9 @@ function slPlan(r, opps) {
      走弱(weakening)  — 多头→纠缠 / 空头→纠缠 (趋势结构破坏, 原方向不再适宜)
      新进(new)        — 纠缠→多头/空头 (新趋势形成)
    经验依据: 单日全市场通常仅数个品种发生排列变化, 属低噪声信号。 */
-let chgState = { list: [], level: 0, open: false };
+let chgState = { list: [], level: 0, open: false, byCode: {} };
+// code → 变化记录, 供机会tab品种行加标记
+function chgIndexOf(code) { return (chgState.byCode || {})[code] || null; }
 const CHG_DESC = {
   '反转': function (x) { return '方向已翻转：<span class="was">' + x.prev + '</span> → <span class="now">' + x.today + '</span>，<span class="hl">原方向思路不宜延续</span>'; },
   '走弱': function (x) { return '趋势结构破坏：<span class="was">' + x.prev + '</span> → <span class="now">' + x.today + '</span>，<span class="hl">原方向已不适宜继续加仓</span>'; },
@@ -3761,7 +3768,11 @@ function loadChanges() {
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function (d) {
       chgState.list = (d && d.items) || [];
+      chgState.byCode = {};
+      chgState.list.forEach(function (x) { if (x && x.code) chgState.byCode[x.code] = x; });
       renderChgAlert();
+      // 数据到达后重渲染机会列表, 让品种行带上变化标记
+      try { renderOpportunities(); } catch (e) {}
     })
     .catch(function (e) {
       console.warn('changes.json 加载失败：', e);
@@ -3908,8 +3919,17 @@ function renderOpportunities() {
       }).join('');
       const moreLine = more > 0 ? '<div class="opp-more">＋还有 ' + more + ' 个信号</div>' : '';
       const planLine = v.plan ? '<div class="opp-plan">' + v.plan + '</div>' : '';
+      // 信号变化标记(来自 changes.json): 反转/走弱/新进
+      const chg = chgIndexOf(v.code);
+      let chgTag = '';
+      if (chg) {
+        const cls = chg.kind === '反转' ? 'rev' : (chg.kind === '走弱' ? 'weak' : 'new');
+        const arrowTxt = chg.kind === '反转' ? '⇄' : (chg.kind === '走弱' ? '↘' : '↗');
+        chgTag = '<span class="opp-chg ' + cls + '" title="' + chg.prev + ' → ' + chg.today + '">' +
+          arrowTxt + ' ' + chg.kind + '</span>';
+      }
       return '<div class="opp-row" onclick="showVarietyDetail(\'' + v.code + '\')">' +
-        '<div class="opp-main"><span class="opp-name">' + v.cn + '<small>' + v.code + '</small></span><span class="opp-n">' + v.opps.length + ' 个信号</span></div>' +
+        '<div class="opp-main"><span class="opp-name">' + v.cn + '<small>' + v.code + '</small>' + chgTag + '</span><span class="opp-n">' + v.opps.length + ' 个信号</span></div>' +
         '<div class="opp-sigs">' + sigs + moreLine + '</div>' + planLine +
         '</div>';
     }).join('');
