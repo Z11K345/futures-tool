@@ -36,6 +36,80 @@ if [ "$OK" != "true" ]; then
     exit 0
 fi
 
+# 信号变化检测: 用 5 年日K(kline_cache.json, 不发布)重算上一交易日与今日的均线排列,
+# 结果写 data/changes.json(仅几KB), 供前端顶部警示条使用。
+python3 - <<'PYEOF'
+import json
+try:
+    q = json.load(open('data/quotes.json', encoding='utf-8'))
+    kl = json.load(open('data/kline_cache.json', encoding='utf-8'))
+    tech = q.get('tech') or {}
+    cats = q.get('categories') or {}
+    secmap = {}
+    for k, v in cats.items():
+        for it in (v or []):
+            if isinstance(it, dict) and it.get('code'):
+                secmap[it['code']] = k
+
+    def arr(bars, end):
+        if end < 59:
+            return ''
+        def m(n):
+            s = bars[max(0, end - n + 1):end + 1]
+            return sum(b['c'] for b in s) / len(s) if s else 0
+        m5, m10, m20, m60 = m(5), m(10), m(20), m(60)
+        if m5 > m10 > m20 > m60:
+            return '多头排列'
+        if m5 < m10 < m20 < m60:
+            return '空头排列'
+        return '均线纠缠'
+
+    out = []
+    for code, klo in kl.items():
+        bars = (klo or {}).get('bars') or []
+        if len(bars) < 62:
+            continue
+        n = len(bars)
+        today, prev = arr(bars, n - 1), arr(bars, n - 2)
+        if not today or not prev or today == prev:
+            continue
+        up = lambda a: a == '多头排列'
+        dn = lambda a: a == '空头排列'
+        neu = lambda a: a == '均线纠缠'
+        if (up(prev) and dn(today)) or (dn(prev) and up(today)):
+            kind, lv = '反转', 3
+        elif (up(prev) and neu(today)) or (dn(prev) and neu(today)):
+            kind, lv = '走弱', 2
+        elif neu(prev) and (up(today) or dn(today)):
+            kind, lv = '新进', 1
+        else:
+            continue
+        lb, pb = bars[n - 1], bars[n - 2]
+        pct = (lb['c'] / pb['c'] - 1) * 100 if pb.get('c') else None
+        t = tech.get(code) or {}
+        out.append({
+            'code': code,
+            'cn': t.get('cn') or klo.get('cn') or code,
+            'kind': kind, 'lv': lv,
+            'prev': prev, 'today': today,
+            'close': lb['c'],
+            'pct': round(pct, 2) if pct is not None else None,
+            'sector': secmap.get(code, ''),
+            'date': lb.get('d', ''),
+        })
+    out.sort(key=lambda x: (-x['lv'], x['code']))
+    json.dump({'generated': q.get('updated_at'), 'trading_day': q.get('trading_day_cn'),
+               'n': len(out), 'items': out},
+              open('data/changes.json', 'w', encoding='utf-8'), ensure_ascii=False)
+    print('  变化检测: %d 个品种 (反转%d 走弱%d 新进%d)' % (
+        len(out),
+        sum(1 for x in out if x['kind'] == '反转'),
+        sum(1 for x in out if x['kind'] == '走弱'),
+        sum(1 for x in out if x['kind'] == '新进')))
+except Exception as e:
+    print('  变化检测失败(不影响主流程): %s' % e)
+PYEOF
+
 echo "--- 发布 $(TZ=Asia/Shanghai date '+%F %H:%M:%S') ---"
 # 页面文件以 main 分支最新为准: 循环任务启动时 checkout 的是当次版本,
 # 之后改了页面若不重新拉取, 每轮发布都会把改动覆盖回旧版

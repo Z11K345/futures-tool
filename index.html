@@ -64,6 +64,30 @@ body { padding-top: 150px; padding-bottom: 16px; }
   -webkit-overflow-scrolling: touch;
 }
 .tab-nav::-webkit-scrollbar { display: none; }
+/* ===== 信号变化警示条 (V4.5) ===== */
+.chg-alert { margin: 8px 10px 0; border-radius: 6px; overflow: hidden; border: 1px solid #7f1d1d; background: linear-gradient(90deg,#2a1215,#1a1113); }
+.chg-alert.lv1 { border-color: #7f1d1d; background: linear-gradient(90deg,#2a1215,#1a1113); }
+.chg-alert.lv2 { border-color: #78350f; background: linear-gradient(90deg,#2a1f10,#1a1511); }
+.chg-head { display: flex; align-items: center; gap: 7px; padding: 9px 11px; cursor: pointer; }
+.chg-icon { font-size: 14px; line-height: 1; }
+.chg-title { flex: 1; font-size: 12.5px; font-weight: 700; color: #fca5a5; letter-spacing: .2px; }
+.chg-alert.lv2 .chg-title { color: #fcd34d; }
+.chg-toggle { font-size: 11px; color: #9ca3af; }
+.chg-body { padding: 2px 11px 10px; border-top: 1px dashed #3f2225; }
+.chg-row { display: flex; align-items: flex-start; gap: 7px; padding: 6px 0; border-bottom: 1px dashed #241a1c; }
+.chg-row:last-child { border-bottom: 0; }
+.chg-badge { flex: 0 0 auto; font-size: 10px; font-weight: 700; padding: 1.5px 5px; border-radius: 3px; margin-top: 1px; line-height: 1.5; }
+.chg-badge.rev { color: #fecaca; background: rgba(185,28,28,.45); border: 1px solid #b91c1c; }
+.chg-badge.weak { color: #fed7aa; background: rgba(180,83,9,.4); border: 1px solid #b45309; }
+.chg-badge.new { color: #bbf7d0; background: rgba(21,128,61,.35); border: 1px solid #15803d; }
+.chg-main { flex: 1; min-width: 0; }
+.chg-name { font-size: 12.5px; font-weight: 700; color: #e5e7eb; }
+.chg-name small { color: #6b7280; font-weight: 400; margin-left: 3px; font-size: 10px; }
+.chg-desc { font-size: 11px; color: #cbd5e1; line-height: 1.6; margin-top: 2px; }
+.chg-desc .was { color: #f87171; }
+.chg-desc .now { color: #4ade80; }
+.chg-desc .hl { color: #fca5a5; font-weight: 600; }
+.chg-tip { font-size: 10.5px; color: #9ca3af; line-height: 1.7; margin-top: 6px; padding-top: 5px; border-top: 1px dashed #2a3142; }
 .tab-item {
   flex: 1; min-width: 80px;
   padding: 12px 8px;
@@ -563,6 +587,16 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <div class="tab-item" data-tab="strategy" onclick="switchTab('strategy')" data-page-node-id="y7CnHtQeCzbFUnbEwF9FP4">策略框架</div>
   </nav>
 </header>
+
+<!-- ========== 信号变化警示条(V4.5) ========== -->
+<div id="chg-alert" class="chg-alert" style="display:none;" data-page-node-id="chgAlert">
+  <div class="chg-head" onclick="toggleChgDetail()" data-page-node-id="chgHead">
+    <span class="chg-icon" data-page-node-id="chgIcon">⚡</span>
+    <span class="chg-title" id="chg-title" data-page-node-id="chgTitle">信号变化</span>
+    <span class="chg-toggle" id="chg-toggle" data-page-node-id="chgToggle">展开 ▾</span>
+  </div>
+  <div class="chg-body" id="chg-body" style="display:none;" data-page-node-id="chgBody"></div>
+</div>
 
 <!-- ========== 盘前预判 ========== -->
 <section class="tab-pane active" id="tab-pre" data-page-node-id="w8eponeT8Qk42BmruWeVxv">
@@ -1721,6 +1755,7 @@ function onQuotesLoaded() {
   renderStrategyLive();
   renderOpportunities();
   renderRank();
+  loadChanges();
   // 更新右上时间戳
   const meta = document.getElementById('data-update-time');
   if (meta) {
@@ -3706,6 +3741,85 @@ function slPlan(r, opps) {
   let out = [s1, s2, s3, s4].filter(function (x) { return x; }).join('');
   if (!out) return '';
   return out;
+}
+/* ===== 信号变化检测 (V4.5) =====
+   数据来源: data/changes.json —— 由刷新脚本用 5 年日K(kline_cache.json, 9.6MB, 不发布)
+   在服务端预计算好, 前端只读几 KB 的结果, 手机端无卡顿。
+   检测三类变化(对比上一交易日与今日的均线排列 MA5/10/20/60):
+     反转(reversal)  — 多头↔空头 (方向直接翻转, 最严重)
+     走弱(weakening)  — 多头→纠缠 / 空头→纠缠 (趋势结构破坏, 原方向不再适宜)
+     新进(new)        — 纠缠→多头/空头 (新趋势形成)
+   经验依据: 单日全市场通常仅数个品种发生排列变化, 属低噪声信号。 */
+let chgState = { list: [], level: 0, open: false };
+const CHG_DESC = {
+  '反转': function (x) { return '方向已翻转：<span class="was">' + x.prev + '</span> → <span class="now">' + x.today + '</span>，<span class="hl">原方向思路不宜延续</span>'; },
+  '走弱': function (x) { return '趋势结构破坏：<span class="was">' + x.prev + '</span> → <span class="now">' + x.today + '</span>，<span class="hl">原方向已不适宜继续加仓</span>'; },
+  '新进': function (x) { return '新趋势形成：' + x.prev + ' → <span class="now">' + x.today + '</span>，刚转入' + (x.today === '多头排列' ? '多头' : '空头') + '结构，可留意'; }
+};
+function loadChanges() {
+  return fetch('data/changes.json?_=' + Date.now())
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (d) {
+      chgState.list = (d && d.items) || [];
+      renderChgAlert();
+    })
+    .catch(function (e) {
+      console.warn('changes.json 加载失败：', e);
+      const box = document.getElementById('chg-alert');
+      if (box) box.style.display = 'none';
+    });
+}
+function renderChgAlert() {
+  const box = document.getElementById('chg-alert');
+  if (!box) return;
+  const list = chgState.list;
+  if (!list.length) { box.style.display = 'none'; return; }
+  const nRev = list.filter(function (x) { return x.kind === '反转'; }).length;
+  const nWeak = list.filter(function (x) { return x.kind === '走弱'; }).length;
+  const nNew = list.filter(function (x) { return x.kind === '新进'; }).length;
+  const hard = nRev + nWeak;
+  chgState.level = nRev ? 1 : (nWeak ? 2 : 3);
+  box.className = 'chg-alert' + (chgState.level === 1 ? ' lv1' : (chgState.level === 2 ? ' lv2' : ''));
+  box.style.display = '';
+  const t = document.getElementById('chg-title');
+  if (t) {
+    const parts = [];
+    if (nRev) parts.push(nRev + ' 个方向反转');
+    if (nWeak) parts.push(nWeak + ' 个趋势走弱');
+    if (nNew) parts.push(nNew + ' 个新趋势');
+    t.textContent = '信号变化 · ' + parts.join(' · ') + (hard ? '（需留意原有持仓）' : '');
+  }
+  const body = document.getElementById('chg-body');
+  if (body) {
+    let h = '';
+    list.slice(0, 40).forEach(function (x) {
+      const badge = x.kind === '反转' ? 'rev' : (x.kind === '走弱' ? 'weak' : 'new');
+      const pctTxt = (x.pct != null) ? ' 当日' + (x.pct >= 0 ? '+' : '') + x.pct.toFixed(2) + '%' : '';
+      const desc = (CHG_DESC[x.kind] || function () { return ''; })(x);
+      h += '<div class="chg-row" onclick="jumpToVariety(\'' + x.code + '\')">' +
+        '<span class="chg-badge ' + badge + '">' + x.kind + '</span>' +
+        '<div class="chg-main">' +
+        '<div class="chg-name">' + x.cn + '<small>' + x.code + pctTxt + '</small></div>' +
+        '<div class="chg-desc">' + desc + '</div>' +
+        '</div></div>';
+    });
+    h += '<div class="chg-tip">依据：对比上一交易日与今日的均线排列（MA5/10/20/60）。' +
+      '「反转/走弱」说明原趋势结构已于最近一日改变，原有方向的持仓可据此重新评估；' +
+      '注意这是均线结构的变化，与当日涨跌不一定同向（如当日上涨但均线结构转弱，属冲高后动能未能延续）。' +
+      '排列变化为技术面信号，不构成投资建议。投资有风险，入市需谨慎。</div>';
+    body.innerHTML = h;
+  }
+}
+function toggleChgDetail() {
+  chgState.open = !chgState.open;
+  const body = document.getElementById('chg-body');
+  const tg = document.getElementById('chg-toggle');
+  if (body) body.style.display = chgState.open ? '' : 'none';
+  if (tg) tg.textContent = chgState.open ? '收起 ▴' : '展开 ▾';
+}
+function jumpToVariety(code) {
+  // 详情卡片位于「盘中关注」tab, showVarietyDetail 内部会自动切 tab 并滚动, 这里直接调用
+  try { showVarietyDetail(code); } catch (e) {}
 }
 function slOppAggregate() {
   const recs = {};
