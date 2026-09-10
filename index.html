@@ -249,6 +249,8 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .opp-dir.none { color: #6b7280; }
 .opp-basis { color: #9ca3af; font-size: 10.5px; flex: 1; min-width: 0; }
 .opp-more { font-size: 10.5px; color: #6b7280; padding-left: 20px; }
+.opp-plan { margin-top: 5px; padding: 6px 8px; background: #131a24; border-left: 2px solid #2f6fed; border-radius: 3px;
+  font-size: 11px; line-height: 1.65; color: #cbd5e1; letter-spacing: .2px; }
 .oc { font-size: 10.5px; padding: 1px 7px; border-radius: 10px; border: 1px solid; line-height: 1.5; cursor: pointer; }
 .oc-spec { color: #7dd3fc; border-color: #0c4a6e; background: rgba(14,165,233,.12); }
 .oc-hedge { color: #86efac; border-color: #14532d; background: rgba(34,197,94,.12); }
@@ -881,7 +883,8 @@ body { padding-top: 150px; padding-bottom: 16px; }
       <span class="card-tag auto" data-page-node-id="oppAuto">自动</span>
     </div>
     <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;line-height:1.6;" data-page-node-id="oppDesc">
-      当前有信号的品种，按产业归类。<span style="color:#fca5a5;">↑ 看多/做多方向</span> · <span style="color:#86efac;">↓ 看空/做空方向</span>。点品种看完整详情。
+      当前有信号的品种，按产业归类。<span style="color:#fca5a5;">↑ 看多/做多方向</span> · <span style="color:#86efac;">↓ 看空/做空方向</span>。
+      每个品种下方一句话总结方向、支撑压力、止损与仓位参考。点品种看完整详情。
     </div>
     <div id="opp-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px;" data-page-node-id="oppFilt">
       <span class="mn-item active" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
@@ -896,6 +899,11 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
     <div id="opp-count" style="font-size:11px;color:#6b7280;margin-bottom:4px;" data-page-node-id="oppCount">--</div>
     <div id="opp-list" style="font-size:12.5px;line-height:1.55;" data-page-node-id="oppList">--</div>
+    <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #2a3142;font-size:10.5px;color:#6b7280;line-height:1.7;" data-page-node-id="oppDisclaimer">
+      总结句中的方向、支撑压力、止损与仓位档位，均由公开行情按固定算法推导，仅为客观数据参考，不构成投资建议。
+      止损位取现价 ±1.2 倍 ATR(14日平均真实波幅)；仓位档位按波动率与价格分位划分。实际交易请结合自身风险承受能力与资金情况独立判断。
+      投资有风险，入市需谨慎。
+    </div>
   </div>
 </section>
 
@@ -3588,6 +3596,117 @@ function slDir(key, m) {
   if (key === 'opt_hedge') return 'down';  // 买看跌护利润
   return '';
 }
+/* ===== 人话总结 (V4.4) =====
+   把"信号名 + 依据"翻译成一句客户能直接读懂的白话结论。
+   只做文字组织, 不产生新数据; 全部数值来自 quotes.json 既有字段。
+   措辞刻意回避"建议/推荐/必涨/稳赚"等诱导性表达, 只陈述事实 + 条件。 */
+function slRound(v, d) {
+  const n = slNum(v);
+  if (n == null) return null;
+  const p = Math.pow(10, d == null ? 0 : d);
+  return Math.round(n * p) / p;
+}
+function slFmt(v, d) {
+  const n = slRound(v, d);
+  if (n == null) return '--';
+  const s = (d > 0) ? n.toFixed(d) : String(n);
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+// ATR 兜底: hedge.atr_pct 优先, 否则 tech.atr_pct
+function slAtrPct(r) {
+  const a = slNum(r.h && r.h.atr_pct);
+  return a != null ? a : slNum(r.t && r.t.atr_pct);
+}
+// 近 N 日风险事件提示(来自 expiry_alerts / lot_round_alerts)
+function slRiskNote(r) {
+  const q = quotesData || {};
+  const alerts = [].concat(q.expiry_alerts || [], q.lot_round_alerts || []);
+  for (let i = 0; i < alerts.length; i++) {
+    const a = alerts[i] || {};
+    const code = a.code || a.variety || '';
+    if (code && code !== r.code) continue;
+    const txt = a.note || a.msg || a.text || a.desc || '';
+    if (txt && /月|日/.test(txt)) return '注意' + txt.replace(/^[，,]\s*/, '');
+  }
+  return '';
+}
+// 方向 → 白话
+function slPlanWord(dir) {
+  if (dir === 'up') return '偏多';
+  if (dir === 'down') return '偏空';
+  return '中性';
+}
+// 生成整句
+function slPlan(r, opps) {
+  if (!r) return '';
+  const t = r.t || {}, h = r.h || {}, b = r.b || {}, tm = r.tm || {};
+  const dir = (opps || []).length ? slDir(opps[0].k, opps[0].m || '') : '';
+  const px = slRound(t.close != null ? t.close : (slNum(h.price_pct) != null && b.fut ? b.fut : null), 0);
+  const arr = t.ma_arr || '';
+  const isUp = arr === '多头排列';
+  const isDn = arr === '空头排列';
+
+  // 第1句: 方向 + 价位
+  let s1 = '';
+  if (dir === 'up' && px != null) s1 = '当前偏多，参考价约 ' + slFmt(px, 0) + '。';
+  else if (dir === 'down' && px != null) s1 = '当前偏空，参考价约 ' + slFmt(px, 0) + '。';
+  else if (px != null) s1 = '当前无明确方向，参考价约 ' + slFmt(px, 0) + '。';
+
+  // 第2句: 关键支撑压力位
+  let s2 = '';
+  const ma20 = slNum(t.ma20), ma60 = slNum(t.ma60);
+  const hi250 = slNum(t.high_250), lo250 = slNum(t.low_250);
+  if (isUp && ma20 != null) {
+    s2 = '下方参考支撑 ' + slFmt(ma20, 0) + '（20日线）';
+    if (hi250 != null && px != null && hi250 > px) s2 += '，上方压力看 250 日高点 ' + slFmt(hi250, 0);
+    s2 += '。';
+  } else if (isDn && ma20 != null) {
+    s2 = '上方参考压力 ' + slFmt(ma20, 0) + '（20日线）';
+    if (lo250 != null && px != null && lo250 < px) s2 += '，下方支撑看 250 日低点 ' + slFmt(lo250, 0);
+    s2 += '。';
+  } else if (ma20 != null) {
+    s2 = '短期支撑/压力参考 20日线 ' + slFmt(ma20, 0) + '。';
+  }
+
+  // 第3句: 止损参考(1.2 倍 ATR) + 建议仓位
+  const atrPct = slAtrPct(r);
+  let s3 = '';
+  if (atrPct != null && px != null) {
+    const atrPx = px * atrPct / 100;
+    const stopRef = 1.2;
+    const pct1y = slNum(t.pct_1y);
+    // 仓位档: 高分位或高波动 → 轻仓; 低波动+中位 → 可稍重
+    let size = '轻仓';
+    if (atrPct >= 2.5) size = '轻仓';
+    else if (atrPct >= 1.2) size = '轻仓至半仓';
+    else if (atrPct < 1.2 && pct1y != null && pct1y > 20 && pct1y < 80) size = '半仓以内';
+    let stopTxt = '';
+    if (dir === 'up' || isUp) stopTxt = '止损参考 ' + slFmt(px - atrPx * stopRef, 0) + '（约 1.2 倍 ATR）';
+    else if (dir === 'down' || isDn) stopTxt = '止损参考 ' + slFmt(px + atrPx * stopRef, 0) + '（约 1.2 倍 ATR）';
+    else stopTxt = '双向止损参考 ' + slFmt(px - atrPx * stopRef, 0) + '（多）/ ' + slFmt(px + atrPx * stopRef, 0) + '（空），约 1.2 倍 ATR';
+    s3 = stopTxt + '，宜' + size + '。';
+  }
+
+  // 第4句: 基差 + 结构 + 形态 + 事件 (能取到才说)
+  const ex = [];
+  if (slNum(h.basis_prc) != null) ex.push('基差处近1年 ' + slFmt(h.basis_prc, 0) + '% 分位');
+  if (tm.struct) ex.push('月差结构 ' + tm.struct + (slNum(tm.ann_pct) != null ? '（年化 ' + slFmt(tm.ann_pct, 1) + '%）' : ''));
+  const pat = t.pattern || '';
+  if (pat) {
+    // K线形态与主趋势相反时, 提示矛盾(只提示, 不改主方向)
+    const bearPat = /见顶|射击之星|乌云盖顶|黄昏之星|看跌|上吊线|弱势延续/.test(pat);
+    const bullPat = /见底|看涨吞没|早晨之星|锤子|倒锤子|强势延续|大阳线/.test(pat);
+    const conflict = (isUp && bearPat) || (isDn && bullPat);
+    ex.push(conflict ? 'K线' + pat + '（与趋势方向相反，注意变盘）' : pat);
+  }
+  let s4 = ex.length ? ex.join('，') + '。' : '';
+  const ev = slRiskNote(r);
+  if (ev) s4 += ev + '。';
+
+  let out = [s1, s2, s3, s4].filter(function (x) { return x; }).join('');
+  if (!out) return '';
+  return out;
+}
 function slOppAggregate() {
   const recs = {};
   slRecords().forEach(function (r) { recs[r.code] = r; });
@@ -3602,11 +3721,17 @@ function slOppAggregate() {
         const code = (it.code || '').trim();
         if (!code) return;
         const rec = recs[code] || {};
-        if (!map[code]) map[code] = { code: code, cn: it.cn || rec.cn || code, sector: rec.sector || '', opps: [] };
+        if (!map[code]) map[code] = { code: code, cn: it.cn || rec.cn || code, sector: rec.sector || '', opps: [], rec: rec };
         if (map[code].opps.some(function (o) { return o.k === k; })) return; // 同策略只记一次, 去重
         map[code].opps.push({ k: k, t: SL_OPP_META[k].t, g: SL_OPP_META[k].g, c: SL_OPP_META[k].c, dir: slDir(k, it.m || ''), m: it.m || '' });
       });
     });
+  });
+  // 生成"人话总结"(依赖 opps 顺序, 取第一条主信号定方向)
+  Object.keys(map).forEach(function (code) {
+    const v = map[code];
+    v.opps.sort(function (a, b) { return (SL_OPP_PRIMARY[b.k] ? 1 : 0) - (SL_OPP_PRIMARY[a.k] ? 1 : 0); });
+    try { v.plan = slPlan(v.rec, v.opps); } catch (e) { v.plan = ''; }
   });
   return map;
 }
@@ -3655,7 +3780,7 @@ function renderOpportunities() {
     html += '<div class="opp-sec"><div class="opp-sec-h" onclick="setOppSec(\'' + sec + '\')" style="cursor:pointer;">' + sec + ' <span>' + arr.length + '</span></div>';
     html += arr.map(function (v) {
       // 信号按"主信号优先"排序, 最多显示4条, 其余折叠
-      const sorted = v.opps.slice().sort(function (a, b) { return (SL_OPP_PRIMARY[b.k] ? 1 : 0) - (SL_OPP_PRIMARY[a.k] ? 1 : 0); });
+      const sorted = v.opps.slice();
       const show = sorted.slice(0, 4);
       const more = sorted.length - show.length;
       const sigs = show.map(function (o) {
@@ -3668,9 +3793,10 @@ function renderOpportunities() {
           '</div>';
       }).join('');
       const moreLine = more > 0 ? '<div class="opp-more">＋还有 ' + more + ' 个信号</div>' : '';
+      const planLine = v.plan ? '<div class="opp-plan">' + v.plan + '</div>' : '';
       return '<div class="opp-row" onclick="showVarietyDetail(\'' + v.code + '\')">' +
         '<div class="opp-main"><span class="opp-name">' + v.cn + '<small>' + v.code + '</small></span><span class="opp-n">' + v.opps.length + ' 个信号</span></div>' +
-        '<div class="opp-sigs">' + sigs + moreLine + '</div>' +
+        '<div class="opp-sigs">' + sigs + moreLine + '</div>' + planLine +
         '</div>';
     }).join('');
     html += '</div>';
