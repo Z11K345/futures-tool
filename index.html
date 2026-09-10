@@ -231,15 +231,24 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .sl-more { color: #6b7280; font-size: 10.5px; padding: 2px 7px; }
 .sl-none { color: #6b7280; font-size: 11px; padding: 2px 7px; }
 
-/* ===== 品种机会总览(V4.2) ===== */
+/* ===== 品种机会总览(V4.3) ===== */
 .opp-sec { margin-top: 9px; }
 .opp-sec-h { font-size: 13px; font-weight: 600; color: #e5e7eb; margin-bottom: 4px; border-bottom: 1px solid #2a3142; padding-bottom: 3px; }
 .opp-sec-h span { color: #22c55e; font-weight: 500; font-size: 11px; margin-left: 4px; }
-.opp-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 4px; border-bottom: 1px dashed #1c2330; cursor: pointer; }
+.opp-row { padding: 8px 4px; border-bottom: 1px dashed #1c2330; cursor: pointer; }
 .opp-row:active { background: #161c26; }
-.opp-name { font-weight: 600; color: #cbd5e1; white-space: nowrap; }
+.opp-main { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.opp-name { font-weight: 700; color: #e5e7eb; font-size: 13px; }
 .opp-name small { color: #6b7280; font-weight: 400; margin-left: 3px; font-size: 10px; }
-.opp-chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.opp-n { font-size: 10.5px; color: #6b7280; }
+.opp-sigs { display: flex; flex-direction: column; gap: 3px; }
+.opp-sig { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.opp-dir { font-weight: 800; font-size: 13px; width: 14px; text-align: center; line-height: 1; }
+.opp-dir.up { color: #f87171; }
+.opp-dir.down { color: #4ade80; }
+.opp-dir.none { color: #6b7280; }
+.opp-basis { color: #9ca3af; font-size: 10.5px; flex: 1; min-width: 0; }
+.opp-more { font-size: 10.5px; color: #6b7280; padding-left: 20px; }
 .oc { font-size: 10.5px; padding: 1px 7px; border-radius: 10px; border: 1px solid; line-height: 1.5; cursor: pointer; }
 .oc-spec { color: #7dd3fc; border-color: #0c4a6e; background: rgba(14,165,233,.12); }
 .oc-hedge { color: #86efac; border-color: #14532d; background: rgba(34,197,94,.12); }
@@ -547,6 +556,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <nav class="tab-nav" data-page-node-id="k11VkFTfFTZrJrAXmYpOTN">
     <div class="tab-item active" data-tab="pre" onclick="switchTab('pre')" data-page-node-id="cQDiXx01SC0aJXKxDHSWOu">盘前预判</div>
     <div class="tab-item" data-tab="live" onclick="switchTab('live')" data-page-node-id="mr8NeuKa9xmVeilWjIj5Iu">盘中关注</div>
+    <div class="tab-item" data-tab="opp" onclick="switchTab('opp')" data-page-node-id="oppTabBtn">机会</div>
     <div class="tab-item" data-tab="post" onclick="switchTab('post')" data-page-node-id="neV5njhQYiewdq8OvdBzrB">盘后复盘</div>
     <div class="tab-item" data-tab="strategy" onclick="switchTab('strategy')" data-page-node-id="y7CnHtQeCzbFUnbEwF9FP4">策略框架</div>
   </nav>
@@ -862,6 +872,33 @@ body { padding-top: 150px; padding-bottom: 16px; }
 
 </section>
 
+<!-- ========== 机会总览(独立选项卡) ========== -->
+<section class="tab-pane" id="tab-opp" data-page-node-id="tabOppPane">
+  <!-- 品种机会总览(V4.3 客户版: 带方向+依据) -->
+  <div class="card" id="card-opp" style="border-left:3px solid #22c55e;" data-page-node-id="oppCardTop">
+    <div class="card-header" data-page-node-id="oppHead">
+      <span class="card-title" data-page-node-id="oppTitle">🎯 品种机会总览</span>
+      <span class="card-tag auto" data-page-node-id="oppAuto">自动</span>
+    </div>
+    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;line-height:1.6;" data-page-node-id="oppDesc">
+      当前有信号的品种，按产业归类。<span style="color:#fca5a5;">↑ 看多/做多方向</span> · <span style="color:#86efac;">↓ 看空/做空方向</span>。点品种看完整详情。
+    </div>
+    <div id="opp-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px;" data-page-node-id="oppFilt">
+      <span class="mn-item active" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
+      <span class="mn-item" data-opp="spec" onclick="setOppFilter('spec')" data-page-node-id="oppSpec">投机</span>
+      <span class="mn-item" data-opp="hedge" onclick="setOppFilter('hedge')" data-page-node-id="oppHedge">套保</span>
+      <span class="mn-item" data-opp="arb" onclick="setOppFilter('arb')" data-page-node-id="oppArb">套利</span>
+      <span class="mn-item" data-opp="opt" onclick="setOppFilter('opt')" data-page-node-id="oppOpt">期权</span>
+    </div>
+    <div id="opp-sectors" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px;" data-page-node-id="oppSecs"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <span class="mn-item" id="opp-strong" onclick="toggleOppStrong()" data-page-node-id="oppStrong">只看强信号(≥2)</span>
+    </div>
+    <div id="opp-count" style="font-size:11px;color:#6b7280;margin-bottom:4px;" data-page-node-id="oppCount">--</div>
+    <div id="opp-list" style="font-size:12.5px;line-height:1.55;" data-page-node-id="oppList">--</div>
+  </div>
+</section>
+
 <!-- ========== 盘后复盘 ========== -->
 <section class="tab-pane" id="tab-post" data-page-node-id="21PfTj0EDvidF83zmVlhAB">
 
@@ -953,30 +990,6 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div class="module-nav" data-page-node-id="mD49JPVbGzRl1cVOqDUBb7">
     <div class="mn-item" onclick="gotoCard('card-hedge')" data-page-node-id="bFCbjqp5h5GVx2tJF2IABM">套保决策</div>
     <div class="mn-item" onclick="gotoCard('card-match')" data-page-node-id="4AoI1YkCGAjYAWbv0bFUoO">策略×品种匹配</div>
-  </div>
-
-  <!-- 品种机会总览(V4.2) -->
-  <div class="card" id="card-opp" style="border-left:3px solid #22c55e;" data-page-node-id="oppCardTop">
-    <div class="card-header" data-page-node-id="oppHead">
-      <span class="card-title" data-page-node-id="oppTitle">🎯 品种机会总览</span>
-      <span class="card-tag auto" data-page-node-id="oppAuto">自动</span>
-    </div>
-    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:7px;line-height:1.6;" data-page-node-id="oppDesc">
-      按产业归类，一眼看到当前哪些品种有信号；点品种进详情。上方按策略筛选（原投机/套保/套利/期权入口），下方按产业筛选，可叠加；点板块名只看该产业。
-    </div>
-    <div id="opp-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;" data-page-node-id="oppFilt">
-      <span class="mn-item active" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
-      <span class="mn-item" data-opp="spec" onclick="setOppFilter('spec')" data-page-node-id="oppSpec">投机</span>
-      <span class="mn-item" data-opp="hedge" onclick="setOppFilter('hedge')" data-page-node-id="oppHedge">套保</span>
-      <span class="mn-item" data-opp="arb" onclick="setOppFilter('arb')" data-page-node-id="oppArb">套利</span>
-      <span class="mn-item" data-opp="opt" onclick="setOppFilter('opt')" data-page-node-id="oppOpt">期权</span>
-    </div>
-    <div id="opp-sectors" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;" data-page-node-id="oppSecs"></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <span class="mn-item" id="opp-strong" onclick="toggleOppStrong()" data-page-node-id="oppStrong">只看强信号(≥2)</span>
-    </div>
-    <div id="opp-count" style="font-size:11px;color:#6b7280;margin-bottom:4px;" data-page-node-id="oppCount">--</div>
-    <div id="opp-list" style="font-size:12.5px;line-height:1.6;" data-page-node-id="oppList">--</div>
   </div>
 
   <!-- 企业套保决策(V3.2 自动: 价格分位+基差分位+波动率+事件) -->
@@ -3558,6 +3571,18 @@ function toggleOppStrong() {
   if (el) el.classList.toggle('active', oppStrong);
   renderOpportunities();
 }
+// 由策略key + 依据文本推断方向: up=看多/做多, down=看空/做空, ''=无方向(特征/套利)
+function slDir(key, m) {
+  m = m || '';
+  if (key === 'trend') return m.indexOf('多头') >= 0 ? 'up' : (m.indexOf('空头') >= 0 ? 'down' : '');
+  if (key === 'reversal') return m.indexOf('高位超买') >= 0 ? 'down' : (m.indexOf('低位超卖') >= 0 ? 'up' : '');
+  if (key === 'breakout') return m.indexOf('距250日高') >= 0 ? 'up' : (m.indexOf('距250日低') >= 0 ? 'down' : '');
+  if (key === 'opt_dir') return m.indexOf('买看涨') >= 0 ? 'up' : (m.indexOf('买看跌') >= 0 ? 'down' : '');
+  if (key === 'buy_hedge') return 'up';    // 买保=防上涨, 价格上行对其不利
+  if (key === 'sell_hedge') return 'down'; // 卖保=防下跌, 价格下行对其不利
+  if (key === 'opt_hedge') return 'down';  // 买看跌护利润
+  return '';
+}
 function slOppAggregate() {
   const recs = {};
   slRecords().forEach(function (r) { recs[r.code] = r; });
@@ -3574,7 +3599,7 @@ function slOppAggregate() {
         const rec = recs[code] || {};
         if (!map[code]) map[code] = { code: code, cn: it.cn || rec.cn || code, sector: rec.sector || '', opps: [] };
         if (map[code].opps.some(function (o) { return o.k === k; })) return; // 同策略只记一次, 去重
-        map[code].opps.push({ k: k, t: SL_OPP_META[k].t, g: SL_OPP_META[k].g, c: SL_OPP_META[k].c });
+        map[code].opps.push({ k: k, t: SL_OPP_META[k].t, g: SL_OPP_META[k].g, c: SL_OPP_META[k].c, dir: slDir(k, it.m || ''), m: it.m || '' });
       });
     });
   });
@@ -3624,11 +3649,24 @@ function renderOpportunities() {
     total += arr.length;
     html += '<div class="opp-sec"><div class="opp-sec-h" onclick="setOppSec(\'' + sec + '\')" style="cursor:pointer;">' + sec + ' <span>' + arr.length + '</span></div>';
     html += arr.map(function (v) {
-      const chips = v.opps.map(function (o) {
+      // 信号按"主信号优先"排序, 最多显示4条, 其余折叠
+      const sorted = v.opps.slice().sort(function (a, b) { return (SL_OPP_PRIMARY[b.k] ? 1 : 0) - (SL_OPP_PRIMARY[a.k] ? 1 : 0); });
+      const show = sorted.slice(0, 4);
+      const more = sorted.length - show.length;
+      const sigs = show.map(function (o) {
+        const arrow = o.dir === 'up' ? '↑' : (o.dir === 'down' ? '↓' : '·');
         const dim = SL_OPP_PRIMARY[o.k] ? '' : ' oc-dim';
-        return '<span class="oc ' + o.c + dim + '" onclick="event.stopPropagation();setOppFilter(\'' + o.g + '\')">' + o.t + '</span>';
+        return '<div class="opp-sig">' +
+          '<span class="opp-dir ' + o.dir + '">' + arrow + '</span>' +
+          '<span class="oc ' + o.c + dim + '" onclick="event.stopPropagation();setOppFilter(\'' + o.g + '\')">' + o.t + '</span>' +
+          '<span class="opp-basis">' + o.m + '</span>' +
+          '</div>';
       }).join('');
-      return '<div class="opp-row" onclick="showVarietyDetail(\'' + v.code + '\')"><span class="opp-name">' + v.cn + '</span><span class="opp-chips">' + chips + '</span></div>';
+      const moreLine = more > 0 ? '<div class="opp-more">＋还有 ' + more + ' 个信号</div>' : '';
+      return '<div class="opp-row" onclick="showVarietyDetail(\'' + v.code + '\')">' +
+        '<div class="opp-main"><span class="opp-name">' + v.cn + '<small>' + v.code + '</small></span><span class="opp-n">' + v.opps.length + ' 个信号</span></div>' +
+        '<div class="opp-sigs">' + sigs + moreLine + '</div>' +
+        '</div>';
     }).join('');
     html += '</div>';
   });
