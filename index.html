@@ -230,6 +230,23 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .sl-metrics { color: #9ca3af; font-size: 10.5px; text-align: right; }
 .sl-more { color: #6b7280; font-size: 10.5px; padding: 2px 7px; }
 .sl-none { color: #6b7280; font-size: 11px; padding: 2px 7px; }
+
+/* ===== 品种机会总览(V4.2) ===== */
+.opp-sec { margin-top: 9px; }
+.opp-sec-h { font-size: 13px; font-weight: 600; color: #e5e7eb; margin-bottom: 4px; border-bottom: 1px solid #2a3142; padding-bottom: 3px; }
+.opp-sec-h span { color: #22c55e; font-weight: 500; font-size: 11px; margin-left: 4px; }
+.opp-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 4px; border-bottom: 1px dashed #1c2330; cursor: pointer; }
+.opp-row:active { background: #161c26; }
+.opp-name { font-weight: 600; color: #cbd5e1; white-space: nowrap; }
+.opp-name small { color: #6b7280; font-weight: 400; margin-left: 3px; font-size: 10px; }
+.opp-chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.oc { font-size: 10.5px; padding: 1px 7px; border-radius: 10px; border: 1px solid; line-height: 1.5; cursor: pointer; }
+.oc-spec { color: #7dd3fc; border-color: #0c4a6e; background: rgba(14,165,233,.12); }
+.oc-hedge { color: #86efac; border-color: #14532d; background: rgba(34,197,94,.12); }
+.oc-arb { color: #fcd34d; border-color: #713f12; background: rgba(202,138,4,.12); }
+.oc-opt { color: #c4b5fd; border-color: #4c1d95; background: rgba(139,92,246,.12); }
+.oc-dim { opacity: .5; font-size: 9.5px; padding: 0 5px; }
+.mn-item.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
 .strategy-body {
   padding: 0 12px 12px;
   font-size: 12px;
@@ -936,6 +953,26 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div class="module-nav" data-page-node-id="mD49JPVbGzRl1cVOqDUBb7">
     <div class="mn-item" onclick="gotoCard('card-hedge')" data-page-node-id="bFCbjqp5h5GVx2tJF2IABM">套保决策</div>
     <div class="mn-item" onclick="gotoCard('card-match')" data-page-node-id="4AoI1YkCGAjYAWbv0bFUoO">策略×品种匹配</div>
+  </div>
+
+  <!-- 品种机会总览(V4.2) -->
+  <div class="card" id="card-opp" style="border-left:3px solid #22c55e;" data-page-node-id="oppCardTop">
+    <div class="card-header" data-page-node-id="oppHead">
+      <span class="card-title" data-page-node-id="oppTitle">🎯 品种机会总览</span>
+      <span class="card-tag auto" data-page-node-id="oppAuto">自动</span>
+    </div>
+    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:7px;line-height:1.6;" data-page-node-id="oppDesc">
+      按产业归类，一眼看到当前哪些品种有信号；点品种进详情。上方筛选可只看某类策略（对应原投机/套保/套利/期权入口）。
+    </div>
+    <div id="opp-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;" data-page-node-id="oppFilt">
+      <span class="mn-item active" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
+      <span class="mn-item" data-opp="spec" onclick="setOppFilter('spec')" data-page-node-id="oppSpec">投机</span>
+      <span class="mn-item" data-opp="hedge" onclick="setOppFilter('hedge')" data-page-node-id="oppHedge">套保</span>
+      <span class="mn-item" data-opp="arb" onclick="setOppFilter('arb')" data-page-node-id="oppArb">套利</span>
+      <span class="mn-item" data-opp="opt" onclick="setOppFilter('opt')" data-page-node-id="oppOpt">期权</span>
+    </div>
+    <div id="opp-count" style="font-size:11px;color:#6b7280;margin-bottom:4px;" data-page-node-id="oppCount">--</div>
+    <div id="opp-list" style="font-size:12.5px;line-height:1.6;" data-page-node-id="oppList">--</div>
   </div>
 
   <!-- 企业套保决策(V3.2 自动: 价格分位+基差分位+波动率+事件) -->
@@ -1652,6 +1689,7 @@ function onQuotesLoaded() {
   renderBasis();
   renderHedge();
   renderStrategyLive();
+  renderOpportunities();
   renderRank();
   // 更新右上时间戳
   const meta = document.getElementById('data-update-time');
@@ -3481,6 +3519,82 @@ function slRenderGroup(g) {
   if (g.note) h += '<div class="sl-more">' + g.note + '</div>';
   return h;
 }
+
+// ===== 品种机会总览 (V4.2) =====
+// 把 13 类策略的实时命中品种聚合成"一张总表", 按产业归类, 一眼看当前哪些品种有信号
+const SL_OPP_META = {
+  trend: { g: 'spec', t: '趋势', c: 'oc-spec' }, reversal: { g: 'spec', t: '反转', c: 'oc-spec' }, breakout: { g: 'spec', t: '突破', c: 'oc-spec' },
+  buy_hedge: { g: 'hedge', t: '买保', c: 'oc-hedge' }, sell_hedge: { g: 'hedge', t: '卖保', c: 'oc-hedge' }, delta_hedge: { g: 'hedge', t: '波动高', c: 'oc-hedge' },
+  basis_arb: { g: 'arb', t: '期现', c: 'oc-arb' }, calendar_arb: { g: 'arb', t: '跨期', c: 'oc-arb' }, cross_arb: { g: 'arb', t: '跨品种', c: 'oc-arb' },
+  opt_dir: { g: 'opt', t: '期权方向', c: 'oc-opt' }, opt_vol: { g: 'opt', t: '波动率', c: 'oc-opt' }, opt_enhance: { g: 'opt', t: '增强', c: 'oc-opt' }, opt_hedge: { g: 'opt', t: '期权保护', c: 'oc-opt' }
+};
+const SL_OPP_KEYS = Object.keys(SL_OPP_META);
+const SL_OPP_GRP_CN = { spec: '投机', hedge: '套保', arb: '套利', opt: '期权' };
+const SL_OPP_ORDER = ['黑色', '有色', '能化', '农产', '金融'];
+// 真正的"方向/套保/期权信号"类型(区别于波动率/跨期/跨品种等特征型)
+const SL_OPP_PRIMARY = { trend: 1, reversal: 1, breakout: 1, buy_hedge: 1, sell_hedge: 1, opt_dir: 1, opt_enhance: 1, opt_hedge: 1 };
+let oppFilter = 'all';
+function setOppFilter(g) {
+  oppFilter = g;
+  const items = document.querySelectorAll('#opp-filter .mn-item');
+  items.forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-opp') === g); });
+  renderOpportunities();
+}
+function slOppAggregate() {
+  const recs = {};
+  slRecords().forEach(function (r) { recs[r.code] = r; });
+  const map = {};
+  SL_OPP_KEYS.forEach(function (k) {
+    let res = null;
+    try { res = slMatch(k); } catch (e) { res = null; }
+    if (!res) return;
+    res.groups.forEach(function (g) {
+      if (!g.label || !g.items.length) return;
+      g.items.forEach(function (it) {
+        const code = (it.code || '').trim();
+        if (!code) return;
+        const rec = recs[code] || {};
+        if (!map[code]) map[code] = { code: code, cn: it.cn || rec.cn || code, sector: rec.sector || '', opps: [] };
+        if (map[code].opps.some(function (o) { return o.k === k; })) return; // 同策略只记一次, 去重
+        map[code].opps.push({ k: k, t: SL_OPP_META[k].t, g: SL_OPP_META[k].g, c: SL_OPP_META[k].c });
+      });
+    });
+  });
+  return map;
+}
+function renderOpportunities() {
+  const box = document.getElementById('opp-list');
+  if (!box) return;
+  const map = slOppAggregate();
+  const f = oppFilter;
+  const groups = {};
+  Object.keys(map).forEach(function (code) {
+    const v = map[code];
+    if (!v.sector || v.sector === '外盘') return;
+    if (f === 'all' && !v.opps.some(function (o) { return SL_OPP_PRIMARY[o.k]; })) return; // 全部只列有真实信号的品种
+    if (f !== 'all' && !v.opps.some(function (o) { return o.g === f; })) return;
+    (groups[v.sector] = groups[v.sector] || []).push(v);
+  });
+  let html = '', total = 0;
+  SL_OPP_ORDER.forEach(function (sec) {
+    const arr = groups[sec];
+    if (!arr || !arr.length) return;
+    arr.sort(function (a, b) { return b.opps.length - a.opps.length; });
+    total += arr.length;
+    html += '<div class="opp-sec"><div class="opp-sec-h">' + sec + ' <span>' + arr.length + '</span></div>';
+    html += arr.map(function (v) {
+      const chips = v.opps.map(function (o) {
+        const dim = SL_OPP_PRIMARY[o.k] ? '' : ' oc-dim';
+        return '<span class="oc ' + o.c + dim + '" onclick="event.stopPropagation();setOppFilter(\'' + o.g + '\')">' + o.t + '</span>';
+      }).join('');
+      return '<div class="opp-row" onclick="showVarietyDetail(\'' + v.code + '\')"><span class="opp-name">' + v.cn + '</span><span class="opp-chips">' + chips + '</span></div>';
+    }).join('');
+    html += '</div>';
+  });
+  box.innerHTML = html || '<div class="empty-state">当前筛选无匹配品种</div>';
+  const cnt = document.getElementById('opp-count');
+  if (cnt) cnt.textContent = '当前' + (f === 'all' ? '全部机会' : SL_OPP_GRP_CN[f]) + ' · ' + total + ' 个品种有信号';
+}
 function renderStrategyLive() {
   document.querySelectorAll('.strategy-card[data-key]').forEach(function (card) {
     const key = card.getAttribute('data-key');
@@ -3516,6 +3630,7 @@ function toggleHedgeSort() {
   hedgeFilter.sort = hedgeFilter.sort === 'urgency' ? 'name' : 'urgency';
   renderHedge();
   renderStrategyLive();
+  renderOpportunities();
 }
 
 function renderHedgeCatBar(avail) {
