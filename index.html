@@ -987,9 +987,14 @@ body { padding-top: 150px; padding-bottom: 16px; }
 <!-- ========== 策略框架 ========== -->
 <section class="tab-pane" id="tab-strategy" data-page-node-id="0gHoW5Zeu0aCqd0RdG2qom">
 
-  <div class="module-nav" data-page-node-id="mD49JPVbGzRl1cVOqDUBb7">
+  <div class="module-nav" id="strategy-nav" data-page-node-id="mD49JPVbGzRl1cVOqDUBb7">
     <div class="mn-item" onclick="gotoCard('card-hedge')" data-page-node-id="bFCbjqp5h5GVx2tJF2IABM">套保决策</div>
     <div class="mn-item" onclick="gotoCard('card-match')" data-page-node-id="4AoI1YkCGAjYAWbv0bFUoO">策略×品种匹配</div>
+    <div class="mn-item" data-cat="spec" onclick="filterStrategyActive('spec')" data-page-node-id="strNavSpec">投机</div>
+    <div class="mn-item" data-cat="hedge" onclick="filterStrategyActive('hedge')" data-page-node-id="strNavHedge">套保</div>
+    <div class="mn-item" data-cat="arb" onclick="filterStrategyActive('arb')" data-page-node-id="strNavArb">套利</div>
+    <div class="mn-item" data-cat="opt" onclick="filterStrategyActive('opt')" data-page-node-id="strNavOpt">期权</div>
+    <div class="mn-item active" data-cat="all" onclick="filterStrategyActive('all')" data-page-node-id="strNavAll">全部</div>
   </div>
 
   <!-- 企业套保决策(V3.2 自动: 价格分位+基差分位+波动率+事件) -->
@@ -3980,6 +3985,11 @@ function renderRank() {
      </div>`;
 }
 
+function filterStrategyActive(cat) {
+  const items = document.querySelectorAll('#strategy-nav .mn-item[data-cat]');
+  items.forEach(function (el) { el.classList.toggle('active', el.getAttribute('data-cat') === cat); });
+  filterStrategy(cat);
+}
 function filterStrategy(cat) {
   document.querySelectorAll('.strategy-card').forEach(el => {
     el.style.display = (cat === 'all' || el.dataset.cat === cat) ? '' : 'none';
