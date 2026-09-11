@@ -883,11 +883,11 @@ body { padding-top: 150px; padding-bottom: 16px; }
 <section class="tab-pane" id="tab-live" data-page-node-id="Mi1ydC5GkuYGPjqpSHvx3y">
 
   <div class="module-nav" data-page-node-id="1fNFO5ksa1fpxDH9jCdWhc">
+    <div class="mn-item" onclick="gotoCard('card-opts')" data-page-node-id="5bgYFUlUeuZXrkuBmGnfwX">期权信号</div>
     <div class="mn-item" onclick="gotoCard('card-term')" data-page-node-id="mnTerm">期限结构</div>
     <div class="mn-item" onclick="gotoCard('card-basis')" data-page-node-id="mnBasis">基差</div>
     <div class="mn-item" onclick="gotoCard('card-spread')" data-page-node-id="mnSpread">跨品种价差</div>
     <div class="mn-item" onclick="gotoCard('card-tech')" data-page-node-id="mnTech">技术面</div>
-    <div class="mn-item" onclick="gotoCard('card-opts')" data-page-node-id="5bgYFUlUeuZXrkuBmGnfwX">期权信号</div>
   </div>
 
   <!-- 品种深度分析(默认隐藏, 点击品种时弹出) -->
@@ -3325,18 +3325,44 @@ function stickyOffset() {
 
 function scrollToEl(el, gap) {
   if (!el) return;
-  const top = el.getBoundingClientRect().top + window.pageYOffset - stickyOffset() - (gap == null ? 8 : gap);
-  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  const go = () => {
+    const top = el.getBoundingClientRect().top + window.pageYOffset - stickyOffset() - (gap == null ? 8 : gap);
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  };
+  go();
+  // 图片/表格/懒渲染会让目标卡片高度在随后几帧内变化, 一次定位常常落偏, 补一次校正
+  setTimeout(go, 320);
 }
 
 // ===== 模块标签跳转: 滚动到卡片并高亮一下 =====
+// 卡片可能不在当前标签页(排版调整后卡片会换页), 故先定位它所属的 pane,
+// 若不在当前页则自动切过去, 再滚动 —— 否则会对隐藏元素滚动, 看起来"点了没反应"。
+function paneOfCard(el) {
+  let n = el;
+  while (n && n !== document.body) {
+    if (n.classList && n.classList.contains('tab-pane')) return n;
+    n = n.parentElement;
+  }
+  return null;
+}
 function gotoCard(id) {
   const el = document.getElementById(id);
   if (!el) return;
+  const pane = paneOfCard(el);
+  if (pane && !pane.classList.contains('active')) {
+    const tab = pane.id.replace(/^tab-/, '');
+    switchTab(tab, true);      // true=不回到顶部, 交给下面的 scrollToEl 精确定位
+  }
   if (id === 'card-rank') ensureRank();
-  scrollToEl(el, 8);
-  el.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
-  setTimeout(() => { el.style.boxShadow = ''; }, 1200);
+  if (pane) {
+    // 卡片隐藏时(如品种详情)先让它可见, 否则滚动位置算不准
+    if (getComputedStyle(el).display === 'none') el.style.display = '';
+  }
+  requestAnimationFrame(() => {
+    scrollToEl(el, 8);
+    el.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
+    setTimeout(() => { el.style.boxShadow = ''; }, 1200);
+  });
 }
 
 // ===== 头部高度自适应: fixed 头部含标签行, body 顶距必须动态校准 =====
