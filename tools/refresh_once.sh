@@ -36,22 +36,40 @@ if [ "$OK" != "true" ]; then
     exit 0
 fi
 
-# 信号变化检测: 用 5 年日K(kline_cache.json, 不发布)重算上一交易日与今日的均线排列,
-# 结果写 data/changes.json(仅几KB), 供前端顶部警示条使用。
+# 信号变化检测(V4.6): 对比「今日」与「上一交易日」的均线排列。
+#   盘中: 用实时价充当"今日收盘价"接入日K末尾(与技术指标同一套 merge_live_bar 逻辑),
+#         与昨日排列对比 -> 盘中即可预警"今天正在转弱"
+#   盘后: 日K已含当日, 退化为纯日K的"今日 vs 昨日"对比, 结果精确
+# 结果写 data/changes.json(仅几KB), 供前端顶部警示条 + 机会列表标记使用。
 python3 - <<'PYEOF'
 import json
 try:
+    import tech_indicators as T          # 复用 merge_live_bar, 保证与盘中技术指标口径一致
     q = json.load(open('data/quotes.json', encoding='utf-8'))
     kl = json.load(open('data/kline_cache.json', encoding='utf-8'))
     tech = q.get('tech') or {}
     cats = q.get('categories') or {}
-    secmap = {}
+    secmap, live = {}, {}
     for k, v in cats.items():
+        if k == 'overseas':
+            continue                          # 外盘无日K对齐, 不参与
         for it in (v or []):
-            if isinstance(it, dict) and it.get('code'):
-                secmap[it['code']] = k
+            if not isinstance(it, dict) or not it.get('code'):
+                continue
+            secmap[it['code']] = k
+            try:
+                last = float(it.get('last') or 0)
+            except Exception:
+                last = 0
+            if last > 0 and not it.get('paused'):
+                live[it['code']] = {
+                    'date': it.get('date'), 'last': last, 'open': it.get('open'),
+                    'high': it.get('high'), 'low': it.get('low'),
+                    'volume': it.get('volume'), 'oi': it.get('oi'),
+                }
 
     def arr(bars, end):
+        """按 MA5/10/20/60 判定排列"""
         if end < 59:
             return ''
         def m(n):
@@ -69,6 +87,11 @@ try:
         bars = (klo or {}).get('bars') or []
         if len(bars) < 62:
             continue
+        lv = live.get(code)
+        # 合并"当日临时K线", 与技术指标完全同一逻辑
+        bars, merged, _note = T.merge_live_bar(bars, lv)
+        if len(bars) < 62:
+            continue
         n = len(bars)
         today, prev = arr(bars, n - 1), arr(bars, n - 2)
         if not today or not prev or today == prev:
@@ -77,11 +100,11 @@ try:
         dn = lambda a: a == '空头排列'
         neu = lambda a: a == '均线纠缠'
         if (up(prev) and dn(today)) or (dn(prev) and up(today)):
-            kind, lv = '反转', 3
+            kind, lv_k = '反转', 3
         elif (up(prev) and neu(today)) or (dn(prev) and neu(today)):
-            kind, lv = '走弱', 2
+            kind, lv_k = '走弱', 2
         elif neu(prev) and (up(today) or dn(today)):
-            kind, lv = '新进', 1
+            kind, lv_k = '新进', 1
         else:
             continue
         lb, pb = bars[n - 1], bars[n - 2]
@@ -90,22 +113,25 @@ try:
         out.append({
             'code': code,
             'cn': t.get('cn') or klo.get('cn') or code,
-            'kind': kind, 'lv': lv,
+            'kind': kind, 'lv': lv_k,
             'prev': prev, 'today': today,
             'close': lb['c'],
             'pct': round(pct, 2) if pct is not None else None,
             'sector': secmap.get(code, ''),
             'date': lb.get('d', ''),
+            'intraday': bool(merged and lv),   # True=盘中用实时价推算, 未收盘可能反复
         })
     out.sort(key=lambda x: (-x['lv'], x['code']))
+    n_intra = sum(1 for x in out if x['intraday'])
     json.dump({'generated': q.get('updated_at'), 'trading_day': q.get('trading_day_cn'),
-               'n': len(out), 'items': out},
+               'intraday': n_intra > 0, 'n': len(out), 'items': out},
               open('data/changes.json', 'w', encoding='utf-8'), ensure_ascii=False)
-    print('  变化检测: %d 个品种 (反转%d 走弱%d 新进%d)' % (
+    print('  变化检测: %d 个品种 (反转%d 走弱%d 新进%d; 其中盘中推算%d)' % (
         len(out),
         sum(1 for x in out if x['kind'] == '反转'),
         sum(1 for x in out if x['kind'] == '走弱'),
-        sum(1 for x in out if x['kind'] == '新进')))
+        sum(1 for x in out if x['kind'] == '新进'),
+        n_intra))
 except Exception as e:
     print('  变化检测失败(不影响主流程): %s' % e)
 PYEOF

@@ -316,8 +316,70 @@ def detect_pattern(bars):
 # ============================================================
 # 主计算
 # ============================================================
-def compute_tech(bars, last_price=None):
-    """输入日K bars, 输出技术指标 dict"""
+def merge_live_bar(bars, live):
+    """
+    盘中把实时行情合并成"当日临时K线"(V4.6)。
+
+    live 形如 {'date':'2026-09-10','open':..,'high':..,'low':..,'last':..,'volume':..}
+    日K尚未含当日时, 追加一根近似K线, 让 MA/MACD/RSI/KDJ/BOLL/ATR/量比/形态
+    全部把"今日盘中"纳入计算 —— 而不是停留在昨日收盘。
+
+    返回 (bars2, merged, note):
+      merged=True  表示确实合并了实时数据
+    """
+    if not live or not bars:
+        return bars, False, ''
+    # 容错: 有些调用方传的是缓存外层 dict({'date':..,'bars':[..]}) 或非列表
+    if isinstance(bars, dict):
+        bars = bars.get('bars') or []
+    if not isinstance(bars, list) or not bars:
+        return bars, False, ''
+    if not isinstance(bars[-1], dict):
+        return bars, False, ''
+    ld = (live.get('date') or '').strip()
+    last = live.get('last')
+    if not ld or last is None or last <= 0:
+        return bars, False, ''
+    last_d = bars[-1].get('d', '')
+    if last_d == ld:
+        # 日K已含当日(收盘后): 用实时价校准收盘价, 保证与行情一致
+        b = dict(bars[-1])
+        if abs(b.get('c', 0) - last) > 1e-9:
+            hi = max(b.get('h', last), last)
+            lo = min(b.get('l', last), last) or last
+            b['c'], b['h'], b['l'] = last, hi, lo
+            return bars[:-1] + [b], True, '校准当日收盘'
+        return bars, False, ''
+    if last_d > ld:
+        return bars, False, ''      # 异常: 日K比实时还新, 不处理
+    # 日K停留在上一交易日 -> 追加当日临时K线
+    o = live.get('open') or last
+    h = live.get('high') or last
+    l = live.get('low') or last
+    try:
+        o = float(o) or last
+        h = float(h) or last
+        l = float(l) or last
+    except Exception:
+        o = h = l = last
+    h = max(h, last, o)
+    l = min(l, last, o)
+    v = live.get('volume')
+    try:
+        v = float(v or 0)
+    except Exception:
+        v = 0.0
+    bar = {'d': ld, 'o': o, 'h': h, 'l': l, 'c': last, 'v': v,
+           'oi': live.get('oi'), 'live': True}
+    return bars + [bar], True, '含盘中实时'
+
+
+def compute_tech(bars, last_price=None, live=None):
+    """输入日K bars, 输出技术指标 dict
+
+    V4.6: live 传入实时行情时, 先合并成"当日临时K线", 使全部指标盘中实时化。
+    """
+    bars, merged, merge_note = merge_live_bar(bars, live)
     if not bars or len(bars) < 30:
         return None
     closes = [b['c'] for b in bars]
@@ -325,7 +387,10 @@ def compute_tech(bars, last_price=None):
     lows = [b['l'] for b in bars]
     vols = [b['v'] for b in bars]
 
-    price = last_price if last_price and last_price > 0 else closes[-1]
+    # 合并了实时K线后, 收盘价已是盘中最新价; last_price 仅作兜底
+    price = last_price if (last_price and last_price > 0) else closes[-1]
+    if live and live.get('last') and live['last'] > 0:
+        price = live['last']
 
     ma5, ma10, ma20, ma60 = (sma(closes, n) for n in (5, 10, 20, 60))
     if ma5 and ma10 and ma20 and ma60:
@@ -422,26 +487,34 @@ def compute_tech(bars, last_price=None):
         'low_250': round(lo250, 2),
         'bars': len(bars),
         'summary': summary,
+        '_merged': merged,
+        'merge_note': merge_note,
     }
 
 
-def build_tech_map(symbol_map, latest_trading_day, verbose=True, allow_stale=False):
+def build_tech_map(symbol_map, latest_trading_day, verbose=True, allow_stale=False,
+                   live_map=None):
     """
     symbol_map: {code: {'symbol': 'RB0', 'cn': '螺纹钢'}}
     allow_stale: 日盘进行中复用上一交易日 K 线(见 get_bars)
+    live_map: {code: 实时行情dict} —— 传入后, 各指标合并"当日临时K线"盘中实时化(V4.6)
     返回 {code: tech_dict}
     """
     cache = load_cache()
     out = {}
-    fetched, cached_n = 0, 0
+    fetched, cached_n, live_n = 0, 0, 0
     for code, info in symbol_map.items():
         sym = info.get('symbol') or code
         bars, from_cache = get_bars(code, sym, latest_trading_day, cache, allow_stale)
         if not bars:
             continue
-        t = compute_tech(bars)
+        lv = (live_map or {}).get(code)
+        t = compute_tech(bars, live=lv)
         if t:
             t['cn'] = info.get('cn', code)
+            if lv and t.get('_merged'):
+                live_n += 1
+                t['live'] = True
             out[code] = t
         if from_cache:
             cached_n += 1
@@ -451,5 +524,6 @@ def build_tech_map(symbol_map, latest_trading_day, verbose=True, allow_stale=Fal
     save_cache(cache)
     if verbose:
         tag = ' / 复用昨日K线' if (allow_stale and cached_n) else ''
+        tag += f' / 盘中实时{live_n}' if live_n else ''
         print(f'[OK] tech: {len(out)} 个品种 (新抓 {fetched} / 缓存 {cached_n}){tag}')
     return out

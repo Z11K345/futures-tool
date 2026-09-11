@@ -1381,12 +1381,37 @@ def main():
         for _cat, _lst in INDEX_CODES.items():
             for _c, _cn, _n in _lst:
                 _sym_map[_c] = {'symbol': _c, 'cn': _cn}
+        # V4.6: 收集实时行情, 供技术指标合并"当日临时K线"(盘中实时化)
+        _live_map = {}
+        for _cat, _lst in (result.get('categories') or {}).items():
+            if _cat == 'overseas':
+                continue        # 外盘无日K对齐, 不参与
+            for _q in (_lst or []):
+                _cd = _q.get('code')
+                if not _cd:
+                    continue
+                try:
+                    _last = float(_q.get('last') or 0)
+                except Exception:
+                    _last = 0
+                if _last <= 0 or _q.get('paused'):
+                    continue
+                _live_map[_cd] = {
+                    'date': _q.get('date'), 'last': _last,
+                    'open': _q.get('open'), 'high': _q.get('high'),
+                    'low': _q.get('low'), 'volume': _q.get('volume'),
+                    'oi': _q.get('oi'),
+                }
         result['tech'] = tech_indicators.build_tech_map(
-            _sym_map, result.get('trading_day', ''), allow_stale=_tech_allow_stale())
+            _sym_map, result.get('trading_day', ''), allow_stale=_tech_allow_stale(),
+            live_map=_live_map)
+        _n_live = sum(1 for _v in result['tech'].values() if _v.get('live'))
+        result['tech_live_n'] = _n_live
         result['tech_updated'] = time.strftime('%Y-%m-%d %H:%M:%S')
         result['tech_note'] = ('技术指标由本工具基于新浪主连日K自算(MA/MACD/RSI/KDJ/BOLL/ATR/量比),'
                                '历史分位 = 当前价在最近N根收盘价中的百分位;'
-                               '主连换月存在跳空,长周期(3年/5年)分位仅供方向参考。')
+                               + (f'其中 {_n_live} 个品种已合并当日盘中实时行情(指标随盘面变化);' if _n_live else '')
+                               + '主连换月存在跳空,长周期(3年/5年)分位仅供方向参考。')
     except Exception as _e:
         print(f'[WARN] tech_indicators 失败: {_e}')
         result['tech'] = {}
