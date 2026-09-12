@@ -661,7 +661,9 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <div id="events-list" style="font-size:13px;" data-page-node-id="ZOLJnKbEGnJ6gsnKO49pLM">--</div>
     <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #2a3142;font-size:10.5px;color:#6b7280;line-height:1.7;">
       实际值经多家权威来源交叉核对一致后录入；预期值可能因机构而异，标注为市场主流预期。
-      关联品种涨跌幅取行情快照当日真实涨跌，口径已在各项注明。以上为客观数据整理，不构成投资建议。投资有风险，入市需谨慎。
+      关联品种涨跌幅取行情快照当日真实涨跌，口径已在各项注明。
+      展示保留期按重要度分级：高（美联储/CPI/非农/USDA）保留 1 年、中（EIA/社零/LPR/CFTC 持仓）3 个月、低 30 天；超期自动隐去。
+      近 14 天为「最近回顾」，更早归入「历史回顾」折叠区。以上为客观数据整理，不构成投资建议。投资有风险，入市需谨慎。
     </div>
   </div>
 
@@ -827,10 +829,10 @@ body { padding-top: 150px; padding-bottom: 16px; }
       <span class="card-tag auto" data-page-node-id="1hiNGCEnQBQNYY6eetu4ya">合约价差</span>
     </div>
     <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="uMMswcdszMi6MPTbsWIrvq">
-      月差 = (次主力 − 主力) ÷ 主力，年化后即期限结构斜率。
-      <b style="color:#e5e7eb;" data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcE">Backwardation</b>(近月贵) → 多头移仓占便宜，展期正收益；
-      <b style="color:#e5e7eb;" data-page-node-id="YEvw59VZHEWnEb8tD8EFzl">Contango</b>(远月贵) → 多头移仓付成本，空头占便宜。
-      这块收益不依赖看对方向，只看结构。点品种看详情。
+      月差 = (次主力 − 主力) ÷ 主力，年化后即期限结构斜率。主力/次主力按成交量排序，合约链按月份递增排列。
+      <b style="color:#e5e7eb;" data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcE">Contango</b>(正向市场) 须 C1&lt;C2&lt;C3 <b>逐月递增</b> → 多头移仓付成本；
+      <b style="color:#e5e7eb;" data-page-node-id="YEvw59VZHEWnEb8tD8EFzl">Back</b>(反向市场) 须 C1&gt;C2&gt;C3 <b>逐月递减</b> → 多头移仓占便宜，展期正收益。
+      不满足严格单调的，不套用这两个术语，标"非单调"。这块收益不依赖看对方向，只看结构。点品种看详情。
     </div>
     <div id="term-sortbar" style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;" data-page-node-id="y9m909easZob1TB4tAzX3n">
       <span class="mn-item" id="term-sort-back" onclick="setTermSort('back')" data-page-node-id="MODGvUPN4EdMSxM4shACoT">多头展期优先</span>
@@ -838,14 +840,12 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
     <div class="table-wrap" data-page-node-id="TAVb80pkAi7PBfTL2AcYnJ">
     <table class="data-table" id="term-table" data-page-node-id="v5ZNq28V5NvX6FCyUCBNNc">
-      <thead data-page-node-id="81kl1K4fiVkmcE7gbM6avD"><tr data-page-node-id="B6MfxKd6I8YtCAzVWx1xve"><th data-page-node-id="ovEWYS6rzHgtHw4oP2VvB3">品种</th><th data-page-node-id="rwuDL5JmqZMdDxC28DJtaB">主力→次月</th><th style="text-align:right;" data-page-node-id="IXvnrCFAdTgJJG8dDmHJhL">月差</th><th style="text-align:right;" data-page-node-id="EtV7UyCM1JAHX4dvRokbI9">年化</th><th data-page-node-id="sug5HnqTrqNEpRfeCgEoHm">结构</th></tr></thead>
+      <thead data-page-node-id="81kl1K4fiVkmcE7gbM6avD"><tr data-page-node-id="B6MfxKd6I8YtCAzVWx1xve"><th data-page-node-id="ovEWYS6rzHgtHw4oP2VvB3">品种</th><th data-page-node-id="rwuDL5JmqZMdDxC28DJtaB">C1→C2→C3</th><th style="text-align:right;" data-page-node-id="IXvnrCFAdTgJJG8dDmHJhL">月差</th><th style="text-align:right;" data-page-node-id="EtV7UyCM1JAHX4dvRokbI9">年化</th><th data-page-node-id="sug5HnqTrqNEpRfeCgEoHm">结构</th></tr></thead>
       <tbody id="term-body" data-page-node-id="Yo3HASwGvfDh90GFv8hlQT"><tr data-page-node-id="EkHo8C096uBVizTNgjE97C"><td colspan="5" class="empty-state" data-page-node-id="l0I3wJcpAYlNKGQtmPKgMB"><span class="loading-spinner" data-page-node-id="DwsyEIZk7nWttA2lTy6G5T"></span> 加载中...</td></tr></tbody>
     </table>
     </div>
     <div class="save-note" id="term-note" data-page-node-id="YNKMtVEeDPwkIYlpbkDziI">📌 --</div>
   </div>
-
-  <!-- 基差透视(自动: 生意社现期表 + 自建近一年分位) V3.1 新增 -->
 
   <!-- 基差透视(自动: 生意社现期表 + 自建近一年分位) V3.1 新增 -->
   <div class="card" id="card-basis" data-page-node-id="zaprV5fH31WtSqGGiMZQty">
@@ -1973,8 +1973,23 @@ function renderCalendar() {
 /* ============================================================
    已公布重要数据回顾 (data/events.json)
    四层: ① 实际值 vs 预期 vs 前值  ② 解读  ③ 关联品种当日涨跌  ④ 方向启示
+   分组: 按事件类型(宏观/能源/农产品/持仓/其他)
+   保留: 按重要度分级 —— 高1年 / 中3个月 / 低30天; 过期自动隐去不再显示
+   归档: 超过「最近窗口」(14天) 的折叠进「历史回顾」, 点开才展开
    ============================================================ */
 let eventsData = null;   // { updated_at, events: [...] }
+const EV_RECENT_DAYS = 14;
+// 按重要度分级的保留天数(过期不再展示)
+const EV_RETAIN_DAYS = { high: 365, medium: 90, low: 30 };
+// 事件类型 -> 分组名(按 cat 归类)
+const EV_CAT_GROUP = {
+  us_rate: '宏观', us_macro: '宏观', cn_macro: '宏观',
+  us_energy: '能源', eia: '能源',
+  usda: '农产品', mpob: '农产品',
+  cftc: '持仓', position: '持仓',
+  futures: '持仓'
+};
+const EV_GROUP_ORDER = ['宏观', '能源', '农产品', '持仓', '其他'];
 
 function loadEvents() {
   return fetch('data/events.json?_=' + Date.now(), { cache: 'no-store' })
@@ -1991,93 +2006,167 @@ function _fmtPct(v) {
   return `<span style="color:${c};font-variant-numeric:tabular-nums;">${s}</span>`;
 }
 
-function renderEvents() {
-  const box = document.getElementById('events-list');
-  if (!box) return;
-  const list = (eventsData && eventsData.events) || [];
-  if (!list.length) {
-    box.innerHTML = '<div style="color:#6b7280;text-align:center;padding:8px;">暂无已公布数据记录</div>';
-    return;
+/* 单个事件的正文(四层)。compact=true 时用于历史区的简版 */
+function _evBody(ev, compact) {
+  let h = '';
+  // ① 指标表: 实际 / 预期 / 前值
+  if (ev.metrics && ev.metrics.length) {
+    h += `<div style="margin-top:7px;overflow-x:auto;">`
+      +  `<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:320px;">`
+      +  `<thead><tr style="color:#6b7280;font-size:11px;">`
+      +  `<th style="text-align:left;padding:3px 4px;font-weight:400;">指标</th>`
+      +  `<th style="text-align:right;padding:3px 4px;font-weight:400;">实际</th>`
+      +  `<th style="text-align:right;padding:3px 4px;font-weight:400;">预期</th>`
+      +  `<th style="text-align:right;padding:3px 4px;font-weight:400;">前值</th>`
+      +  `<th style="text-align:left;padding:3px 4px;font-weight:400;min-width:72px;">判定</th>`
+      +  `</tr></thead><tbody>`;
+    ev.metrics.forEach(m => {
+      const dirColor = m.dir === 'up' ? '#ef4444' : (m.dir === 'down' ? '#22c55e' : '#9ca3af');
+      const arrow = m.dir === 'up' ? '↑' : (m.dir === 'down' ? '↓' : '—');
+      h += `<tr style="border-top:1px solid #232a38;">`
+        +  `<td style="text-align:left;padding:4px 4px;color:#e5e7eb;">${m.name}</td>`
+        +  `<td style="text-align:right;padding:4px 4px;color:${dirColor};font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;">${m.actual}<span style="font-size:10px;margin-left:2px;">${arrow}</span></td>`
+        +  `<td style="text-align:right;padding:4px 4px;color:#9ca3af;font-variant-numeric:tabular-nums;">${m.forecast}</td>`
+        +  `<td style="text-align:right;padding:4px 4px;color:#9ca3af;font-variant-numeric:tabular-nums;">${m.previous}</td>`
+        +  `<td style="text-align:left;padding:4px 4px;color:${dirColor};font-size:11px;">${m.judge || ''}</td>`
+        +  `</tr>`;
+    });
+    h += `</tbody></table></div>`;
   }
-  box.innerHTML = list.map(ev => {
-    const impColor = ev.impact === 'high' ? '#ef4444' : (ev.impact === 'medium' ? '#f59e0b' : '#6b7280');
-    let h = '';
-    h += `<div style="padding:10px 0;border-bottom:1px solid #2a3142;">`;
+  if (compact) return h;   // 历史区只要指标表，下面几层省略
 
-    // 标题行: 名称 + 日期时间
-    h += `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;">`
-      +  `<div><span style="color:${impColor};">●</span>`
-      +  `<span style="color:#e5e7eb;font-weight:600;margin-left:6px;">${ev.name}</span>`
-      +  (ev.country ? `<span style="color:#6b7280;font-size:11px;margin-left:6px;">${ev.country}</span>` : '')
-      +  `</div>`
-      +  `<div style="color:#9ca3af;font-size:11.5px;font-variant-numeric:tabular-nums;">${(ev.date||'').slice(5)} ${ev.time||''}</div>`
+  // ② 解读
+  if (ev.read) {
+    h += `<div style="margin-top:7px;font-size:12.5px;color:#cbd5e1;line-height:1.65;">`
+      +  `<span style="color:#7dd3fc;">数据解读：</span>${ev.read}</div>`;
+  }
+  // ③ 关联品种当日反应
+  if (ev.related && ev.related.length) {
+    const chips = ev.related.map(r => {
+      const p = (r.pct == null) ? '' : ' ' + _fmtPct(r.pct);
+      const nm = r.cn || r.code;
+      const tip = r.note ? ` title="${r.note}"` : '';
+      return `<span${tip} style="display:inline-block;background:#1e2533;border:1px solid #2a3142;border-radius:4px;padding:2px 7px;margin:2px 4px 2px 0;font-size:11.5px;color:#e5e7eb;">`
+        + `${nm}${p}</span>`;
+    }).join('');
+    const base = ev.related[0] && ev.related[0].snap_day ? `<span style="color:#6b7280;">（${ev.related[0].snap_day} 口径）</span>` : '';
+    h += `<div style="margin-top:7px;font-size:12px;color:#9ca3af;">`
+      +  `<span style="color:#fca5a5;">关联品种：</span>${chips}${base}</div>`;
+  }
+  // ④ 市场反应
+  if (ev.market_reaction) {
+    h += `<div style="margin-top:6px;font-size:12.5px;color:#cbd5e1;line-height:1.65;">`
+      +  `<span style="color:#fcd34d;">盘面反应：</span>${ev.market_reaction}</div>`;
+  }
+  // ⑤ 方向启示
+  if (ev.implication) {
+    h += `<div style="margin-top:6px;padding:6px 8px;background:#191f2b;border-left:2px solid #f59e0b;border-radius:0 4px 4px 0;font-size:12.5px;color:#e5e7eb;line-height:1.65;">`
+      +  `<span style="color:#f59e0b;">影响启示：</span>${ev.implication}</div>`;
+  }
+  return h;
+}
+
+/* 单条事件的外壳(标题 + 正文)。compact=true 时正文折叠, 点击展开 */
+function _evShell(ev, compact) {
+  const impColor = ev.impact === 'high' ? '#ef4444' : (ev.impact === 'medium' ? '#f59e0b' : '#6b7280');
+  const gid = 'ev-' + (ev.id || (ev.date + '-' + (ev.name || '').length));
+  let h = `<div style="padding:10px 0;border-bottom:1px solid #2a3142;">`;
+  // 标题行
+  h += `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;">`
+    +  `<div><span style="color:${impColor};">●</span>`
+    +  `<span style="color:#e5e7eb;font-weight:600;margin-left:6px;">${ev.name}</span>`
+    +  (ev.country ? `<span style="color:#6b7280;font-size:11px;margin-left:6px;">${ev.country}</span>` : '')
+    +  (compact ? `<span style="color:#4a9eff;font-size:11px;margin-left:8px;cursor:pointer;" onclick="toggleEv('${gid}')">展开 ▾</span>` : '')
+    +  `</div>`
+    +  `<div style="color:#9ca3af;font-size:11.5px;font-variant-numeric:tabular-nums;">${(ev.date||'').slice(5)} ${ev.time||''}</div>`
+    +  `</div>`;
+  if (compact) {
+    // 历史区: 折叠, 点击展开
+    const brief = (ev.metrics && ev.metrics[0]) ? `${ev.metrics[0].name} ${ev.metrics[0].actual}` : '';
+    h += `<div id="${gid}" style="display:none;margin-top:4px;">${_evBody(ev, false)}`
+      +  (ev.source ? `<div style="margin-top:5px;font-size:10.5px;color:#6b7280;">来源：${ev.source}</div>` : '')
       +  `</div>`;
-
-    // ① 指标表: 实际 / 预期 / 前值
-    if (ev.metrics && ev.metrics.length) {
-      h += `<div style="margin-top:7px;overflow-x:auto;">`
-        +  `<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:320px;">`
-        +  `<thead><tr style="color:#6b7280;font-size:11px;">`
-        +  `<th style="text-align:left;padding:3px 4px;font-weight:400;">指标</th>`
-        +  `<th style="text-align:right;padding:3px 4px;font-weight:400;">实际</th>`
-        +  `<th style="text-align:right;padding:3px 4px;font-weight:400;">预期</th>`
-        +  `<th style="text-align:right;padding:3px 4px;font-weight:400;">前值</th>`
-        +  `<th style="text-align:left;padding:3px 4px;font-weight:400;">判定</th>`
-        +  `</tr></thead><tbody>`;
-      ev.metrics.forEach(m => {
-        const dirColor = m.dir === 'up' ? '#ef4444' : (m.dir === 'down' ? '#22c55e' : '#9ca3af');
-        const arrow = m.dir === 'up' ? '↑' : (m.dir === 'down' ? '↓' : '—');
-        h += `<tr style="border-top:1px solid #232a38;">`
-          +  `<td style="text-align:left;padding:4px 4px;color:#e5e7eb;white-space:nowrap;">${m.name}</td>`
-          +  `<td style="text-align:right;padding:4px 4px;color:${dirColor};font-weight:600;font-variant-numeric:tabular-nums;">${m.actual}<span style="font-size:10px;margin-left:2px;">${arrow}</span></td>`
-          +  `<td style="text-align:right;padding:4px 4px;color:#9ca3af;font-variant-numeric:tabular-nums;">${m.forecast}</td>`
-          +  `<td style="text-align:right;padding:4px 4px;color:#9ca3af;font-variant-numeric:tabular-nums;">${m.previous}</td>`
-          +  `<td style="text-align:left;padding:4px 4px;color:${dirColor};font-size:11px;">${m.judge || ''}</td>`
-          +  `</tr>`;
-      });
-      h += `</tbody></table></div>`;
-    }
-
-    // ② 解读
-    if (ev.read) {
-      h += `<div style="margin-top:7px;font-size:12.5px;color:#cbd5e1;line-height:1.65;">`
-        +  `<span style="color:#7dd3fc;">数据解读：</span>${ev.read}</div>`;
-    }
-
-    // ③ 关联品种当日反应
-    if (ev.related && ev.related.length) {
-      const chips = ev.related.map(r => {
-        const p = (r.pct == null) ? '' : ' ' + _fmtPct(r.pct);
-        const nm = r.cn || r.code;
-        const tip = r.note ? ` title="${r.note}"` : '';
-        return `<span${tip} style="display:inline-block;background:#1e2533;border:1px solid #2a3142;border-radius:4px;padding:2px 7px;margin:2px 4px 2px 0;font-size:11.5px;color:#e5e7eb;">`
-          + `${nm}${p}</span>`;
-      }).join('');
-      const base = ev.related[0] && ev.related[0].snap_day ? `<span style="color:#6b7280;">（${ev.related[0].snap_day} 口径）</span>` : '';
-      h += `<div style="margin-top:7px;font-size:12px;color:#9ca3af;">`
-        +  `<span style="color:#fca5a5;">关联品种：</span>${chips}${base}</div>`;
-    }
-
-    // ④ 市场反应
-    if (ev.market_reaction) {
-      h += `<div style="margin-top:6px;font-size:12.5px;color:#cbd5e1;line-height:1.65;">`
-        +  `<span style="color:#fcd34d;">盘面反应：</span>${ev.market_reaction}</div>`;
-    }
-
-    // ⑤ 方向启示
-    if (ev.implication) {
-      h += `<div style="margin-top:6px;padding:6px 8px;background:#191f2b;border-left:2px solid #f59e0b;border-radius:0 4px 4px 0;font-size:12.5px;color:#e5e7eb;line-height:1.65;">`
-        +  `<span style="color:#f59e0b;">影响启示：</span>${ev.implication}</div>`;
-    }
-
-    // 来源
+    if (brief) h += `<div style="margin-top:3px;font-size:11.5px;color:#6b7280;">${brief}</div>`;
+  } else {
+    h += _evBody(ev, false);
     if (ev.source) {
       h += `<div style="margin-top:5px;font-size:10.5px;color:#6b7280;">来源：${ev.source}</div>`;
     }
+  }
+  h += `</div>`;
+  return h;
+}
 
-    h += `</div>`;
-    return h;
-  }).join('');
+function toggleEv(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+}
+
+function renderEvents() {
+  const box = document.getElementById('events-list');
+  if (!box) return;
+  const all = (eventsData && eventsData.events) || [];
+  if (!all.length) {
+    box.innerHTML = '<div style="color:#6b7280;text-align:center;padding:8px;">暂无已公布数据记录</div>';
+    return;
+  }
+  // 按重要度分级保留: 超过保留期的事件不再展示
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const kept = all.filter(ev => {
+    const d = new Date((ev.date || '') + 'T00:00:00');
+    if (isNaN(d.getTime())) return true;
+    const days = Math.floor((today - d) / 86400000);
+    const limit = EV_RETAIN_DAYS[ev.impact] || EV_RETAIN_DAYS.medium;
+    return days <= limit;
+  });
+  if (!kept.length) {
+    box.innerHTML = '<div style="color:#6b7280;text-align:center;padding:8px;">近期无已公布数据记录</div>';
+    return;
+  }
+  // 最近窗口 vs 历史归档
+  const recent = [], history = [];
+  kept.forEach(ev => {
+    const d = new Date((ev.date || '') + 'T00:00:00');
+    const days = isNaN(d.getTime()) ? 0 : Math.floor((today - d) / 86400000);
+    (days <= EV_RECENT_DAYS ? recent : history).push(ev);
+  });
+
+  let html = '';
+  // ===== 最近回顾(按类型分组, 完整展开) =====
+  if (recent.length) {
+    const groups = {};
+    recent.forEach(ev => {
+      const g = EV_CAT_GROUP[ev.cat] || '其他';
+      (groups[g] = groups[g] || []).push(ev);
+    });
+    const active = EV_GROUP_ORDER.filter(g => groups[g] && groups[g].length);
+    html += `<div style="font-size:12px;color:#7dd3fc;font-weight:600;margin:2px 0 4px;">最近回顾（近 ${EV_RECENT_DAYS} 天）</div>`;
+    active.forEach(g => {
+      html += `<div style="margin-top:8px;">`
+        + `<div style="font-size:11.5px;color:#9ca3af;background:#1a2130;display:inline-block;padding:1px 8px;border-radius:3px;">${g}</div>`
+        + `</div>`;
+      html += groups[g].map(ev => _evShell(ev, false)).join('');
+    });
+  }
+  // ===== 历史回顾(折叠) =====
+  if (history.length) {
+    html += `<div style="margin-top:14px;padding-top:8px;border-top:1px solid #2a3142;">`
+      +  `<div style="font-size:12px;color:#9ca3af;font-weight:600;">历史回顾（${history.length} 条 · 点条目展开）</div>`
+      +  `</div>`;
+    // 历史区也按类型分组
+    const hg = {};
+    history.forEach(ev => {
+      const g = EV_CAT_GROUP[ev.cat] || '其他';
+      (hg[g] = hg[g] || []).push(ev);
+    });
+    EV_GROUP_ORDER.filter(g => hg[g] && hg[g].length).forEach(g => {
+      html += `<div style="margin-top:6px;"><span style="font-size:11px;color:#6b7280;">${g}</span></div>`;
+      html += hg[g].map(ev => _evShell(ev, true)).join('');
+    });
+  }
+  box.innerHTML = html;
 }
 
 function renderNews() {
@@ -3553,26 +3642,46 @@ function renderTerm() {
   rows.sort((a, b) => termSort === 'back' ? a.ann_pct - b.ann_pct : b.ann_pct - a.ann_pct);
   box.innerHTML = rows.map(v => {
     const ann = v.ann_pct;
-    // 年化 <0 = Back = 近月贵 = 多头移仓占便宜(红); >0 = Contango = 多头付成本(绿)
-    const col = ann <= -1 ? '#ef4444' : ann >= 1 ? '#10b981' : '#8b95a5';
-    const flag = (v.near ? ' ⚠' : '') + (v.thin ? ' ¹' : '');
-    const structTxt = v.struct === 'Back' ? '近月升水' : v.struct === 'Contango' ? '远月升水' : '平坦';
+    // 颜色: Back(近月贵, 多头展期占便宜)=红; Contango(远月贵, 多头付成本)=绿; 未定性结构=黄
+    const undetermined = (v.struct === '非单调' || v.struct === '仅两月' || v.struct === '平坦');
+    const col = undetermined ? '#f59e0b' : (ann <= -1 ? '#ef4444' : ann >= 1 ? '#10b981' : '#8b95a5');
+    const flag = (v.extreme ? ' ‡' : '') + (v.near ? ' ⚠' : '') + (v.thin ? ' ¹' : '');
+    // 结构名与颜色: 只有严格单调才用 Back/Contango 这两个术语
+    let structTxt, structCol;
+    if (v.struct === 'Back') { structTxt = 'Back 反向'; structCol = '#ef4444'; }
+    else if (v.struct === 'Contango') { structTxt = 'Contango 正向'; structCol = '#10b981'; }
+    else if (v.struct === '平坦') { structTxt = '近平'; structCol = '#8b95a5'; }
+    else if (v.struct === '仅两月') { structTxt = '仅两月·未定性'; structCol = '#f59e0b'; }
+    else { structTxt = '非单调·未定性'; structCol = '#f59e0b'; }
+    // 三个合约代码(短码), 缺 C3 显示 —
+    const s = c => (c || '').slice(-4) || '—';
+    const chain = `${s(v.c1)}→${s(v.c2)}→${s(v.c3)}`;
+    const chainTip = `${v.c1 || ''} → ${v.c2 || ''}` + (v.c3 ? ` → ${v.c3}` : '') + (v.struct_reason ? `（${v.struct_reason}）` : '');
     return `<tr onclick="showVarietyDetail('${v.code}')" style="cursor:pointer;">
       <td>${v.cn || v.code}${flag}</td>
-      <td style="font-size:10.5px;color:#9ca3af;">${(v.c1 || '').slice(-4)}→${(v.c2 || '').slice(-4)}<span style="color:#6b7280;"> ${v.months}M</span></td>
+      <td style="font-size:10.5px;color:#9ca3af;white-space:nowrap;" title="${chainTip}">${chain}<span style="color:#6b7280;"> ${v.gap_months || v.months}M</span></td>
       <td style="text-align:right;font-variant-numeric:tabular-nums;color:#9ca3af;">${v.gap_pct > 0 ? '+' : ''}${v.gap_pct}%</td>
       <td style="text-align:right;font-variant-numeric:tabular-nums;color:${col};font-weight:500;">${ann > 0 ? '+' : ''}${ann}%</td>
-      <td style="font-size:11px;color:${col};">${structTxt}</td>
+      <td style="font-size:11px;color:${structCol};white-space:nowrap;">${structTxt}</td>
     </tr>`;
   }).join('');
   if (note) {
     const nBack = rows.filter(r => r.struct === 'Back').length;
     const nCont = rows.filter(r => r.struct === 'Contango').length;
+    const nMix = rows.filter(r => r.struct === '非单调').length;
+    const nTwo = rows.filter(r => r.struct === '仅两月').length;
+    const nFlat = rows.filter(r => r.struct === '平坦').length;
     const nNear = rows.filter(r => r.near).length;
     const nThin = rows.filter(r => r.thin).length;
-    note.innerHTML = '📌 口径: 主力合约 → 次一个活跃合约，按合约月份差年化；'
-      + `本次 ${rows.length} 个品种 (近月升水 ${nBack} / 远月升水 ${nCont} / 平坦 ${rows.length - nBack - nCont})。`
-      + '⚠ = 主力临近交割月，自然人须在交割月前清仓，纸面展期收益吃不满；'
+    const nExt = rows.filter(r => r.extreme).length;
+    note.innerHTML = '📌 口径: 主力→次主力按成交量排序; 合约链按月份递增排列(C1→C2→C3)。'
+      + '<b style="color:#e5e7eb;">结构严格按定义判定</b>——'
+      + 'Contango 需 C1&lt;C2&lt;C3 逐月递增, Back 需 C1&gt;C2&gt;C3 逐月递减;'
+      + '不满足严格单调的<b style="color:#f59e0b;">不套用这两个术语</b>，标「非单调」；'
+      + '只有两个合约时依据不足，标「仅两月」。'
+      + `本次 ${rows.length} 个品种 (Back ${nBack} / Contango ${nCont} / 非单调 ${nMix} / 仅两月 ${nTwo} / 平坦 ${nFlat})。`
+      + (nExt ? ` ‡ = 月差≥5% 的极端价差(${nExt} 个)，<b style="color:#fca5a5;">年化数字系按月外推，不可当常态展期收益</b>，多因临近交割或流动性异常；` : '')
+      + (nNear ? ` ⚠ = 主力临近交割月(${nNear} 个)，自然人须在交割月前清仓，纸面展期收益吃不满；` : '')
       + (nThin ? ` ¹ = 次月合约流动性薄(${nThin} 个)，报价代表性有限，仅供参考。` : '')
       + ' 展期收益为结构本身的收益，未计交易成本与价差跳空；历史分位暂未积累。';
   }

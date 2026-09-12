@@ -11,7 +11,10 @@
 计算口径:
   1. 枚举品种当前月起未来 LOOKAHEAD 个月的全部合约, 批量取新浪合约级行情;
   2. 保留"活跃"合约(成交量 >= 该品种最大成交 2% 且持仓 > 0), 剔除虚挂/僵尸合约;
-  3. C1 = 活跃合约中持仓量最大者(即主力); C2/C3 = 月份晚于 C1 的下一个/再下一个活跃合约;
+  3. C1 = 活跃合约中成交量最大者(持仓量次之, 即主力);
+     C2 = 月份晚于 C1 的活跃合约中成交量最大者(次主力, 不要求紧邻月份 ——
+          10月是主力但11月无人交易时, 取真正有成交的远月);
+     C3 = 月份晚于 C1 的活跃合约中成交量第二大者(用于判断曲线是否单调).
      —— 注意: 不能用"月份最小的活跃合约"当 C1, 近月合约进入交割月后只剩产业交割博弈,
         自然人已清仓, 价格被仓单与交割品级压歪(实测甲醇 2610 相对 2611 折价 7.25%, 年化 -87%,
         明显失真)。改用主力合约为锚后, 数值回到 ±30% 的合理区间。
@@ -109,13 +112,20 @@ def build(verbose=True):
         if kind == 'cmd':
             # 商品: 剔除已进入交割月的合约(自然人已清仓, 价格只反映交割博弈)
             active = [r for r in active if r['ym'] > cur_ym] or active
-        active.sort(key=lambda r: (-r['oi'], r['ym']))
+        # 主力 C1 = 成交量最大(持仓量次之); 次主力 C2 = 月份晚于 C1 的活跃合约里成交量最大者
+        # (按成交量选, 而非按月份紧邻选 —— 10月是主力但11月无人交易时, 取真正有成交的远月)
+        active.sort(key=lambda r: (-r['vol'], -r['oi']))
         c1 = active[0]
-        rest = sorted([r for r in active if r['ym'] > c1['ym']], key=lambda r: r['ym'])
+        rest = [r for r in active if r['ym'] > c1['ym']]
+        rest.sort(key=lambda r: (-r['vol'], -r['oi']))
         if not rest:
             continue
         c2 = rest[0]
-        c3 = rest[1] if len(rest) > 1 else None
+        # C3 必须取「月份晚于 C2」的活跃合约 —— 否则链条顺序错乱(出现 C3 月份早于 C2),
+        # 后面的严格单调判定就没有意义。在 C2 之后的合约里仍按成交量选最具代表性的那个。
+        after_c2 = [r for r in rest if r['ym'] > c2['ym']]
+        after_c2.sort(key=lambda r: (-r['vol'], -r['oi']))
+        c3 = after_c2[0] if after_c2 else None
 
         gap = _month_gap(c1['code'], c2['code'])
         if not gap or gap <= 0:
@@ -138,6 +148,9 @@ def build(verbose=True):
             # 近月主力距交割月 <= 1 个月: 自然人须在交割月前清仓,
             # 这段"多头展期收益"自然人吃不到完整区间, 必须提示(否则是把纸面收益当到手收益)
             'near': bool(kind == 'cmd' and _ym(c1['code']) - cur_ym <= 1),
+            # 极端月差: |月差| >= 5% 时, 年化数字(×12/K 外推)严重失真(多为临近交割的
+            # 逼仓/挤仓价差, 或新上市品种流动性异常), 必须显著提示, 不能当常态展期收益看
+            'extreme': bool(abs(gap_pct) >= 5.0),
         }
         if c3:
             gap2 = _month_gap(c1['code'], c3['code'])
@@ -146,19 +159,54 @@ def build(verbose=True):
                 item['c3_last'] = round(c3['last'], 2)
                 item['c3_oi'] = int(c3['oi'])
                 item['ann_far_pct'] = round((c3['last'] - c1['last']) / c1['last'] * 100 * 12.0 / gap2, 2)
-        if ann >= 1:
-            item['struct'] = 'Contango'
-        elif ann <= -1:
-            item['struct'] = 'Back'
+        # 结构判断 —— 严格按期限结构的标准定义:
+        #   Contango   (正向市场) = 价格逐月递增 C1 < C2 < C3
+        #   Back       (反向市场) = 价格逐月递减 C1 > C2 > C3
+        #   不满足严格单调时, 不套用这两个术语(Market 不成立), 标为「非单调」。
+        #   只有 C1/C2 两个月时, 依据不足, 标为「仅两月」并给出方向, 不强行定性。
+        # 采用严格不等号(>= 不算), 避免"持平"被误判为单调。
+        FLAT_THRESH = 0.15   # |gap_pct| < 0.15% 视为价格实质持平, 不参与单调判定
+        p1, p2 = c1['last'], c2['last']
+        flat12 = abs(gap_pct) < FLAT_THRESH
+        if c3:
+            p3 = c3['last']
+            gap23_pct = (p3 - p2) / p2 * 100 if p2 else 0
+            flat23 = abs(gap23_pct) < FLAT_THRESH
+            if flat12 or flat23:
+                item['struct'] = '非单调'      # 含持平段, 曲线不严格单调
+                item['struct_reason'] = '含持平段'
+            elif p1 < p2 < p3:
+                item['struct'] = 'Contango'    # 严格逐月递增
+                item['struct_reason'] = '严格逐月递增'
+            elif p1 > p2 > p3:
+                item['struct'] = 'Back'        # 严格逐月递减
+                item['struct_reason'] = '严格逐月递减'
+            else:
+                item['struct'] = '非单调'      # 先升后降 / 先降后升
+                item['struct_reason'] = '先升后降' if (p2 > p1 and p3 < p2) else '先降后升'
         else:
-            item['struct'] = '平坦'
+            # 仅有 C1/C2, 无 C3: 无法验证单调性, 不强行定性
+            if flat12:
+                item['struct'] = '平坦'
+                item['struct_reason'] = '两月价差近平'
+            else:
+                item['struct'] = '仅两月'
+                item['struct_reason'] = ('近月贴水(倾向Back)' if p2 > p1 else '近月升水(倾向Contango)')
+        # 合约代码标记: 让前端能直接展示 C1/C2/C3 究竟是哪几个合约
+        item['c1_c2'] = f"{c1['code']}→{c2['code']}"
+        item['gap_months'] = gap
+        if c3:
+            item['c2_c3'] = f"{c2['code']}→{c3['code']}"
         out[code0] = item
 
     if verbose:
         n_back = sum(1 for v in out.values() if v['struct'] == 'Back')
         n_cont = sum(1 for v in out.values() if v['struct'] == 'Contango')
-        print('[OK] term_structure: %d 品种 (Back %d / Contango %d / 平坦 %d)'
-              % (len(out), n_back, n_cont, len(out) - n_back - n_cont))
+        n_flat = sum(1 for v in out.values() if v['struct'] == '平坦')
+        n_mix = sum(1 for v in out.values() if v['struct'] == '非单调')
+        n_two = sum(1 for v in out.values() if v['struct'] == '仅两月')
+        print('[OK] term_structure: %d 品种 (严格单调: Back %d / Contango %d; 未定性: 非单调 %d / 仅两月 %d / 平坦 %d)'
+              % (len(out), n_back, n_cont, n_mix, n_two, n_flat))
 
     try:
         os.makedirs(DATA_DIR, exist_ok=True)

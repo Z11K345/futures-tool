@@ -2,7 +2,7 @@
 // 提供离线缓存能力，首次加载后断网仍可使用静态框架
 // v25: 数据类资源改为「网络优先 + 失败回落旧缓存」，避免网关抖动(502)时页面打不开
 
-const CACHE_NAME = 'qb-rb-v46';
+const CACHE_NAME = 'qb-rb-v47';
 const DATA_CACHE = 'qb-rb-data-v25';
 
 // 新版本立即接管（不用等用户关闭 PWA），激活时清理旧缓存
