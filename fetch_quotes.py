@@ -304,9 +304,11 @@ KEY_CALENDAR_2026 = [
     {'date': '2026-09-20', 'time': '09:15', 'name': '中国 LPR 报价', 'impact': 'medium', 'cat': 'cn_macro'},
     {'date': '2026-09-30', 'time': '09:30', 'name': '中国 9 月 PMI', 'impact': 'high', 'cat': 'cn_macro'},
     # 期货市场
-    {'date': '2026-09-12', 'time': '15:30', 'name': '期货市场周度持仓报告', 'impact': 'medium', 'cat': 'futures'},
-    {'date': '2026-09-19', 'time': '15:30', 'name': '期货市场周度持仓报告', 'impact': 'medium', 'cat': 'futures'},
-    {'date': '2026-09-26', 'time': '15:30', 'name': '期货市场周度持仓报告', 'impact': 'medium', 'cat': 'futures'},
+    # CFTC 持仓报告(COT) — 美东周五 15:30 发布, 对应北京时间周六凌晨 03:30(夏令时)
+    # 数据截至当周二收盘, 覆盖商业头寸/管理基金净多空/掉期商
+    {'date': '2026-09-12', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-09-19', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-09-26', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
 ]
 
 # ============================================================
@@ -1175,14 +1177,21 @@ def build_variety_kb_map():
 
 
 def filter_upcoming_calendar():
-    """过滤未来 14 天内的重要数据"""
+    """过滤未来 14 天内的重要数据。
+
+    按「日期 + 时间」完整比较: 已过时点的当日条目不再列入(如周六凌晨 03:30
+    的 CFTC 报告, 到当天白天时已经公布, 不应再显示成"今日待公布")。
+    保留少量宽限(30 分钟), 避免整点刚过就消失。
+    """
     now = datetime.now()
     horizon = now + timedelta(days=14)
+    grace = timedelta(minutes=30)
     out = []
     for e in KEY_CALENDAR_2026:
         try:
-            dt = datetime.strptime(e['date'], '%Y-%m-%d')
-            if now.date() <= dt.date() <= horizon.date():
+            dt = datetime.strptime(e['date'] + ' ' + (e.get('time') or '00:00'),
+                                  '%Y-%m-%d %H:%M')
+            if dt + grace >= now and dt.date() <= horizon.date():
                 out.append(e)
         except Exception:
             continue
