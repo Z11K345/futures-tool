@@ -63,9 +63,67 @@ def _month_gap(c1, c2):
     return b - a
 
 
+def _load_spot(verbose=False):
+    """读取现货价(生意社现期表), 返回 {品种码: (spot, 现货日期)}。
+
+    只在现货与期货为同一交易日时, 前端才把现货段纳入曲线展示与结构判定 ——
+    否则两个不同交易日的数据混在一条链上比大小, 结论不可信(实测黄金因此
+    出现"现货>近月却判 Contango"的自相矛盾)。
+    """
+    f = os.path.join(DATA_DIR, 'basis_days.json')
+    try:
+        days = json.load(open(f, encoding='utf-8'))
+    except Exception:
+        return {}
+    if not days:
+        return {}
+    day = sorted(days.keys())[-1]
+    rows = days.get(day) or {}
+    out = {}
+    name2code = {}
+    for _cat, lst in COMMODITY_CODES.items():
+        for code, cn, _name in lst:
+            name2code[cn] = code
+    # 生意社品种名与本地简称存在差异(生意社用"铜"/"铝", 本地用"沪铜"/"沪铝"),
+    # 不做映射会导致这些品种的现货段整段丢失。此处补齐已知别名。
+    alias = {
+        '铜': 'CU0', '铝': 'AL0', '锌': 'ZN0', '铅': 'PB0', '镍': 'NI0', '锡': 'SN0',
+        '黄金': 'AU0', '白银': 'AG0', '螺纹钢': 'RB0', '线材': 'WR0',
+        '燃料油': 'FU0', '石油沥青': 'BU0', '天然橡胶': 'RU0', '纸浆': 'SP0',
+        '不锈钢': 'SS0', '热轧卷板': 'HC0', '铁矿石': 'I0', '焦炭': 'J0', '焦煤': 'JM0',
+        '豆一': 'A0', '豆粕': 'M0', '豆油': 'Y0', '棕榈油': 'P0', '玉米': 'C0',
+        '玉米淀粉': 'CS0', '鸡蛋': 'JD0', '生猪': 'LH0', '白糖': 'SR0', '棉花': 'CF0',
+        '棉纱': 'CY0', '苹果': 'AP0', '红枣': 'CJ0', '花生': 'PK0', '菜油': 'OI0',
+        '菜粕': 'RM0', '早籼稻': 'RI0', '粳稻': 'JR0', '晚籼稻': 'LR0',
+        'PTA': 'TA0', '甲醇': 'MA0', '尿素': 'UR0', '纯碱': 'SA0', '玻璃': 'FG0',
+        '动力煤': 'ZC0', '硅铁': 'SF0', '锰硅': 'SM0', '短纤': 'PF0', '苯乙烯': 'EB0',
+        '乙二醇': 'EG0', '液化石油气': 'PG0', '聚丙烯': 'PP0', '塑料': 'L0',
+        'PVC': 'V0', '原油': 'SC0', '低硫燃料油': 'LU0', '20号胶': 'NR0',
+        '国际铜': 'BC0', '氧化铝': 'AO0', '工业硅': 'SI0', '碳酸锂': 'LC0',
+        '多晶硅': 'PS0', '烧碱': 'SH0', '对二甲苯': 'PX0', '瓶片': 'PR0',
+        '集运指数': 'EC0', '棉纱': 'CY0',
+    }
+    for nm, r in rows.items():
+        code = name2code.get(nm) or alias.get(nm) \
+            or name2code.get((r.get('name_raw') or '').strip()) \
+            or alias.get((r.get('name_raw') or '').strip())
+        if not code:
+            continue
+        try:
+            spot = float(r.get('spot'))
+        except (TypeError, ValueError):
+            continue
+        if spot > 0:
+            out[code] = (spot, day)
+    if verbose:
+        print('[OK] term spot: %d 品种 现货日 %s' % (len(out), day))
+    return out
+
+
 def build(verbose=True):
     now = datetime.datetime.now()
     cur_ym = now.year * 12 + now.month
+    spot_map = _load_spot(verbose=verbose)
 
     varieties = []
     for _cat, lst in COMMODITY_CODES.items():
@@ -104,7 +162,23 @@ def build(verbose=True):
             ym = _ym(c)
             if not ym:
                 continue
-            rows.append({'code': c, 'last': last, 'oi': oi, 'vol': vol, 'ym': ym})
+            # 新浪字段 17 = 该合约行情日期。注意夜盘跨零点: 9/11 夜盘(21:00-次日02:30)
+            # 的成交记在 9/12, 但它属于 9/11 这个交易日。若直接拿字段 17 与现货日比,
+            # 沪铜/黄金这类夜盘活跃品种会被误判为"不同日"。此处按夜盘归属做归正。
+            fday = parts[17].strip() if len(parts) > 17 else ''
+            ftime = parts[1].strip() if len(parts) > 1 else ''
+            try:
+                hhmm = int(ftime[:2]) * 100 + int(ftime[2:4])
+            except (ValueError, IndexError):
+                hhmm = 0
+            # 00:00-03:00 视为前一交易日的夜盘延续
+            if fday and hhmm < 300:
+                try:
+                    fday = (datetime.datetime.strptime(fday, '%Y-%m-%d')
+                            - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+                except ValueError:
+                    pass
+            rows.append({'code': c, 'last': last, 'oi': oi, 'vol': vol, 'ym': ym, 'd': fday})
         if len(rows) < 2:
             continue
         max_vol = max(r['vol'] for r in rows)
@@ -159,22 +233,62 @@ def build(verbose=True):
                 item['c3_last'] = round(c3['last'], 2)
                 item['c3_oi'] = int(c3['oi'])
                 item['ann_far_pct'] = round((c3['last'] - c1['last']) / c1['last'] * 100 * 12.0 / gap2, 2)
+        # ---- 现货段(可选): 现货与期货须为同一交易日才纳入 ----
+        # 教科书定义里的期限结构是「现货 → 近月 → 远月」的完整链条, 现货是链条起点。
+        # 但不能拿隔日的现货去和今日的期货比大小, 因此加同日校验。
+        spot = None
+        spot_day = None
+        sm = spot_map.get(code0)
+        if sm:
+            spot, spot_day = sm
+        item['spot'] = round(spot, 4) if spot else None
+        item['spot_day'] = spot_day
+        # fut_day: 期货行情实际所属交易日(取自 C1 的新浪行情日期字段, 而非本机时间 ——
+        # 周末/节假日跑批时本机日期会晚于最后一个交易日, 用它做同日校验会全部误判为不同日)
+        item['fut_day'] = c1.get('d') or now.strftime('%Y-%m-%d')
+        # 量纲校验: 现货与期货报价单位可能不同(玻璃 现货12.4元/㎡ vs 期货958元/吨;
+        # 鸡蛋 现货10.62元/公斤 vs 期货3829元/500kg)。生意社给出的基差率会掩盖这种
+        # 量纲差异(玻璃仅1.92%), 但现货价与期货价相差数十倍, 直接比大小毫无意义。
+        # 判定标准: |现货/期货 - 1| > 5 即量纲不可比, 现货段不得纳入判定与展示。
+        unit_ok = True
+        if spot and c1['last']:
+            ratio = spot / c1['last'] if c1['last'] else 0
+            if not (0.2 <= ratio <= 5.0):
+                unit_ok = False
+        item['spot_unit_ok'] = unit_ok
+        item['spot_same_day'] = bool(spot and spot_day and spot_day == item['fut_day'] and unit_ok)
+
         # 结构判断 —— 严格按期限结构的标准定义:
-        #   Contango   (正向市场) = 价格逐月递增 C1 < C2 < C3
-        #   Back       (反向市场) = 价格逐月递减 C1 > C2 > C3
-        #   不满足严格单调时, 不套用这两个术语(Market 不成立), 标为「非单调」。
-        #   只有 C1/C2 两个月时, 依据不足, 标为「仅两月」并给出方向, 不强行定性。
-        # 采用严格不等号(>= 不算), 避免"持平"被误判为单调。
+        #   Contango   (正向市场) = 现货价 < 近月价 < 远月价, 近低远高
+        #   Back       (反向市场) = 现货价 > 近月价 > 远月价, 近高远低
+        #   要求逐月(含现货段)严格单调; 不满足严格单调时, 不套用这两个术语
+        # 采用严格不等号, 避免"持平"被误判为单调。
         FLAT_THRESH = 0.15   # |gap_pct| < 0.15% 视为价格实质持平, 不参与单调判定
         p1, p2 = c1['last'], c2['last']
         flat12 = abs(gap_pct) < FLAT_THRESH
+        # 现货段偏差(仅同日时参与判定)
+        flat_s1 = False
+        if item['spot_same_day'] and spot:
+            sp_pct = (p1 - spot) / spot * 100 if spot else 0
+            flat_s1 = abs(sp_pct) < FLAT_THRESH
         if c3:
             p3 = c3['last']
             gap23_pct = (p3 - p2) / p2 * 100 if p2 else 0
             flat23 = abs(gap23_pct) < FLAT_THRESH
-            if flat12 or flat23:
+            if flat12 or flat23 or flat_s1:
                 item['struct'] = '非单调'      # 含持平段, 曲线不严格单调
                 item['struct_reason'] = '含持平段'
+            elif item['spot_same_day'] and spot:
+                # 含现货的完整四段链条: 现货 → C1 → C2 → C3
+                if spot < p1 < p2 < p3:
+                    item['struct'] = 'Contango'
+                    item['struct_reason'] = '现货<C1<C2<C3 严格递增'
+                elif spot > p1 > p2 > p3:
+                    item['struct'] = 'Back'
+                    item['struct_reason'] = '现货>C1>C2>C3 严格递减'
+                else:
+                    item['struct'] = '非单调'
+                    item['struct_reason'] = '现货段不单调'
             elif p1 < p2 < p3:
                 item['struct'] = 'Contango'    # 严格逐月递增
                 item['struct_reason'] = '严格逐月递增'
@@ -205,8 +319,9 @@ def build(verbose=True):
         n_flat = sum(1 for v in out.values() if v['struct'] == '平坦')
         n_mix = sum(1 for v in out.values() if v['struct'] == '非单调')
         n_two = sum(1 for v in out.values() if v['struct'] == '仅两月')
-        print('[OK] term_structure: %d 品种 (严格单调: Back %d / Contango %d; 未定性: 非单调 %d / 仅两月 %d / 平坦 %d)'
-              % (len(out), n_back, n_cont, n_mix, n_two, n_flat))
+        n_sd = sum(1 for v in out.values() if v.get('spot_same_day'))
+        print('[OK] term_structure: %d 品种 (严格单调: Back %d / Contango %d; 未定性: 非单调 %d / 仅两月 %d / 平坦 %d; 现货同日可用 %d)'
+              % (len(out), n_back, n_cont, n_mix, n_two, n_flat, n_sd))
 
     try:
         os.makedirs(DATA_DIR, exist_ok=True)

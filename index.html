@@ -829,10 +829,12 @@ body { padding-top: 150px; padding-bottom: 16px; }
       <span class="card-tag auto" data-page-node-id="1hiNGCEnQBQNYY6eetu4ya">合约价差</span>
     </div>
     <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="uMMswcdszMi6MPTbsWIrvq">
-      月差 = (次主力 − 主力) ÷ 主力，年化后即期限结构斜率。主力/次主力按成交量排序，合约链按月份递增排列。
-      <b style="color:#e5e7eb;" data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcE">Contango</b>(正向市场) 须 C1&lt;C2&lt;C3 <b>逐月递增</b> → 多头移仓付成本；
-      <b style="color:#e5e7eb;" data-page-node-id="YEvw59VZHEWnEb8tD8EFzl">Back</b>(反向市场) 须 C1&gt;C2&gt;C3 <b>逐月递减</b> → 多头移仓占便宜，展期正收益。
-      不满足严格单调的，不套用这两个术语，标"非单调"。这块收益不依赖看对方向，只看结构。点品种看详情。
+      月差 = (次主力 − 主力) ÷ 主力，年化后即期限结构斜率。主力/次主力按成交量排序，合约链按月份递增排列。<br data-page-node-id="uMMswcdszMi6MPTbsWIrvqB">
+      <b style="color:#e5e7eb;" data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcE">Contango</b>(正向市场)
+      = 现货价 &lt; 近月价 &lt; 远月价，<b>近低远高</b>，逐月递增 → 多头移仓付成本；<br data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcEB">
+      <b style="color:#e5e7eb;" data-page-node-id="YEvw59VZHEWnEb8tD8EFzl">Backwardation</b>(反向市场)
+      = 现货价 &gt; 近月价 &gt; 远月价，<b>近高远低</b>，逐月递减 → 多头移仓占便宜，展期正收益。<br data-page-node-id="YEvw59VZHEWnEb8tD8EFzlB">
+      两者都要求<b>逐月严格单调</b>：只要有任何一个月份没有按方向递减/递增（含持平、反弹），曲线就不是单调的，不套用这两个术语，标「非单调」。这块收益不依赖看对方向，只看结构。点品种看详情。
     </div>
     <div id="term-sortbar" style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;" data-page-node-id="y9m909easZob1TB4tAzX3n">
       <span class="mn-item" id="term-sort-back" onclick="setTermSort('back')" data-page-node-id="MODGvUPN4EdMSxM4shACoT">多头展期优先</span>
@@ -840,7 +842,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
     <div class="table-wrap" data-page-node-id="TAVb80pkAi7PBfTL2AcYnJ">
     <table class="data-table" id="term-table" data-page-node-id="v5ZNq28V5NvX6FCyUCBNNc">
-      <thead data-page-node-id="81kl1K4fiVkmcE7gbM6avD"><tr data-page-node-id="B6MfxKd6I8YtCAzVWx1xve"><th data-page-node-id="ovEWYS6rzHgtHw4oP2VvB3">品种</th><th data-page-node-id="rwuDL5JmqZMdDxC28DJtaB">C1→C2→C3</th><th style="text-align:right;" data-page-node-id="IXvnrCFAdTgJJG8dDmHJhL">月差</th><th style="text-align:right;" data-page-node-id="EtV7UyCM1JAHX4dvRokbI9">年化</th><th data-page-node-id="sug5HnqTrqNEpRfeCgEoHm">结构</th></tr></thead>
+      <thead data-page-node-id="81kl1K4fiVkmcE7gbM6avD"><tr data-page-node-id="B6MfxKd6I8YtCAzVWx1xve"><th data-page-node-id="ovEWYS6rzHgtHw4oP2VvB3">品种</th><th data-page-node-id="rwuDL5JmqZMdDxC28DJtaB">现货→C1→C2→C3</th><th style="text-align:right;" data-page-node-id="IXvnrCFAdTgJJG8dDmHJhL">月差</th><th style="text-align:right;" data-page-node-id="EtV7UyCM1JAHX4dvRokbI9">年化</th><th data-page-node-id="sug5HnqTrqNEpRfeCgEoHm">结构</th></tr></thead>
       <tbody id="term-body" data-page-node-id="Yo3HASwGvfDh90GFv8hlQT"><tr data-page-node-id="EkHo8C096uBVizTNgjE97C"><td colspan="5" class="empty-state" data-page-node-id="l0I3wJcpAYlNKGQtmPKgMB"><span class="loading-spinner" data-page-node-id="DwsyEIZk7nWttA2lTy6G5T"></span> 加载中...</td></tr></tbody>
     </table>
     </div>
@@ -3655,8 +3657,19 @@ function renderTerm() {
     else { structTxt = '非单调·未定性'; structCol = '#f59e0b'; }
     // 三个合约代码(短码), 缺 C3 显示 —
     const s = c => (c || '').slice(-4) || '—';
-    const chain = `${s(v.c1)}→${s(v.c2)}→${s(v.c3)}`;
-    const chainTip = `${v.c1 || ''} → ${v.c2 || ''}` + (v.c3 ? ` → ${v.c3}` : '') + (v.struct_reason ? `（${v.struct_reason}）` : '');
+    // 现货价按量级取合适小数位(黄金 936.44 / 玉米 2231.43 / 苯乙烯 10610)
+    const fmtSpot = n => {
+      if (n == null) return '—';
+      const a = Math.abs(n);
+      return a >= 1000 ? n.toFixed(0) : (a >= 100 ? n.toFixed(1) : n.toFixed(2));
+    };
+    // 现货段: 仅当现货与期货同一交易日、且量纲可比时才纳入展示(否则两个不同口径的价格并列会误导)
+    const hasSpot = !!v.spot_same_day;
+    const chain = (hasSpot ? `<span style="color:#a78bfa;">现货${fmtSpot(v.spot)}</span>→` : '')
+      + `${s(v.c1)}→${s(v.c2)}→${s(v.c3)}`;
+    const chainTip = (hasSpot ? `现货 ${v.spot}(${v.spot_day}) → ` : '')
+      + `${v.c1 || ''} → ${v.c2 || ''}` + (v.c3 ? ` → ${v.c3}` : '')
+      + (v.struct_reason ? `（${v.struct_reason}）` : '');
     return `<tr onclick="showVarietyDetail('${v.code}')" style="cursor:pointer;">
       <td>${v.cn || v.code}${flag}</td>
       <td style="font-size:10.5px;color:#9ca3af;white-space:nowrap;" title="${chainTip}">${chain}<span style="color:#6b7280;"> ${v.gap_months || v.months}M</span></td>
@@ -3674,10 +3687,16 @@ function renderTerm() {
     const nNear = rows.filter(r => r.near).length;
     const nThin = rows.filter(r => r.thin).length;
     const nExt = rows.filter(r => r.extreme).length;
+    const nSpot = rows.filter(r => r.spot_same_day).length;
     note.innerHTML = '📌 口径: 主力→次主力按成交量排序; 合约链按月份递增排列(C1→C2→C3)。'
+      + '<b style="color:#a78bfa;">现货段</b>仅在现货与期货<b>同一交易日</b>且量纲可比时并入链条展示'
+      + (nSpot ? `(本次 ${nSpot} 个品种满足)` : '(本次无品种满足)') + '，'
+      + '否则两个不同口径的价格并列会误导，此时现货段留空、结构按期货三个月判定。'
       + '<b style="color:#e5e7eb;">结构严格按定义判定</b>——'
-      + 'Contango 需 C1&lt;C2&lt;C3 逐月递增, Back 需 C1&gt;C2&gt;C3 逐月递减;'
-      + '不满足严格单调的<b style="color:#f59e0b;">不套用这两个术语</b>，标「非单调」；'
+      + 'Contango = 现货&lt;近月&lt;远月(近低远高), Backwardation = 现货&gt;近月&gt;远月(近高远低), '
+      + '均须<b>逐月严格单调</b>；'
+      + '有任何一个月份未按方向递减/递增(含持平、反弹)，'
+      + '<b style="color:#f59e0b;">就不套用这两个术语</b>，标「非单调」；'
       + '只有两个合约时依据不足，标「仅两月」。'
       + `本次 ${rows.length} 个品种 (Back ${nBack} / Contango ${nCont} / 非单调 ${nMix} / 仅两月 ${nTwo} / 平坦 ${nFlat})。`
       + (nExt ? ` ‡ = 月差≥5% 的极端价差(${nExt} 个)，<b style="color:#fca5a5;">年化数字系按月外推，不可当常态展期收益</b>，多因临近交割或流动性异常；` : '')
