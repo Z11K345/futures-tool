@@ -142,6 +142,15 @@ echo "--- 发布 $(TZ=Asia/Shanghai date '+%F %H:%M:%S') ---"
 git fetch -q origin main 2>/dev/null \
   && git checkout -q origin/main -- index.html sw.js manifest.json 2>/dev/null \
   || echo "   (未取到 main 最新页面文件, 沿用本次 checkout 版本)"
+
+# 抓取脚本同样回拉到 main 最新版。长循环任务(5.5 小时一班)启动时 checkout 的是当时
+# 的代码, 之后修了抓取逻辑若不重新拉取, 这一整班都会用旧代码跑 ——
+# 表现为"改了 term_structure.py / basis.py, 线上数据格式却不变, 要等下一班交接才生效"。
+# 放在每轮开头执行, 使代码改动在下一轮(≤5 分钟)即生效。
+git checkout -q origin/main -- *.py 2>/dev/null \
+  || echo "   (未取到 main 最新抓取脚本, 沿用本次 checkout 版本)"
+find . -maxdepth 1 -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null
+
 rm -rf /tmp/pub && mkdir -p /tmp/pub
 # 跳过 Jekyll 构建, 直接发布静态文件(更快, 也不会被 Jekyll 处理 HTML)
 touch /tmp/pub/.nojekyll
