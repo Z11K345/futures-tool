@@ -957,11 +957,22 @@ body { padding-top: 150px; padding-bottom: 16px; }
 <section class="tab-pane" id="tab-post" data-page-node-id="21PfTj0EDvidF83zmVlhAB">
 
   <div class="module-nav" data-page-node-id="qez0qH4RcL7ruIksxhoAnh">
+    <div class="mn-item" onclick="gotoCard('card-post-review')" data-page-node-id="postReviewNav">复盘专栏</div>
     <div class="mn-item" onclick="gotoCard('card-review')" data-page-node-id="0AGMxlabBwQdD5rE11eC6q">涨跌归因</div>
     <div class="mn-item" onclick="gotoCard('card-close')" data-page-node-id="BmPibWrN8NbUPbAvZJkqVV">全品种收盘</div>
     <div class="mn-item" onclick="gotoCard('card-rank')" data-page-node-id="cNQuW5k9FHbTUi4thAFCEb">持仓龙虎榜</div>
     <div class="mn-item" onclick="gotoCard('card-fund')" data-page-node-id="VZ3qscw6TE9k3YGLZpY9N6">资金沉淀</div>
     <div class="mn-item" onclick="gotoCard('card-outlook')" data-page-node-id="DxNkyqJUVAdyE9qf71wjP8">明日关注</div>
+  </div>
+
+  <!-- 国内期货期权复盘专栏(新增: 完整交易日复盘, 收盘后定稿) -->
+  <div class="card" id="card-post-review" style="border-left:3px solid #a78bfa;" data-page-node-id="postReviewCard">
+    <div class="card-header" data-page-node-id="postReviewHead">
+      <span class="card-title" data-page-node-id="postReviewTitle">🗓️ 国内期货期权复盘专栏</span>
+      <span class="card-tag auto" data-page-node-id="postReviewTag">自动</span>
+    </div>
+    <div id="post-review-status" style="font-size:11.5px;line-height:1.6;margin-bottom:8px;"></div>
+    <div id="post-review-body" style="font-size:12.5px;line-height:1.7;"></div>
   </div>
 
   <div class="card" id="card-review" style="border-left:3px solid #f59e0b;" data-page-node-id="xOiGcXSybTngaXDdJkqvVL">
@@ -1731,6 +1742,7 @@ function onQuotesLoaded() {
   renderOverseas();
   renderMovers();
   renderReview();
+  renderPostReview();
   renderCloseTable();
   renderDataDayBanner();
   renderAStockIndices();
@@ -2958,6 +2970,125 @@ function renderOutlookAuto() {
 
   html += `<div style="margin-top:8px;font-size:11px;color:#6b7280;">以上为自动生成，仅供参考，不构成投资建议。</div>`;
   box.innerHTML = html || '暂无数据';
+}
+
+/* ============================================================
+   国内期货期权复盘专栏(V5.5 新增)
+   — 交易日口径: 前一晚 21:00 夜盘开盘 → 当日收盘(商品/股指约 15:00, 国债 15:15)
+     构成一个完整交易日; 复盘在下午全天收盘后定稿
+   — 收盘前显示"交易进行中"状态, 收盘后展示完整复盘(期货端 + 期权端 + 数据事件)
+   ============================================================ */
+function getPostReviewState() {
+  const now = new Date();
+  const dow = now.getDay();                 // 0=Sun..6=Sat
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const isWorkday = dow >= 1 && dow <= 5;
+  const isWeekend = dow === 0 || dow === 6;
+  // 全市场下午收盘时点: 取 15:15(覆盖商品/股指 15:00 与国债 15:15)
+  const afterFullClose = (h > 15) || (h === 15 && m >= 15);
+  // 复盘定稿状态: 周末展示上一交易日完整复盘; 工作日须等收盘
+  const finalized = isWeekend ? true : (isWorkday ? afterFullClose : true);
+  return { dow, isWorkday, isWeekend, afterFullClose, finalized, now };
+}
+
+function renderPostReview() {
+  const statusEl = document.getElementById('post-review-status');
+  const bodyEl = document.getElementById('post-review-body');
+  if (!statusEl || !bodyEl) return;
+  const st = getPostReviewState();
+  const dayCn = (quotesData && quotesData.trading_day_cn) || '';
+  const dayStr = (quotesData && quotesData.trading_day) || '';
+  const wk = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  let dayOfWeek = '';
+  if (dayStr) { try { dayOfWeek = wk[new Date(dayStr.replace(/-/g, '/')).getDay()]; } catch (e) {} }
+
+  // —— 状态条 ——
+  let statusColor, statusTxt;
+  if (st.finalized) {
+    statusColor = '#86efac';
+    statusTxt = `✅ ${dayCn}${dayOfWeek ? '（' + dayOfWeek + '）' : ''} 完整交易日复盘已生成`;
+  } else {
+    statusColor = '#f59e0b';
+    statusTxt = `🕐 今日交易进行中，完整复盘将于 15:15 收盘后定稿（当前为盘中数据）`;
+  }
+  statusEl.innerHTML = `<span style="color:${statusColor};font-weight:600;">${statusTxt}</span>
+    <div style="color:#8b95a5;margin-top:3px;">交易日口径：前一晚 21:00 夜盘开盘 → 当日收盘（商品/股指约 15:00，国债 15:15），构成一个完整交易日。</div>`;
+
+  // —— 正文 ——
+  const rv = (quotesData && quotesData.review) || null;
+  let html = '';
+
+  // ① 当日盘面主线
+  html += `<div style="font-weight:600;color:#e5e7eb;margin:2px 0 4px;">📌 当日盘面主线</div>`;
+  if (rv && rv.summary) {
+    html += `<div style="color:#cbd5e1;margin-bottom:4px;">${rv.summary}<span style="color:#8b95a5;">（消息样本 ${rv.news_count || 0} 条）</span></div>`;
+  }
+  if (rv && rv.sector && rv.sector.length) {
+    rv.sector.slice(0, 2).forEach(s => {
+      const up = s.direction === 'up';
+      html += `<div style="color:${up ? '#ef4444' : '#10b981'};margin-bottom:2px;">${up ? '🔺' : '🔻'} ${s.name}板块${up ? '领涨' : '领跌'}：均 ${(s.avg > 0 ? '+' : '')}${s.avg}%，共 ${s.count} 个品种${s.chain ? (' · 产业链：' + s.chain) : ''}</div>`;
+    });
+  }
+
+  // ② 期货端涨跌榜(国内, 前5)
+  const flat = flatAll().filter(q => q.cat !== 'overseas' && !q.paused && isFinite(num(q.pct)) && num(q.last) > 0);
+  const ups = flat.slice().sort((a, b) => num(b.pct) - num(a.pct)).slice(0, 5);
+  const dns = flat.slice().sort((a, b) => num(a.pct) - num(b.pct)).slice(0, 5);
+  const fmtRow = q => `<span style="cursor:pointer;color:#e5e7eb;" onclick="showVarietyDetail('${q.code}')">${q.cn_name}</span> <span style="color:${num(q.pct) >= 0 ? '#ef4444' : '#10b981'};">${num(q.pct) > 0 ? '+' : ''}${q.pct}%</span>`;
+  html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">📈 期货端 · 涨跌榜（国内）</div>`;
+  html += `<div style="display:flex;gap:14px;flex-wrap:wrap;">`;
+  html += `<div style="flex:1;min-width:140px;"><div style="color:#ef4444;font-size:11px;margin-bottom:2px;">涨幅前5</div>${ups.map(fmtRow).join('<br>') || '—'}</div>`;
+  html += `<div style="flex:1;min-width:140px;"><div style="color:#10b981;font-size:11px;margin-bottom:2px;">跌幅前5</div>${dns.map(fmtRow).join('<br>') || '—'}</div>`;
+  html += `</div>`;
+
+  // ③ 期权端机会提示(10 大标的, 与透视页期权信号同源)
+  const optTargets = ['CU0', 'AU0', 'AG0', 'RB0', 'I0', 'SC0', 'LC0', 'M0', 'P0', 'SR0'];
+  const optRows = [];
+  optTargets.forEach(code => {
+    const q = flatAll().find(x => x.code === code);
+    if (!q || q.paused) return;
+    const pct = num(q.pct);
+    if (!isFinite(pct)) return;
+    let strat;
+    if (pct >= 1.5) strat = '买Call/牛市价差';
+    else if (pct <= -1.5) strat = '买Put/熊市价差';
+    else if (Math.abs(pct) < 0.5) strat = '卖跨式收时间价值';
+    else strat = pct > 0 ? '回调买看涨' : '反弹买看跌';
+    optRows.push(`${q.cn_name} <span style="color:${pct >= 0 ? '#ef4444' : '#10b981'}">${pct > 0 ? '+' : ''}${pct}%</span> → ${strat}`);
+  });
+  if (optRows.length) {
+    html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">🎯 期权端 · 机会提示（10 大标的）</div>`;
+    html += `<div style="color:#cbd5e1;line-height:1.8;">${optRows.join('　|　')}</div>`;
+  }
+
+  // ④ 关键数据 / 事件(今日 + 昨日, 取自数据日历)
+  const cal = (quotesData && quotesData.calendar) || [];
+  const today = new Date().toISOString().slice(0, 10);
+  const yest = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const keyEv = cal.filter(e => e.date === today || e.date === yest);
+  if (keyEv.length) {
+    html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">📰 关键数据 / 事件</div>`;
+    html += keyEv.slice(0, 4).map(e => `<div style="color:#9ca3af;">· ${e.date.slice(5)} ${e.time} ${e.name}</div>`).join('');
+  }
+
+  // ⑤ 明日关注
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const tmr = cal.filter(e => e.date === tomorrow);
+  html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">🔮 明日关注</div>`;
+  if (tmr.length) {
+    html += tmr.slice(0, 4).map(e => `<div style="color:#9ca3af;">· ${e.time} ${e.name}</div>`).join('');
+  } else {
+    html += `<div style="color:#9ca3af;">明日暂无重大数据窗口</div>`;
+  }
+
+  // ⑥ 详细卡片跳转
+  html += `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #2a3142;display:flex;flex-wrap:wrap;gap:10px;">`;
+  const links = [['card-review', '🔍 涨跌归因'], ['card-close', '📋 全品种收盘'], ['card-rank', '🏆 持仓龙虎榜'], ['card-fund', '💰 资金沉淀'], ['card-outlook', '🔮 明日关注']];
+  links.forEach(([id, t]) => { html += `<span style="cursor:pointer;color:#4a9eff;font-size:11.5px;" onclick="gotoCard('${id}')">${t} →</span>`; });
+  html += `</div>`;
+
+  bodyEl.innerHTML = html || '<div style="color:#9ca3af;">暂无复盘数据</div>';
 }
 
 function renderVarietyKB(code) {
