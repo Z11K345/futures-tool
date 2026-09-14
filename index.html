@@ -4710,6 +4710,7 @@ function renderRank() {
     let s = `数据日期 <b style="color:#e5e7eb;">${r.date || '--'}</b> · 已接入 ${ok.length} 家: ${ok.join('、')}`;
     if (bad.length) s += ` · 未接入: <span style="color:#f59e0b;">${bad.join('、')}</span>`;
     if (r.dce && r.dce.indexOf('blocked') === 0) s += ' · 大商所官网对当前网络出口返回 412, 暂时无法抓取';
+    else if (r.dce && r.dce.indexOf('ok') === 0) s += ' · 大商所(东财源)';
     s += ' · 单位: 手(单边)';
     noteEl.innerHTML = s;
   }

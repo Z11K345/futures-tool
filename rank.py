@@ -8,7 +8,9 @@
   3) 郑商所 CZCE    http://www.czce.com.cn/cn/DFSStaticFiles/Future/YYYY/YYYYMMDD/FutureDataHolding.txt
   4) 中金所 CFFEX   http://www.cffex.com.cn/sj/ccpm/YYYYMM/DD/{IF,IC,IH,IM,TS,TF,T,TL}.xml
   5) 广期所 GFEX    POST http://www.gfex.com.cn/u/interfacesWebTiMemberDealPosiQuotes/loadList
-  6) 大商所 DCE     官网对本机出口返回 412(WAF), 代码中保留可达性探测; 若云端可用会自动接入。
+  6) 大商所 DCE     官网对本机出口返回 412(WAF), 无法直接爬; 改用东方财富 datacenter
+                  (RPT_FUTU_DAILYPOSITION, 市场码 069001007) 接入, 无需鉴权、覆盖全市场。
+                  见 fetch_eastmoney_dce()。
 
 口径说明:
   - 交易所公布的是"会员"维度排名, 分三个榜单: 成交量 / 持买仓量 / 持卖仓量, 各榜前 20 名。
@@ -91,7 +93,19 @@ CODE_CN = {
     'IF0': '沪深300股指', 'IH0': '上证50股指', 'IC0': '中证500股指',
     'IM0': '中证1000股指', 'T0': '10年国债', 'TF0': '5年国债',
     'TS0': '2年国债', 'TL0': '30年国债',
+    # ---- 大商所 DCE(经东方财富数据源接入) ----
+    'A0': '豆一', 'B0': '豆二', 'C0': '玉米', 'CS0': '玉米淀粉', 'M0': '豆粕',
+    'Y0': '豆油', 'P0': '棕榈油', 'JD0': '鸡蛋', 'LH0': '生猪', 'L0': '塑料',
+    'V0': 'PVC', 'PP0': '聚丙烯', 'J0': '焦炭', 'JM0': '焦煤', 'I0': '铁矿石',
+    'EG0': '乙二醇', 'EB0': '苯乙烯', 'RR0': '粳米', 'PG0': '液化石油气',
+    'FB0': '纤维板', 'BB0': '胶合板',
 }
+DCE_CN = {k: v for k, v in CODE_CN.items() if k in (
+    'A0', 'B0', 'C0', 'CS0', 'M0', 'Y0', 'P0', 'JD0', 'LH0', 'L0', 'V0',
+    'PP0', 'J0', 'JM0', 'I0', 'EG0', 'EB0', 'RR0', 'PG0', 'FB0', 'BB0')}
+# 东方财富市场码 -> 本工具交易所标签
+EM_MK = {'069001005': 'SHFE', '069001007': 'DCE', '069001008': 'CZCE',
+         '069001009': 'CFFEX', '069001016': 'INE', '069001021': 'GFEX'}
 
 # ---------------------------------------------------------------- 交易日
 def recent_trade_days(n=8):
@@ -350,6 +364,101 @@ def probe_dce():
         return f'blocked({type(e).__name__})'
 
 
+# ---------------------------------------------------------------- 大商所(东方财富 datacenter)
+# 大商所官网对本机出口返回 412(WAF) 无法直爬; 但东方财富 datacenter 的
+# RPT_FUTU_DAILYPOSITION 覆盖全部 6 家交易所(含 DCE), 无需鉴权、无 WAF 拦截。
+# 该接口同时为后续统一替代 5 个官网爬虫提供可能(当前仅先接 DCE, 降低改动面)。
+EM_BASE = 'https://datacenter.eastmoney.com/api/data/v1/get'
+EM_REPORT = 'RPT_FUTU_DAILYPOSITION'
+EM_MAINREPORT = 'RPT_FUTU_POSITIONCODE'
+MK_DCE = '069001007'
+
+
+def _em_query(report, flt, size=200, pg=1):
+    """东方财富 datacenter 查询; 返回 data 列表或 None。"""
+    f = urllib.parse.quote(flt)
+    url = (f"{EM_BASE}?reportName={report}&columns=ALL&filter={f}"
+           f"&pageNumber={pg}&pageSize={size}&source=WEB&client=WEB"
+           f"&sortColumns=SECURITY_CODE&sortTypes=1")
+    txt = http_get(url, referer='https://data.eastmoney.com/')
+    if not txt:
+        return None
+    try:
+        j = json.loads(txt)
+        return j.get('result', {}).get('data') or []
+    except Exception:
+        return None
+
+
+def _em_item(rows, code, cn, contract):
+    """把单个合约的 DAILYPOSITION 行解析成本工具 item 结构。
+    TYPE='0' 为会员行(成交量/多头/空头各占一行, 只填对应指标);
+    MEM='本日合计'(带 VOLUME) 为总量行; MEM='总量增减' 为变化行。"""
+    vol, buy, sell = [], [], []
+    vsum = bsum = ssum = vchg = bchg = schg = 0
+    for x in rows:
+        mem = (x.get('MEMBER_NAME_ABBR') or '').strip()
+        if x.get('TYPE') != '0':
+            if mem == '本日合计' and x.get('VOLUME') not in (None, '', 0):
+                vsum = _int(x.get('VOLUME'))
+                bsum = _int(x.get('LONG_POSITION'))
+                ssum = _int(x.get('SHORT_POSITION'))
+            elif mem == '总量增减' and x.get('VOLUME') not in (None, '', 0):
+                vchg = _int(x.get('VOLUME'))
+                bchg = _int(x.get('LONG_POSITION'))
+                schg = _int(x.get('SHORT_POSITION'))
+            continue
+        nm = re.sub(r'[（(][^）)]*[）)]', '', mem).strip()
+        if not nm:
+            continue
+        if x.get('VOLUME') not in (None, '', 0):
+            vol.append({'r': _int(x.get('VOLUME_RANK')), 'm': nm,
+                        'q': _int(x.get('VOLUME')), 'c': _int(x.get('VOLUME_CHANGE'))})
+        if x.get('LONG_POSITION') not in (None, '', 0):
+            buy.append({'r': _int(x.get('LP_RANK')), 'm': nm,
+                        'q': _int(x.get('LONG_POSITION')), 'c': _int(x.get('LP_CHANGE'))})
+        if x.get('SHORT_POSITION') not in (None, '', 0):
+            sell.append({'r': _int(x.get('SP_RANK')), 'm': nm,
+                         'q': _int(x.get('SHORT_POSITION')), 'c': _int(x.get('SP_CHANGE'))})
+    vol.sort(key=lambda a: a['r']); buy.sort(key=lambda a: a['r']); sell.sort(key=lambda a: a['r'])
+    return {'code': code, 'cn': cn, 'contract': contract, 'ex': 'DCE', 'level': '合约',
+            'vol': vol[:20], 'buy': buy[:20], 'sell': sell[:20],
+            'vsum': vsum, 'bsum': bsum, 'ssum': ssum,
+            'vchg': vchg, 'bchg': bchg, 'schg': schg}
+
+
+def fetch_eastmoney_dce(day):
+    """取大商所(DCE)每日会员持仓排名。返回 ({code:{contract:item}}, status)。"""
+    import time
+    ymd = day.strftime('%Y-%m-%d')
+    # 1) DCE 主力合约列表(IS_MAINCODE=1)
+    mains = _em_query(EM_MAINREPORT,
+                      f'(TRADE_MARKET_CODE="{MK_DCE}")(IS_MAINCODE="1")', 50)
+    if mains is None:
+        return {}, 'fail'
+    if not mains:
+        return {}, 'empty'
+    out, ok = {}, 0
+    for m in mains:
+        sec = (m.get('SECURITY_CODE') or '').lower()
+        tc = (m.get('TRADE_CODE') or '').upper()
+        if not sec or not tc:
+            continue
+        code = tc + '0'
+        cn = DCE_CN.get(code, tc)
+        rows = _em_query(EM_REPORT, f"(SECURITY_CODE=\"{sec.upper()}\")(TRADE_DATE='{ymd}')", 200)
+        if not rows:
+            continue
+        item = _em_item(rows, code, cn, sec)
+        item['net'] = item['bsum'] - item['ssum']
+        item['netchg'] = item['bchg'] - item['schg']
+        item['main'] = True
+        out.setdefault(code, {})[sec] = item
+        ok += 1
+        time.sleep(0.12)          # 礼貌限速, 避免触发限频
+    return out, ('ok' if ok else 'empty')
+
+
 # ---------------------------------------------------------------- 汇总
 def build(force=False, verbose=True):
     import time
@@ -401,11 +510,16 @@ def build(force=False, verbose=True):
         if got >= 10:
             result['date'] = day.strftime('%Y-%m-%d')
             result['sources'] = src
+            # 大商所经东方财富 datacenter 接入(官网 412 无法直爬)
+            de, sde = fetch_eastmoney_dce(day)
+            src['DCE'] = sde
+            for code, d in de.items():
+                merged.setdefault(code, {}).update(d)
             break
 
     if not result['date']:
         result['sources'] = src
-        result['dce'] = probe_dce()
+        result['dce'] = 'no-data'
         return result
 
     # 选主力合约: 优先 main_contract 判定的月份, 否则取持仓最大的合约
@@ -432,7 +546,7 @@ def build(force=False, verbose=True):
 
     items.sort(key=lambda x: x['code'])
     result['items'] = items
-    result['dce'] = probe_dce()
+    result['dce'] = src.get('DCE') or probe_dce()
     result['_ts'] = __import__('time').time()
     result['_time'] = __import__('time').strftime('%Y-%m-%d %H:%M:%S')
 
