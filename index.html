@@ -146,7 +146,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
 }
 .data-table th {
   background: #141a26;
-  padding: 6px 5px;
+  padding: 5px 4px;
   text-align: right;
   color: #9ca3af;
   font-weight: 500;
@@ -156,7 +156,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
 }
 .data-table th:first-child { text-align: left; }
 .data-table td {
-  padding: 6px 5px;
+  padding: 4px 4px;
   text-align: right;
   border-bottom: 1px solid #1f2536;
   white-space: nowrap;
@@ -483,6 +483,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
   .tech-name { width: 56px; }
   .tech-pct { width: 40px; }
   .tech-sum { flex: 1 1 100%; order: 10; max-width: none; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.5; }
+  /* 表格移动端紧凑化 */
+  .data-table { font-size: 11px; }
+  .data-table th { padding: 4px 3px; font-size: 10.5px; }
+  .data-table td { padding: 3px 3px; }
+  #card-term > div[style*="font-size"] { font-size: 10.5px !important; line-height: 1.55 !important; margin-bottom: 4px !important; }
+  #term-sortbar { margin-bottom: 3px !important; }
+  #card-term .card-title { font-size: 13px; }
 }
 
 /* ===== V3.0 套保决策 ===== */
@@ -697,7 +704,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <span class="card-title" data-page-node-id="AsItF1KvmF4LWs2PAFEZue">📅 期限结构与展期收益</span>
   <span class="card-tag auto" data-page-node-id="1hiNGCEnQBQNYY6eetu4ya">合约价差</span>
   </div>
-  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="uMMswcdszMi6MPTbsWIrvq">
+  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;line-height:1.6;" data-page-node-id="uMMswcdszMi6MPTbsWIrvq">
   月差 = (次主力 − 主力) ÷ 主力，年化后即期限结构斜率。主力/次主力按成交量排序，合约链按月份递增排列。<br data-page-node-id="uMMswcdszMi6MPTbsWIrvqB">
   <b style="color:#e5e7eb;" data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcE">Contango</b>(正向市场)
   = 现货价 &lt; 近月价 &lt; 远月价，<b>近低远高</b>，逐月递增 → 多头移仓付成本；<br data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcEB">
@@ -705,7 +712,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   = 现货价 &gt; 近月价 &gt; 远月价，<b>近高远低</b>，逐月递减 → 多头移仓占便宜，展期正收益。<br data-page-node-id="YEvw59VZHEWnEb8tD8EFzlB">
   两者都要求<b>逐月严格单调</b>：只要有任何一个月份没有按方向递减/递增（含持平、反弹），曲线就不是单调的，不套用这两个术语，标「非单调」。这块收益不依赖看对方向，只看结构。点品种看详情。
   </div>
-  <div id="term-sortbar" style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;" data-page-node-id="y9m909easZob1TB4tAzX3n">
+  <div id="term-sortbar" style="margin-bottom:4px;display:flex;gap:6px;flex-wrap:wrap;" data-page-node-id="y9m909easZob1TB4tAzX3n">
   <span class="mn-item" id="term-sort-back" onclick="setTermSort('back')" data-page-node-id="MODGvUPN4EdMSxM4shACoT">多头展期优先</span>
   <span class="mn-item" id="term-sort-cont" onclick="setTermSort('cont')" data-page-node-id="qr4g8reb0DBcBfpR9bfw5o">空头展期优先</span>
   </div>
