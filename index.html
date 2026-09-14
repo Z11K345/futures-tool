@@ -563,7 +563,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .rv-rumor { color:#f59e0b; font-size:10px; margin-right:3px; }
 .rv-watch { font-size:11.5px; color:#cbd5e1; line-height:1.7; }
 .rv-watch div { padding:2px 0 2px 9px; text-indent:-9px; }
-.rv-watch b { display:inline-block; color:#6b7280; font-weight:400; font-size:10px; border:1px solid #2f3849; border-radius:3px; padding:0 3px; margin-right:4px; vertical-align:1px; }
+.rv-watch b { display:inline-block; color:#6b7280; font-weight:400; font-size:10px; border:1px solid #2f3849; border-radius:3px; padding:1px 5px; margin-right:4px; vertical-align:middle; line-height:1.4; white-space:nowrap; }
 .rv-warn { font-size:11.5px; color:#f59e0b; background:#1a1710; border-radius:3px; padding:5px 7px; margin:4px 0; line-height:1.6; }
 .rv-rumors { border:1px solid #4a3a1a; border-radius:4px; padding:7px 9px; background:#15130c; }
 .rv-more { font-size:11px; color:#4a9eff; padding:4px 0 0; cursor:pointer; }
@@ -2403,17 +2403,86 @@ const _hedgeOf = code => ((quotesData && quotesData.hedge) || {})[code];
 const _pctCls = pct => pct >= 0 ? 'up' : 'down';
 const _sign = pct => pct > 0 ? '+' : '';
 
-// 技术面一行摘要: 均线排列 · MACD · RSI · 布林 · 波动率 · 价格分位
+// 技术面一行摘要: 均线排列 · 突破/破位 · MACD · KDJ · RSI · 布林 · 波动率 · 看大做小
 const _techLine = code => {
   const t = _techOf(code);
   if (!t) return null;
   const bit = [];
-  if (t.ma_arr) bit.push(t.ma_arr.replace('排列', '排列'));
+  if (t.ma_arr) bit.push(t.ma_arr);
   if (t.macd && t.macd.signal) bit.push('MACD' + t.macd.signal);
+  if (t.kdj && t.kdj.signal) bit.push('KDJ' + t.kdj.signal + (t.kdj.k != null ? '(' + Math.round(t.kdj.k) + ')' : ''));
   if (t.rsi14 != null) bit.push('RSI' + Math.round(t.rsi14) + (t.rsi14 >= 70 ? '(超买)' : t.rsi14 <= 30 ? '(超卖)' : ''));
   if (t.boll && t.boll.pos) bit.push(t.boll.pos.replace('中轨', '布林中轨'));
   if (t.atr_pct != null) bit.push('波幅' + t.atr_pct.toFixed(1) + '%');
+  if (t.big_trend) bit.push('看大·' + t.big_trend);
   return bit.join(' · ');
+};
+
+// 突破/破位(价格 vs MA20 / MA60, 多维度均线)
+const _breakoutOf = (t, price) => {
+  if (!t || price == null || t.ma20 == null || t.ma60 == null) return null;
+  const p = price, m20 = t.ma20, m60 = t.ma60;
+  if (p > m20 && p > m60) return { txt: m20 > m60 ? '突破多均线·多头格局' : '站上短期·未破中期', color: m20 > m60 ? '#ef4444' : '#f59e0b' };
+  if (p < m20 && p < m60) return { txt: m20 < m60 ? '跌破多均线·空头格局' : '跌破短期·未破中期', color: m20 < m60 ? '#10b981' : '#f59e0b' };
+  if (p > m20 && p < m60) return { txt: '站上MA20·受MA60压制', color: '#f59e0b' };
+  return { txt: '回踩MA60·MA20上方', color: '#9ca3af' };
+};
+
+// 量仓动能(量比 + 持仓变化 → 上涨/下跌动能)
+const _momentumOf = (s, t) => {
+  const vr = t && t.vol_ratio;
+  const oiChg = s ? s.oi_chg : undefined;
+  const pct = s ? num(s.pct) : 0;
+  let volTxt = '量比—';
+  if (vr != null) volTxt = vr >= 1.5 ? '放量' + vr : vr >= 1.1 ? '温和放量' + vr : vr >= 0.8 ? '量平' + vr : '缩量' + vr;
+  let oiTxt = '持仓—';
+  if (oiChg != null) oiTxt = Math.abs(oiChg) < 100 ? '仓差持平' : (oiChg > 0 ? '增仓' : '减仓') + fmtBig(Math.abs(oiChg));
+  let mom, color;
+  if (pct > 0 && vr != null && vr >= 1.1 && oiChg != null && oiChg > 0) { mom = '上涨动能强·增仓放量'; color = '#ef4444'; }
+  else if (pct < 0 && vr != null && vr >= 1.1 && oiChg != null && oiChg > 0) { mom = '下跌动能强·增仓放量'; color = '#10b981'; }
+  else if (vr != null && vr < 0.8) { mom = '动能减弱·缩量'; color = '#9ca3af'; }
+  else if (pct > 0) { mom = '偏多·量能待确认'; color = '#f59e0b'; }
+  else if (pct < 0) { mom = '偏空·量能待确认'; color = '#f59e0b'; }
+  else { mom = '中性'; color = '#9ca3af'; }
+  return { volTxt, oiTxt, mom, color };
+};
+
+// 缠论(日线)文字
+const _chanText = chan => {
+  if (!chan) return { txt: '暂无法判定', color: '#6b7280', note: '' };
+  const color = ({ '二买': '#10b981', '二卖': '#ef4444', '一买': '#4a9eff', '一卖': '#f59e0b', '无': '#6b7280' })[chan.signal] || '#6b7280';
+  const txt = chan.signal + (chan.ref != null ? ' 参考进场≈' + chan.ref : '');
+  return { txt, color, note: chan.note || '' };
+};
+
+// 复盘专栏: 单品种多维论证块(技术面 + 量仓动能 + 缠论, 日线)
+const _reviewVarietyBlock = code => {
+  const q = findQuote(code);
+  const t = _techOf(code);
+  if (!q || !t) return '';
+  const pct = num(q.pct);
+  const px = (t.close != null) ? t.close : q.last;
+  const bo = _breakoutOf(t, px);
+  const mo = _momentumOf(q, t);
+  const ch = _chanText(t.chan);
+  const bt = t.big_trend || '—';
+  const btColor = bt === '长多' ? '#ef4444' : bt === '长空' ? '#10b981' : '#9ca3af';
+  const maTxt = t.ma_arr || '—';
+  const macdTxt = (t.macd && t.macd.signal) ? 'MACD' + t.macd.signal : 'MACD—';
+  const kdjTxt = (t.kdj && t.kdj.signal) ? 'KDJ' + t.kdj.signal : 'KDJ—';
+  const pctColor = pct >= 0 ? '#ef4444' : '#10b981';
+  const kb = (quotesData && quotesData.variety_kb && quotesData.variety_kb[code]);
+  const fundTxt = (kb && kb.focus) ? ('' + kb.focus) : (({ metal: '金属', black: '黑色', energy: '能化', agri: '农产品' })[q.cat] || '—');
+  const fundShort = fundTxt.length > 42 ? fundTxt.slice(0, 42) + '…' : fundTxt;
+  return `<div style="border-left:3px solid #2a3142;padding:5px 0 5px 10px;margin:5px 0;background:#0f1419;border-radius:0 4px 4px 0;">
+    <div style="font-weight:600;color:#e5e7eb;font-size:13px;">${q.cn_name} <span style="color:${pctColor};">${pct > 0 ? '+' : ''}${pct}%</span> <span style="color:#6b7280;font-weight:400;font-size:11px;">${q.contract_full || ''}</span></div>
+    <div style="font-size:11.5px;color:#cbd5e1;line-height:1.7;">
+      技术面：<b style="color:#e5e7eb;font-weight:600;">${maTxt}</b> · ${bo ? `<span style="color:${bo.color};">${bo.txt}</span>` : '—'} · <span style="color:#e5e7eb;">${macdTxt}</span> · <span style="color:#e5e7eb;">${kdjTxt}</span>　|　看大做小：<b style="color:${btColor};">${bt}</b><br>
+      量仓动能：<span style="color:#e5e7eb;">${mo.volTxt}</span> · <span style="color:#e5e7eb;">${mo.oiTxt}</span> → <b style="color:${mo.color};">${mo.mom}</b><br>
+      缠论(日线)：<b style="color:${ch.color};">${ch.txt}</b>${ch.note ? ` <span style="color:#8b95a5;">(${ch.note})</span>` : ''}<br>
+      基本面：<span style="color:#9ca3af;">${fundShort}</span>
+    </div>
+  </div>`;
 };
 // 基差一行: 现货/期货/基差率/近1年分位
 const _basisLine = code => {
@@ -3013,7 +3082,7 @@ function renderPostReview() {
     statusTxt = `🕐 今日交易进行中，完整复盘将于 15:15 收盘后定稿（当前为盘中数据）`;
   }
   statusEl.innerHTML = `<span style="color:${statusColor};font-weight:600;">${statusTxt}</span>
-    <div style="color:#8b95a5;margin-top:3px;">交易日口径：前一晚 21:00 夜盘开盘 → 当日收盘（商品/股指约 15:00，国债 15:15），构成一个完整交易日。</div>`;
+    <div style="color:#8b95a5;margin-top:3px;">交易日口径：前一晚 21:00 夜盘开盘 → 当日收盘（商品/股指约 15:00，国债 15:15），构成一个完整交易日。复盘不含股指期货，聚焦商品期货期权。</div>`;
 
   // —— 正文 ——
   const rv = (quotesData && quotesData.review) || null;
@@ -3025,24 +3094,34 @@ function renderPostReview() {
     html += `<div style="color:#cbd5e1;margin-bottom:4px;">${rv.summary}<span style="color:#8b95a5;">（消息样本 ${rv.news_count || 0} 条）</span></div>`;
   }
   if (rv && rv.sector && rv.sector.length) {
-    rv.sector.slice(0, 2).forEach(s => {
+    rv.sector.slice(0, 3).forEach(s => {
       const up = s.direction === 'up';
       html += `<div style="color:${up ? '#ef4444' : '#10b981'};margin-bottom:2px;">${up ? '🔺' : '🔻'} ${s.name}板块${up ? '领涨' : '领跌'}：均 ${(s.avg > 0 ? '+' : '')}${s.avg}%，共 ${s.count} 个品种${s.chain ? (' · 产业链：' + s.chain) : ''}</div>`;
     });
   }
 
-  // ② 期货端涨跌榜(国内, 前5)
-  const flat = flatAll().filter(q => q.cat !== 'overseas' && !q.paused && isFinite(num(q.pct)) && num(q.last) > 0);
+  // ② 重点品种多维论证(技术面 + 量仓动能 + 缠论，均基于日线，不含股指)
+  html += `<div style="font-weight:600;color:#e5e7eb;margin:10px 0 2px;">🔬 重点品种多维论证<span style="color:#8b95a5;font-weight:400;font-size:11px;">（技术面·量仓动能·缠论，均基于日线）</span></div>`;
+  const focus = flatAll().filter(q => q.cat !== 'overseas' && q.cat !== 'finance' && !q.paused && _techOf(q.code) && isFinite(num(q.pct)))
+    .sort((a, b) => Math.abs(num(b.pct)) - Math.abs(num(a.pct))).slice(0, 8);
+  if (focus.length) {
+    focus.forEach(q => { html += _reviewVarietyBlock(q.code); });
+  } else {
+    html += `<div style="color:#9ca3af;font-size:12px;">暂无可用品种数据</div>`;
+  }
+
+  // ③ 期货端涨跌榜(国内, 前5, 不含股指)
+  const flat = flatAll().filter(q => q.cat !== 'overseas' && q.cat !== 'finance' && !q.paused && isFinite(num(q.pct)) && num(q.last) > 0);
   const ups = flat.slice().sort((a, b) => num(b.pct) - num(a.pct)).slice(0, 5);
   const dns = flat.slice().sort((a, b) => num(a.pct) - num(b.pct)).slice(0, 5);
   const fmtRow = q => `<span style="cursor:pointer;color:#e5e7eb;" onclick="showVarietyDetail('${q.code}')">${q.cn_name}</span> <span style="color:${num(q.pct) >= 0 ? '#ef4444' : '#10b981'};">${num(q.pct) > 0 ? '+' : ''}${q.pct}%</span>`;
-  html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">📈 期货端 · 涨跌榜（国内）</div>`;
+  html += `<div style="font-weight:600;color:#e5e7eb;margin:10px 0 4px;">📈 期货端 · 涨跌榜（国内，不含股指）</div>`;
   html += `<div style="display:flex;gap:14px;flex-wrap:wrap;">`;
   html += `<div style="flex:1;min-width:140px;"><div style="color:#ef4444;font-size:11px;margin-bottom:2px;">涨幅前5</div>${ups.map(fmtRow).join('<br>') || '—'}</div>`;
   html += `<div style="flex:1;min-width:140px;"><div style="color:#10b981;font-size:11px;margin-bottom:2px;">跌幅前5</div>${dns.map(fmtRow).join('<br>') || '—'}</div>`;
   html += `</div>`;
 
-  // ③ 期权端机会提示(10 大标的, 与透视页期权信号同源)
+  // ④ 期权端机会提示(商品标的, 与透视页期权信号同源)
   const optTargets = ['CU0', 'AU0', 'AG0', 'RB0', 'I0', 'SC0', 'LC0', 'M0', 'P0', 'SR0'];
   const optRows = [];
   optTargets.forEach(code => {
@@ -3058,31 +3137,31 @@ function renderPostReview() {
     optRows.push(`${q.cn_name} <span style="color:${pct >= 0 ? '#ef4444' : '#10b981'}">${pct > 0 ? '+' : ''}${pct}%</span> → ${strat}`);
   });
   if (optRows.length) {
-    html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">🎯 期权端 · 机会提示（10 大标的）</div>`;
+    html += `<div style="font-weight:600;color:#e5e7eb;margin:10px 0 4px;">🎯 期权端 · 机会提示（商品标的）</div>`;
     html += `<div style="color:#cbd5e1;line-height:1.8;">${optRows.join('　|　')}</div>`;
   }
 
-  // ④ 关键数据 / 事件(今日 + 昨日, 取自数据日历)
+  // ⑤ 关键数据 / 事件(今日 + 昨日, 取自数据日历)
   const cal = (quotesData && quotesData.calendar) || [];
   const today = new Date().toISOString().slice(0, 10);
   const yest = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const keyEv = cal.filter(e => e.date === today || e.date === yest);
   if (keyEv.length) {
-    html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">📰 关键数据 / 事件</div>`;
+    html += `<div style="font-weight:600;color:#e5e7eb;margin:10px 0 4px;">📰 关键数据 / 事件</div>`;
     html += keyEv.slice(0, 4).map(e => `<div style="color:#9ca3af;">· ${e.date.slice(5)} ${e.time} ${e.name}</div>`).join('');
   }
 
-  // ⑤ 明日关注
+  // ⑥ 明日关注
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   const tmr = cal.filter(e => e.date === tomorrow);
-  html += `<div style="font-weight:600;color:#e5e7eb;margin:8px 0 4px;">🔮 明日关注</div>`;
+  html += `<div style="font-weight:600;color:#e5e7eb;margin:10px 0 4px;">🔮 明日关注</div>`;
   if (tmr.length) {
     html += tmr.slice(0, 4).map(e => `<div style="color:#9ca3af;">· ${e.time} ${e.name}</div>`).join('');
   } else {
     html += `<div style="color:#9ca3af;">明日暂无重大数据窗口</div>`;
   }
 
-  // ⑥ 详细卡片跳转
+  // ⑦ 详细卡片跳转
   html += `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed #2a3142;display:flex;flex-wrap:wrap;gap:10px;">`;
   const links = [['card-review', '🔍 涨跌归因'], ['card-close', '📋 全品种收盘'], ['card-rank', '🏆 持仓龙虎榜'], ['card-fund', '💰 资金沉淀'], ['card-outlook', '🔮 明日关注']];
   links.forEach(([id, t]) => { html += `<span style="cursor:pointer;color:#4a9eff;font-size:11.5px;" onclick="gotoCard('${id}')">${t} →</span>`; });

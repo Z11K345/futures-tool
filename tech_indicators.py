@@ -374,6 +374,65 @@ def merge_live_bar(bars, live):
     return bars + [bar], True, '含盘中实时'
 
 
+def chan_analysis(bars, window=120):
+    """简化缠论(日线): 分型 → 笔 → 二买/二卖。
+
+    仅用日K的 顶/底分型 与 笔 的严格交替 + 极值刷新, 判定最近结构处于
+    一买/二买/一卖/二卖 哪个区间, 并给出参考进场价位。
+    说明: 这是"简化版"缠论(未做中枢严格定义与笔的复杂处理),
+          仅作复盘参考, 不构成交易依据。
+    """
+    if not bars or len(bars) < 30:
+        return None
+    sub = bars[-window:]
+    highs = [b['h'] for b in sub]
+    lows = [b['l'] for b in sub]
+    n = len(highs)
+    raw = []
+    for i in range(1, n - 1):
+        # 顶分型: 中间高 > 左右高(至少一侧严格大于)
+        if highs[i] > highs[i - 1] and highs[i] >= highs[i + 1]:
+            raw.append((i, highs[i], 'top'))
+        # 底分型: 中间低 < 左右低(至少一侧严格小于)
+        if lows[i] < lows[i - 1] and lows[i] <= lows[i + 1]:
+            raw.append((i, lows[i], 'bottom'))
+    raw.sort(key=lambda x: x[0])
+    # 交替合并: 类型相反直接入列; 同型保留更极值者
+    seq = []
+    for pt in raw:
+        if not seq:
+            seq.append(pt)
+            continue
+        last = seq[-1]
+        if pt[2] != last[2]:
+            seq.append(pt)
+        else:
+            more = (pt[2] == 'top' and pt[1] > last[1]) or (pt[2] == 'bottom' and pt[1] < last[1])
+            if more:
+                seq[-1] = pt
+    if len(seq) < 3:
+        return {'signal': '无', 'ref': None, 'note': '日线结构不足, 暂无法判定缠论买卖点'}
+
+    last = seq[-1]
+    s = seq[-6:]  # 只看最近 6 个分型
+    for i in range(len(s) - 2):
+        a, b, c = s[i], s[i + 1], s[i + 2]
+        # 二买: 底 → 顶 → 底, 且第二底 > 第一底(回调不破前低)
+        if a[2] == 'bottom' and b[2] == 'top' and c[2] == 'bottom' and c[1] > a[1]:
+            return {'signal': '二买', 'ref': round(c[1], 2),
+                    'note': f'一买区低≈{a[1]:.0f}, 回调不破前低, 二买参考进场≈{c[1]:.0f}'}
+        # 二卖: 顶 → 底 → 顶, 且第二顶 < 第一顶(反弹不过前高)
+        if a[2] == 'top' and b[2] == 'bottom' and c[2] == 'top' and c[1] < a[1]:
+            return {'signal': '二卖', 'ref': round(c[1], 2),
+                    'note': f'一卖区高≈{a[1]:.0f}, 反弹不过前高, 二卖参考进场≈{c[1]:.0f}'}
+    # 退一步: 末端分型作为一买/一卖区
+    if last[2] == 'bottom':
+        return {'signal': '一买', 'ref': round(last[1], 2),
+                'note': f'近期低≈{last[1]:.0f}, 关注是否企稳(一买区)'}
+    return {'signal': '一卖', 'ref': round(last[1], 2),
+            'note': f'近期高≈{last[1]:.0f}, 关注是否回落(一卖区)'}
+
+
 def compute_tech(bars, last_price=None, live=None):
     """输入日K bars, 输出技术指标 dict
 
@@ -393,6 +452,8 @@ def compute_tech(bars, last_price=None, live=None):
         price = live['last']
 
     ma5, ma10, ma20, ma60 = (sma(closes, n) for n in (5, 10, 20, 60))
+    ma120 = sma(closes, 120)
+    ma250 = sma(closes, 250)
     if ma5 and ma10 and ma20 and ma60:
         if ma5 > ma10 > ma20 > ma60:
             ma_arr = '多头排列'
@@ -436,6 +497,17 @@ def compute_tech(bars, last_price=None, live=None):
 
     pat = detect_pattern(bars)
 
+    # 看大做小: 长线趋势(MA120 vs MA250) —— 大周期定方向
+    big_trend = '纠缠'
+    if ma120 and ma250:
+        if ma120 > ma250 and price > ma250:
+            big_trend = '长多'
+        elif ma120 < ma250 and price < ma250:
+            big_trend = '长空'
+
+    # 缠论(日线·简化): 分型→笔→二买/二卖
+    chan = chan_analysis(bars)
+
     # 技术面一句话结论(基于上述指标的组合判断)
     parts = []
     if ma_arr == '多头排列':
@@ -470,6 +542,10 @@ def compute_tech(bars, last_price=None, live=None):
         'ma10': round(ma10, 2) if ma10 else None,
         'ma20': round(ma20, 2) if ma20 else None,
         'ma60': round(ma60, 2) if ma60 else None,
+        'ma120': round(ma120, 2) if ma120 else None,
+        'ma250': round(ma250, 2) if ma250 else None,
+        'big_trend': big_trend,
+        'chan': chan,
         'ma_arr': ma_arr,
         'trend': trend,
         'macd': m,
