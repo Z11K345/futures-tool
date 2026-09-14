@@ -1463,7 +1463,7 @@ const REALTIME_COMMODITY_CODES = [
 ];
 const REALTIME_INDEX_CODES = ['IF0','IH0','IC0','IM0','T0','TF0','TS0','TL0'];
 const REALTIME_OVERSEAS_CODES = [
-  'hf_GC','hf_SI','hf_CL','hf_NG','hf_CAD','hf_ZSD','hf_NID','hf_SND','hf_AHD','hf_PBD',
+  'hf_GC','hf_SI','hf_CL','hf_OIL','hf_NG','hf_CAD','hf_ZSD','hf_NID','hf_SND','hf_AHD','hf_PBD',
   'hf_S','hf_C','hf_W','hf_SM','hf_BO','hf_RB','hf_CT','hf_KC','hf_SB','hf_OJ',
   'hf_CC','hf_RS','hf_DX',
   'int_dji','int_sp500','int_nasdaq','int_n225','int_hangseng','int_dax','int_ftse',
@@ -3248,13 +3248,13 @@ function renderOverseas() {
     tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无外盘数据</td></tr>';
     return;
   }
-  // 应用用户排序(默认按涨跌幅绝对值)
+  // 应用用户排序(默认按涨跌幅绝对值); 全量展示, 贵金属/有色/原油等大品种不因波幅小被截断
   const st = sortState.overnight;
   let sorted;
   if (st.field) {
-    sorted = sortBy(lst, st.field === 'name' ? 'cn_name' : st.field, st.dir).slice(0, 30);
+    sorted = sortBy(lst, st.field === 'name' ? 'cn_name' : st.field, st.dir).slice(0, 40);
   } else {
-    sorted = lst.slice().sort((a, b) => Math.abs(parseFloat(b.pct)) - Math.abs(parseFloat(a.pct))).slice(0, 14);
+    sorted = lst.slice().sort((a, b) => Math.abs(parseFloat(b.pct)) - Math.abs(parseFloat(a.pct)));
   }
   updateSortIcons('overnight');
   tbody.innerHTML = sorted.map(q => {
