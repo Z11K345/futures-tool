@@ -448,6 +448,16 @@ body { padding-top: 150px; padding-bottom: 16px; }
   color: #4a9eff;
 }
 
+/* ===== 折叠卡片(2026-09-14 排版优化) ===== */
+.card.foldable > .card-header { cursor: pointer; justify-content: flex-start; }
+.card.foldable > .card-header .card-tag { margin-left: auto; }
+.fold-arrow { color: #6b7280; font-size: 12px; margin-left: 6px; flex: 0 0 auto; }
+.card.folded > *:not(.card-header) { display: none !important; }
+.card.folded > .card-header { margin-bottom: 0; }
+.sub-label { font-size: 11px; color: #64748b; font-weight: 600; margin: 8px 0 4px; }
+.sub-label.first { margin-top: 0; }
+.sub-divide { border-top: 1px dashed #2a3142; margin-top: 10px; padding-top: 4px; }
+
 /* ===== V3.0 技术面扫描 ===== */
 .tech-row {
   display: flex;
@@ -605,294 +615,236 @@ body { padding-top: 150px; padding-bottom: 16px; }
 
 <!-- ========== 盘前预判 ========== -->
 <section class="tab-pane active" id="tab-pre" data-page-node-id="w8eponeT8Qk42BmruWeVxv">
-
-  <div class="module-nav" data-page-node-id="DhJuaQegSd9zK6uadpwMbk">
-    <div class="mn-item" onclick="gotoCard('card-focus')" data-page-node-id="t3EJQWeGQDRV9cdSGmb6KG">今日焦点</div>
-    <div class="mn-item" onclick="gotoCard('card-astock')" data-page-node-id="UTJjutS6IABNKJf1v2tjQz">A股指数</div>
-    <div class="mn-item" onclick="gotoCard('card-events')" data-page-node-id="mnEvents">数据回顾</div>
-    <div class="mn-item" onclick="gotoCard('card-calendar')" data-page-node-id="1maZxFngvRf2tD1VjvrpiO">数据日历</div>
-    <div class="mn-item" onclick="gotoCard('card-overnight')" data-page-node-id="0AODyt9v7ZpeaMpI8A50v9">外盘</div>
-    <div class="mn-item" onclick="gotoCard('card-news')" data-page-node-id="mnNews">财经要闻</div>
-    <div class="mn-item" onclick="gotoCard('card-fnews')" data-page-node-id="mnFnews">期货快讯</div>
-    <div class="mn-item" onclick="gotoCard('card-movers')" data-page-node-id="mnMovers">涨跌幅榜</div>
-    <div class="mn-item" onclick="gotoCard('card-quotes')" data-page-node-id="to4qW3CUAeHhq34cijA4XI">国内主力</div>
-    <div class="mn-item" onclick="gotoCard('card-signals')" data-page-node-id="eWsJy5nW297PV0ptRrlL76">异动信号</div>
-    <div class="mn-item" onclick="gotoCard('card-expiry')" data-page-node-id="KDryybsF8HzyoB2n3fbP31">合约到期</div>
-    <div class="mn-item" onclick="gotoCard('card-optexp')" data-page-node-id="eWgmscGV69jeoqJO1FM404">期权到期</div>
-    <div class="mn-item" onclick="gotoCard('card-lotround')" data-page-node-id="1l04Qjctl05aM7PXacSI26">清仓日历</div>
+  <div class="module-nav">
+    <div class="mn-item" onclick="gotoCard('card-focus')">今日</div>
+    <div class="mn-item" onclick="gotoCard('card-movers')">涨跌</div>
+    <div class="mn-item" onclick="gotoCard('card-signals')">信号</div>
+    <div class="mn-item" onclick="gotoCard('card-tech')">技术</div>
+    <div class="mn-item" onclick="gotoCard('card-term')">期限</div>
+    <div class="mn-item" onclick="gotoCard('card-basis')">基差</div>
+    <div class="mn-item" onclick="gotoCard('card-spread')">价差</div>
+    <div class="mn-item" onclick="gotoCard('card-quotes')">行情</div>
+    <div class="mn-item" onclick="gotoCard('card-outer')">外围</div>
+    <div class="mn-item" onclick="gotoCard('card-cal')">日历</div>
+    <div class="mn-item" onclick="gotoCard('card-news')">要闻</div>
+    <div class="mn-item" onclick="gotoCard('card-data')">数据</div>
   </div>
 
-  <!-- 数据归属日（自动判断交易日 / 周末 / 夜盘） -->
-  <div class="card" id="data-day-card" style="border-left:3px solid #4a9eff;" data-page-node-id="K4QmJYOj4KOGtdi8HB1tTO">
-    <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;" data-page-node-id="SM2QiPvFLAM5RqVZBF7SRo">
-      <span style="color:#9ca3af;" data-page-node-id="QtSMB05e3RUFJ4bZjPVsrA">📅 数据归属交易日</span>
-      <span id="data-day-text" style="color:#e5e7eb;font-weight:600;" data-page-node-id="ebuNPdwbHe7nOTN2osV0GU">--</span>
-    </div>
-    <div id="data-day-detail" style="font-size:11px;color:#6b7280;margin-top:6px;" data-page-node-id="oPBxCVpc5XqLO5EIOCtJU3">--</div>
+  <div class="card" id="card-focus" style="border-left:3px solid #4a9eff;background:linear-gradient(135deg,#1a1f2e 0%,#141a26 100%);">
+  <div class="card-header">
+    <span class="card-title">📌 今日概览</span>
+    <span class="card-tag auto">自动</span>
+  </div>
+  <div class="sub-label first">数据归属</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;" data-page-node-id="SM2QiPvFLAM5RqVZBF7SRo">
+  <span style="color:#9ca3af;" data-page-node-id="QtSMB05e3RUFJ4bZjPVsrA">📅 数据归属交易日</span>
+  <span id="data-day-text" style="color:#e5e7eb;font-weight:600;" data-page-node-id="ebuNPdwbHe7nOTN2osV0GU">--</span>
+  </div>
+  <div id="data-day-detail" style="font-size:11px;color:#6b7280;margin-top:6px;" data-page-node-id="oPBxCVpc5XqLO5EIOCtJU3">--</div>
+  <div class="sub-label">要点</div>
+  <div class="list-row" data-page-node-id="57FEptQYjo9mNJ7TPHSrUQ"><span class="label" data-page-node-id="30DRz3OQrJjUdi7CZkS0S7">交易日</span><span class="value" id="today-trading" data-page-node-id="9ZntCLkLn3wXHr9FZ7VnM1">--</span></div>
+  <div class="list-row" data-page-node-id="6FcBi4HcT02n2e3ReUZEDI"><span class="label" data-page-node-id="o6Id8KaD3m2aGaYjht7R5F">主力合约切换</span><span class="value" id="main-switch" data-page-node-id="fIaUcClGa9iHfYnuv0u74x">--</span></div>
+  <div class="list-row" data-page-node-id="odOzHfq0x6n9RZMV7qCpZi"><span class="label" data-page-node-id="9icv2RjY3RFNiZbetbYde7">重要数据/事件</span><span class="value" id="today-events" data-page-node-id="HfClrNcUbBA0cM33IAfhRG">--</span></div>
+  <div class="sub-label sub-divide">🤖 AI 焦点</div>
+  <div id="today-focus" style="font-size:13px;line-height:1.6;" data-page-node-id="3FVK0h5VjULPY3Dwv4yIUI">--</div>
   </div>
 
-  <!-- AI 推送 - 今日要点(自动, 不需手动) -->
-  <div class="card" id="card-focus" style="border-left:3px solid #4a9eff;background:linear-gradient(135deg,#1a1f2e 0%,#141a26 100%);" data-page-node-id="MoANxMjASAUkHb2hCO2eG0">
-    <div class="card-header" data-page-node-id="MDdMiVDU0LRYkD1qjpLq85">
-      <span class="card-title" data-page-node-id="EQtQxx60yhB4gJ0lYUonIr">🤖 今日焦点</span>
-      <span class="card-tag auto" data-page-node-id="by3OcydfWbNrwvfhAhVB6m">AI 推送</span>
-    </div>
-    <div id="today-focus" style="font-size:13px;line-height:1.6;" data-page-node-id="3FVK0h5VjULPY3Dwv4yIUI">--</div>
+  <div class="card" id="card-movers" data-page-node-id="r4de2LSuSRpo4GkHA7Qa3c">
+  <div class="card-header" data-page-node-id="xdOT7RZHXk9WBFuKC5IQbs">
+  <span class="card-title" data-page-node-id="q2m8Kt6apQCKGPYhtGKkB3">🔥 涨跌幅榜</span>
+  <span class="card-tag live" data-page-node-id="5bZhdfncIlU7sbTopZUajc">实时</span>
   </div>
-
-  <!-- A 股指数(自动) -->
-  <div class="card" id="card-astock" data-page-node-id="jvXE6tc0B8QCTIR571sUkg">
-    <div class="card-header" data-page-node-id="9R3hUlbEVtjj1TQqlZBuT1">
-      <span class="card-title" data-page-node-id="1KgRcoMLCoYziaNQPYMRcB">📈 A 股指数</span>
-      <span class="card-tag auto" data-page-node-id="HpnRS0s2yKGfpEMuLD28MI">自动</span>
-    </div>
-    <table class="data-table" data-page-node-id="3BRaEFzErLnyZX4nyl3Fk9">
-      <thead data-page-node-id="xZdcTOIv3gIHDJK6YJf4Wc"><tr data-page-node-id="T9Pzk61AA3ZSJrUGN1hACz"><th data-page-node-id="Bp9zmIRpLQiGn4XpQPGFYf">指数</th><th style="text-align:right;" data-page-node-id="0AuSwn9FfJVdcaRBpgg7cs">最新</th><th style="text-align:right;" data-page-node-id="YIkQKR8s5ZUsK3F8zTD6vj">涨跌</th></tr></thead>
-      <tbody id="astock-table-body" data-page-node-id="bNkyy6PyflXYQnx7nAE0Hq"><tr data-page-node-id="uHIjDX814KumR5xvJsLiuY"><td colspan="3" class="empty-state" data-page-node-id="bDqm6gW4M8KPjprbZFWDyf"><span class="loading-spinner" data-page-node-id="LtJ65VTsoblAK8t0yxre69"></span> 加载中...</td></tr></tbody>
-    </table>
+  <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteMovers">盘中按实时价与持仓量排行，随盘面变化；收盘后即为当日最终排名。</div>
+  <div class="table-wrap" data-page-node-id="AARsAw0X6tQM0nwSeQdwHN">
+  <table class="data-table" id="movers-table" data-page-node-id="UXcdE1NEkowGqbmzFG4Te2">
+  <thead data-page-node-id="XK1rqat8kNIHcupAq65vG7">
+  <tr data-page-node-id="DsplwI09QC6N7Y0FkVmI8d"><th class="sortable" data-sort="movers" data-field="cn_name" data-page-node-id="p0eBvoNnr8MggJMPPFeLed">品种<span class="sort-icon" data-page-node-id="hBrYsvrQFXc4E9XU6Kv0BC"></span></th><th class="sortable" data-sort="movers" data-field="last" data-page-node-id="zhnP2q3UNLvnFwDmNABwWp">最新<span class="sort-icon" data-page-node-id="ch8pcbAiujT8zM2lCbUeFF"></span></th><th class="sortable" data-sort="movers" data-field="pct" data-page-node-id="FlPR5gJE52D3tTBmOwEN3h">涨跌幅<span class="sort-icon" data-page-node-id="8odoJeqDzDMdaL3xsnwA2Y"></span></th><th class="sortable" data-sort="movers" data-field="oi" data-page-node-id="Fxo9MBbCKusK7n1F7ObpIb">持仓量<span class="sort-icon" data-page-node-id="bfrLuXQ7LyijhGDSHFynwt"></span></th></tr>
+  </thead>
+  <tbody data-page-node-id="s6s4M4O34TsxlHkBRWKdaf"><tr data-page-node-id="dxNqimqzFAusHs6wfNHQcM"><td colspan="4" class="empty-state" data-page-node-id="ceZTC1kX7ZioVxUiwdmUtc"><span class="loading-spinner" data-page-node-id="4GJN9eRGEaCcvS5XOdhINQ"></span> 加载中...</td></tr></tbody>
+  </table>
   </div>
-
-  <!-- 已公布数据回顾(自动, 实际值+解读+品种反应) -->
-  <div class="card" id="card-events" data-page-node-id="p4GlIEAkzS4j7N5NPYgv8z">
-    <div class="card-header" data-page-node-id="jnZ4m0BRF78hr3SZdBWYyG">
-      <span class="card-title" data-page-node-id="GJsAAycZOI8d9wvXZnLAEZ">📊 重要数据公布回顾</span>
-      <span class="card-tag auto" data-page-node-id="tmCpq8GmWSrDt228xRIxYe">自动</span>
-    </div>
-    <div id="events-list" style="font-size:13px;" data-page-node-id="ZOLJnKbEGnJ6gsnKO49pLM">--</div>
-    <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #2a3142;font-size:10.5px;color:#6b7280;line-height:1.7;">
-      实际值经多家权威来源交叉核对一致后录入；预期值可能因机构而异，标注为市场主流预期。
-      关联品种涨跌幅取行情快照当日真实涨跌，口径已在各项注明。
-      展示保留期按重要度分级：高（美联储/CPI/非农/USDA）保留 1 年、中（EIA/社零/LPR/CFTC 持仓）3 个月、低 30 天；超期自动隐去。
-      近 14 天为「最近回顾」，更早归入「历史回顾」折叠区。以上为客观数据整理，不构成投资建议。投资有风险，入市需谨慎。
-    </div>
-  </div>
-
-  <!-- 重要数据日历(未来 14 天) -->
-  <div class="card" id="card-calendar" data-page-node-id="p4GlIEAkzS4j7N5NPYgv8z2">
-    <div class="card-header" data-page-node-id="jnZ4m0BRF78hr3SZdBWYyG2">
-      <span class="card-title" data-page-node-id="GJsAAycZOI8d9wvXZnLAEZ2">📅 重要数据日历(未来 14 天)</span>
-      <span class="card-tag auto" data-page-node-id="tmCpq8GmWSrDt228xRIxYe2">自动</span>
-    </div>
-    <div id="calendar-list" style="font-size:13px;" data-page-node-id="ZOLJnKbEGnJ6gsnKO49pLM2">--</div>
-  </div>
-
-  <!-- 今日要点(简版,详细在上面的"AI 推送-今日焦点") -->
-  <div class="card" data-page-node-id="9RohwO4WhaDfvIscTuEKDD">
-    <div class="card-header" data-page-node-id="EgvQkfSlepTEPcR7wjehaM">
-      <span class="card-title" data-page-node-id="jD47re9zMKRCiHFA3hGUbF">📌 今日要点(简版)</span>
-      <span class="card-tag auto" data-page-node-id="WNsjSc5IWyrxNApeNHQLnA">自动</span>
-    </div>
-    <div class="list-row" data-page-node-id="57FEptQYjo9mNJ7TPHSrUQ"><span class="label" data-page-node-id="30DRz3OQrJjUdi7CZkS0S7">交易日</span><span class="value" id="today-trading" data-page-node-id="9ZntCLkLn3wXHr9FZ7VnM1">--</span></div>
-    <div class="list-row" data-page-node-id="6FcBi4HcT02n2e3ReUZEDI"><span class="label" data-page-node-id="o6Id8KaD3m2aGaYjht7R5F">主力合约切换</span><span class="value" id="main-switch" data-page-node-id="fIaUcClGa9iHfYnuv0u74x">--</span></div>
-    <div class="list-row" data-page-node-id="odOzHfq0x6n9RZMV7qCpZi"><span class="label" data-page-node-id="9icv2RjY3RFNiZbetbYde7">重要数据/事件</span><span class="value" id="today-events" data-page-node-id="HfClrNcUbBA0cM33IAfhRG">--</span></div>
-  </div>
-
-  <!-- 隔夜外盘 -->
-  <div class="card" id="card-overnight" data-page-node-id="XQzzSoAT910KJ5tPGjJYSy">
-    <div class="card-header" data-page-node-id="CDeVUyzYGmiKqF22EgnVO3">
-      <span class="card-title" data-page-node-id="FJNDSPqczmQqTEuD5ZObPO">🌙 外盘</span>
-      <span class="card-tag auto" data-page-node-id="jeXGnwOCjBZ6bSSG2MdkRH">自动</span>
-    </div>
-    <div class="table-wrap" data-page-node-id="k317UhQGBkEccjUZ5WzXTv">
-    <table class="data-table" id="overnight-table" data-page-node-id="tdZ7WnmGAr4ffjqvrLxzBj">
-      <thead data-page-node-id="MmXeX5p5tODGpj5Y9YiEFq">
-        <tr data-page-node-id="KcARkGMnSthTzbBWDoqIHj"><th class="sortable" data-sort="overnight" data-field="name" data-page-node-id="UmZ7oCP2KWd3qoru7Rq7NM">品种<span class="sort-icon" data-page-node-id="HjBmQLRZOoo5oDYxVOcHLl"></span></th><th class="sortable" data-sort="overnight" data-field="last" data-page-node-id="aO32MnrGnEeWtzMHYrOJbe">最新<span class="sort-icon" data-page-node-id="DytLFcW77EJGU5mX3AXVYY"></span></th><th class="sortable" data-sort="overnight" data-field="change" data-page-node-id="wNQpKytTWnZbzKQAH8PXYj">涨跌<span class="sort-icon" data-page-node-id="LgzVgdjG2vFAoKwe1A1Y1i"></span></th><th class="sortable" data-sort="overnight" data-field="pct" data-page-node-id="AQ3Huq3vNiFBm55omdzamK">涨跌幅<span class="sort-icon" data-page-node-id="PtAErmgBFxHgCIdJvKdoub"></span></th></tr>
-      </thead>
-      <tbody data-page-node-id="sYiANLg6J0jNnFDHoHUnPF"><tr data-page-node-id="WA7mbMLVaAZyJlpEryYUVL"><td colspan="4" class="empty-state" data-page-node-id="1p8MTelfjPWQaJ70pMEEBS"><span class="loading-spinner" data-page-node-id="u117e7QOTh1kSp2Nd0Npub"></span> 加载中...</td></tr></tbody>
-    </table>
-    </div>
-  </div>
-
-  <!-- 关键品种报价 -->
-  <!-- ===== 动态信息区(随盘面变化, 盘中持续刷新) ===== -->
-  <div class="sect-div" data-page-node-id="sectDyn"><span>📡 动态信息</span><i>随盘面刷新</i></div>
-
-  <!-- 7×24 新闻流(自动) -->
-  <div class="card" id="card-news" data-page-node-id="HGJMb14Sc27lHzgeG2q5mk">
-    <div class="card-header" data-page-node-id="LcA5ngPzlCUxDXvPasNqnl">
-      <span class="card-title" data-page-node-id="BeeJNWaGGtDK8wJtc0rMnt">📰 7×24 财经要闻</span>
-      <span class="card-tag auto" data-page-node-id="wfbUePmw1z1xdGLUjuQfX2">自动</span>
-    </div>
-    <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteNews">随每次行情抓取同步更新，盘中可持续刷出新条目。</div>
-    <div id="news-list" style="max-height:500px;overflow-y:auto;" data-page-node-id="jqNv6M3POWDnDigXngFVyt">--</div>
-  </div>
-
-  <!-- 期货快讯 V2.6 新增 -->
-
-  <!-- 期货快讯 V2.6 新增 -->
-  <div class="card" id="card-fnews" style="border-left:3px solid #4a9eff;" data-page-node-id="M5afVW1eokKm67Ff6X4v0x">
-    <div class="card-header" data-page-node-id="BtWr732OaTozyZf4c4bZUq">
-      <span class="card-title" data-page-node-id="boFLGrqVw0ZY4DQU4EZMd3">🎯 期货快讯(商品期货)</span>
-      <span class="card-tag auto" data-page-node-id="ngfCyMZoWWKmZt9iAZFHez">新浪 lid=2518</span>
-      <button id="btn-multi-source-refresh" onclick="onMultiSourceRefreshClick()" style="margin-left:auto;background:rgba(74,158,255,0.15);border:1px solid #4a9eff;color:#4a9eff;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;" data-page-node-id="de3uk7XpH8dtnC3Ojab30E">
-        🔄 多源刷新
-      </button>
-    </div>
-    <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteFnews">盘中随盘面同步更新；多源刷新可即时拉取。</div>
-    <div id="futures-news-list" style="max-height:380px;overflow-y:auto;font-size:12.5px;line-height:1.6;" data-page-node-id="qzS3bScSFbNGsaSfeYH6hz">--</div>
-  </div>
-
-
-<div class="card" id="card-movers" data-page-node-id="r4de2LSuSRpo4GkHA7Qa3c">
-    <div class="card-header" data-page-node-id="xdOT7RZHXk9WBFuKC5IQbs">
-      <span class="card-title" data-page-node-id="q2m8Kt6apQCKGPYhtGKkB3">🔥 涨跌幅榜</span>
-      <span class="card-tag live" data-page-node-id="5bZhdfncIlU7sbTopZUajc">实时</span>
-    </div>
-    <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteMovers">盘中按实时价与持仓量排行，随盘面变化；收盘后即为当日最终排名。</div>
-    <div class="table-wrap" data-page-node-id="AARsAw0X6tQM0nwSeQdwHN">
-    <table class="data-table" id="movers-table" data-page-node-id="UXcdE1NEkowGqbmzFG4Te2">
-      <thead data-page-node-id="XK1rqat8kNIHcupAq65vG7">
-        <tr data-page-node-id="DsplwI09QC6N7Y0FkVmI8d"><th class="sortable" data-sort="movers" data-field="cn_name" data-page-node-id="p0eBvoNnr8MggJMPPFeLed">品种<span class="sort-icon" data-page-node-id="hBrYsvrQFXc4E9XU6Kv0BC"></span></th><th class="sortable" data-sort="movers" data-field="last" data-page-node-id="zhnP2q3UNLvnFwDmNABwWp">最新<span class="sort-icon" data-page-node-id="ch8pcbAiujT8zM2lCbUeFF"></span></th><th class="sortable" data-sort="movers" data-field="pct" data-page-node-id="FlPR5gJE52D3tTBmOwEN3h">涨跌幅<span class="sort-icon" data-page-node-id="8odoJeqDzDMdaL3xsnwA2Y"></span></th><th class="sortable" data-sort="movers" data-field="oi" data-page-node-id="Fxo9MBbCKusK7n1F7ObpIb">持仓量<span class="sort-icon" data-page-node-id="bfrLuXQ7LyijhGDSHFynwt"></span></th></tr>
-      </thead>
-      <tbody data-page-node-id="s6s4M4O34TsxlHkBRWKdaf"><tr data-page-node-id="dxNqimqzFAusHs6wfNHQcM"><td colspan="4" class="empty-state" data-page-node-id="ceZTC1kX7ZioVxUiwdmUtc"><span class="loading-spinner" data-page-node-id="4GJN9eRGEaCcvS5XOdhINQ"></span> 加载中...</td></tr></tbody>
-    </table>
-    </div>
-  </div>
-
-
-  <div class="card" id="card-quotes" data-page-node-id="0B9hRTsrtRFleABFnfYFdJ">
-    <div class="card-header" data-page-node-id="WjrTMtGSd0CKixABpHb9vj">
-      <span class="card-title" data-page-node-id="gGtEZqCoNA1UL2YhvKrcMB">📊 国内期货主力</span>
-      <span class="card-tag auto" data-page-node-id="QzsmktD6neU3eI2DnTkpK5">自动</span>
-    </div>
-    <div style="margin-bottom: 8px;" data-page-node-id="iJcW6sSsLiEUnYeCsaBUlX">
-      <select id="category-select" onchange="renderQuotes()" style="background:#141a26;color:#e5e7eb;border:1px solid #2a3142;padding:6px 8px;border-radius:4px;font-size:12px;width:100%;" data-page-node-id="LHXIJHWAA7f0Cef984458k">
-        <option value="all" data-page-node-id="IiVy8XyY3EBhcv9j2AK8cc">全部</option>
-        <option value="metal" data-page-node-id="mV5DJyNAzS5MD21AppyS0Z">有色金属</option>
-        <option value="black" data-page-node-id="VTharFXdMvi7GfknCVWkTG">黑色系</option>
-        <option value="energy" data-page-node-id="95l7BJX7rqZik9NVLmRJt0">能源化工</option>
-        <option value="agri" data-page-node-id="f911f2jJDj7QbXoCv4w4kF">农产品</option>
-        <option value="finance" data-page-node-id="3qRkOyGrqUVuFmxvZc2Ffo">股指国债</option>
-      </select>
-    </div>
-    <div style="font-size:11px;color:#6b7280;margin:0 0 6px;line-height:1.5;" data-page-node-id="B079GsuQ20aj9p6PCvMhFV">
-      品种后灰色标签为该品种<b style="color:#8b95a5;" data-page-node-id="zfTSDwcxNkV50zGacbGEiT">当前主力合约</b>（按各月份合约持仓量自动判定，换月时自动更新），价格/涨跌/持仓/成交量均取该合约真实数据。
-    </div>
-    <div class="table-wrap" data-page-node-id="JU48MFNo1kycu6VFwFzAkl">
-    <table class="data-table" id="quotes-table" data-page-node-id="TYYokXrqoCzVaIA9gc3ZAD">
-      <thead data-page-node-id="ZlIDrNb9tjiFT6yg2hGXbV">
-        <tr data-page-node-id="5gtnbJsJflfFhEYEo5c5cA"><th class="sortable" data-sort="quotes" data-field="cn_name" data-page-node-id="5l81b0nvunAyFqyK1mX8dV">品种<span class="sort-icon" data-page-node-id="bx6L3xGzzd3wND3Op9eqg2"></span></th><th class="sortable" data-sort="quotes" data-field="last" data-page-node-id="SaEEQVmpEkO1HVXD59qW85">最新<span class="sort-icon" data-page-node-id="U2VyfB4yZI8BUdswhzbyc9"></span></th><th class="sortable" data-sort="quotes" data-field="change" data-page-node-id="q7mCaQ4JiF3prhIdx4RTU6">涨跌<span class="sort-icon" data-page-node-id="s4mgAJkEyY0QxM93V5IDZC"></span></th><th class="sortable" data-sort="quotes" data-field="pct" data-page-node-id="usC5dEvNtaAmBHJozsvxe1">涨跌幅<span class="sort-icon" data-page-node-id="FQ4KAe7RNsMp2IkExYLvB8"></span></th><th class="sortable" data-sort="quotes" data-field="volume" data-page-node-id="whv7ahydyQPcNauHilpJoC">成交量<span class="sort-icon" data-page-node-id="Ba12RPApLvPz8uS8nnnC9V"></span></th></tr>
-      </thead>
-      <tbody data-page-node-id="vCeXFmZWFHrNPDqd4pED2k"><tr data-page-node-id="Coj7MB0lAU2vylfSgEcpBE"><td colspan="5" class="empty-state" data-page-node-id="J7jg64RE24OOrNX8X9bbGw"><span class="loading-spinner" data-page-node-id="IpXGVFWXWwxjcn6CypDqtG"></span> 加载中...</td></tr></tbody>
-    </table>
-    </div>
   </div>
 
   <div class="card" id="card-signals" style="border-left:3px solid #ef4444;" data-page-node-id="8PwAqImKXiRSaEdtFCknUZ">
-    <div class="card-header" data-page-node-id="aoEBdJ6iYwxHHus3d3qEoJ">
-      <span class="card-title" data-page-node-id="6zL8r7CfRWIpFdE8GThihf">⚡ 期货端信号(自动)</span>
-      <span class="card-tag auto" data-page-node-id="Wuv5ccE1gXwJXvqYjXs5fa">实时派生</span>
-    </div>
-    <div id="future-signals" style="font-size:13px;line-height:1.6;" data-page-node-id="pW8BgPZHUrzrMW9mIIwlaH">--</div>
+  <div class="card-header" data-page-node-id="aoEBdJ6iYwxHHus3d3qEoJ">
+  <span class="card-title" data-page-node-id="6zL8r7CfRWIpFdE8GThihf">⚡ 期货端信号(自动)</span>
+  <span class="card-tag auto" data-page-node-id="Wuv5ccE1gXwJXvqYjXs5fa">实时派生</span>
+  </div>
+  <div id="future-signals" style="font-size:13px;line-height:1.6;" data-page-node-id="pW8BgPZHUrzrMW9mIIwlaH">--</div>
   </div>
 
-  <!-- 主力合约到期提醒(V2.6 新增) -->
-  <div class="card" id="card-expiry" style="border-left:3px solid #f59e0b;" data-page-node-id="gvS8wvuPIw7DgjN34fqJEm">
-    <div class="card-header" data-page-node-id="PC4LrtPpRQoRj0cu6d2tBt">
-      <span class="card-title" data-page-node-id="KpN146DJZB1Vyw9AHCI5za">⏰ 主力合约到期提醒</span>
-      <span class="card-tag auto" data-page-node-id="tUvwNyLlptrNweLMKcGETv">推算</span>
-    </div>
-    <div id="expiry-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="ZEnyAnEx0fe2cHBgmB2mm8">--</div>
+  <div class="card" id="card-tech" data-page-node-id="ljLIOTmyaaIlFT0pOhRFml">
+  <div class="card-header" data-page-node-id="y12U73h9KIRXuFw9eEMAq6">
+  <span class="card-title" data-page-node-id="Nf0IEC3A00srdkgLf0W9iM">📐 技术面扫描(自动)</span>
+  <span class="card-tag auto" data-page-node-id="sCIai7sSWsfvp20KTTVQDU">自动</span>
+  </div>
+  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;" data-page-node-id="R5W2BRZvw874LaZC1rImnW">按"近1年价格分位"从高到低排列。分位越高越接近阶段高位(注意回调), 越低越接近阶段低位。点品种看详情。<br><b style="color:#7dd3fc;">盘中已接入实时价</b>，MA/MACD/RSI 等指标随盘面同步变化，未收盘前数值可能反复。</div>
+  <div id="tech-list" style="max-height:460px;overflow-y:auto;" data-page-node-id="0A2dmVlzxBmeXAhIaBFEYF">--</div>
+  <div class="save-note" data-page-node-id="tf4UkinCg0rz0hssGx8XBi">📌 基于日线收盘价计算: MA5/10/20/60、MACD、RSI14、KDJ、布林、ATR。指标滞后于价格, 仅供参考。</div>
   </div>
 
-  <!-- 期权到期日提醒(V3.3 新增: 按交易所规则推算, 已用期货公司到期通知核对) -->
-  <div class="card" id="card-optexp" style="border-left:3px solid #a78bfa;" data-page-node-id="69lHGUbbsE9IC5xyIOHYSn">
-    <div class="card-header" data-page-node-id="9C7x5O0lxwEoAFVNZInfz2">
-      <span class="card-title" data-page-node-id="S7CzGHB9DTmwevLwe8IYJR">🎯 期权到期日提醒(未来 45 天)</span>
-      <span class="card-tag auto" data-page-node-id="2UlMWtXZNsvoCS3ciM7uiK">规则推算</span>
-    </div>
-    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="dOQeQr4SIlAPFicWfuoE7R">
-      <b style="color:#e5e7eb;" data-page-node-id="h3lfVgETH8GNdQzWCKg0v2">商品期权为美式</b>(买方可在到期日当日前行权): 到期日当天<b style="color:#e5e7eb;" data-page-node-id="2i4myBcSg7Gyh4HbtPoR4s">平仓截止 15:00, 行权/放弃申请及行权资金入金截止 15:15</b>。
-      实值期权买方行权资金不足将被自动放弃行权; 卖方到期未平仓将按交易所配对履约。
-      <b style="color:#e5e7eb;" data-page-node-id="dsKkGCRo5tHttc1iuCmIk7">中金所股指期权为欧式</b>(仅最后交易日可行权), 采用现金交割。
-    </div>
-    <div id="optexp-list" style="max-height:460px;overflow-y:auto;" data-page-node-id="POxlMYKibhC8rLkvsETF3p">--</div>
-    <div class="save-note" id="optexp-note" data-page-node-id="REpmDhzAHua82YamtMcqvc">📌 --</div>
-  </div>
-
-  <!-- 自然人交割月清仓日历(取整日 / 取零日) V2.7 重写 -->
-  <div class="card" id="card-lotround" style="border-left:3px solid #ef4444;" data-page-node-id="ffvhmP4ecifNEs9NWue8CQ">
-    <div class="card-header" data-page-node-id="VDdxWhaBnrWfVjby1jyCNN">
-      <span class="card-title" data-page-node-id="DAd5x8AstD7YMppdpPInrW">⚠️ 自然人清仓日历(取整 / 取零)</span>
-      <span class="card-tag auto" data-page-node-id="moB2H0ADxTA0asxwfTeATH">交易所规则</span>
-    </div>
-    <div id="lot-round-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="x9fXcmM0oj6g7gFI57FQg5">--</div>
-  </div>
-
-  <!-- ===== 数据透视区(当日收盘后的完整数据) ===== -->
-  <div class="sect-div" data-page-node-id="sectSta"><span>🗂 数据透视</span><i>当日/历史口径</i></div>
-
-  <!-- 期限结构与展期收益(主力 vs 次主力价差 -> 年化斜率) V3.5 新增 -->
   <div class="card" id="card-term" style="border-left:3px solid #8b5cf6;" data-page-node-id="NgWyDxyiHFo5Hly0FiUU79">
-    <div class="card-header" data-page-node-id="sAl8iA1XmTT8fQpDvFFyDG">
-      <span class="card-title" data-page-node-id="AsItF1KvmF4LWs2PAFEZue">📅 期限结构与展期收益</span>
-      <span class="card-tag auto" data-page-node-id="1hiNGCEnQBQNYY6eetu4ya">合约价差</span>
-    </div>
-    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="uMMswcdszMi6MPTbsWIrvq">
-      月差 = (次主力 − 主力) ÷ 主力，年化后即期限结构斜率。主力/次主力按成交量排序，合约链按月份递增排列。<br data-page-node-id="uMMswcdszMi6MPTbsWIrvqB">
-      <b style="color:#e5e7eb;" data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcE">Contango</b>(正向市场)
-      = 现货价 &lt; 近月价 &lt; 远月价，<b>近低远高</b>，逐月递增 → 多头移仓付成本；<br data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcEB">
-      <b style="color:#e5e7eb;" data-page-node-id="YEvw59VZHEWnEb8tD8EFzl">Backwardation</b>(反向市场)
-      = 现货价 &gt; 近月价 &gt; 远月价，<b>近高远低</b>，逐月递减 → 多头移仓占便宜，展期正收益。<br data-page-node-id="YEvw59VZHEWnEb8tD8EFzlB">
-      两者都要求<b>逐月严格单调</b>：只要有任何一个月份没有按方向递减/递增（含持平、反弹），曲线就不是单调的，不套用这两个术语，标「非单调」。这块收益不依赖看对方向，只看结构。点品种看详情。
-    </div>
-    <div id="term-sortbar" style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;" data-page-node-id="y9m909easZob1TB4tAzX3n">
-      <span class="mn-item" id="term-sort-back" onclick="setTermSort('back')" data-page-node-id="MODGvUPN4EdMSxM4shACoT">多头展期优先</span>
-      <span class="mn-item" id="term-sort-cont" onclick="setTermSort('cont')" data-page-node-id="qr4g8reb0DBcBfpR9bfw5o">空头展期优先</span>
-    </div>
-    <div class="table-wrap" data-page-node-id="TAVb80pkAi7PBfTL2AcYnJ">
-    <table class="data-table" id="term-table" data-page-node-id="v5ZNq28V5NvX6FCyUCBNNc">
-      <thead data-page-node-id="81kl1K4fiVkmcE7gbM6avD"><tr data-page-node-id="B6MfxKd6I8YtCAzVWx1xve"><th data-page-node-id="ovEWYS6rzHgtHw4oP2VvB3">品种</th><th data-page-node-id="rwuDL5JmqZMdDxC28DJtaB">现货→C1→C2→C3</th><th style="text-align:right;" data-page-node-id="IXvnrCFAdTgJJG8dDmHJhL">月差</th><th style="text-align:right;" data-page-node-id="EtV7UyCM1JAHX4dvRokbI9">年化</th><th data-page-node-id="sug5HnqTrqNEpRfeCgEoHm">结构</th></tr></thead>
-      <tbody id="term-body" data-page-node-id="Yo3HASwGvfDh90GFv8hlQT"><tr data-page-node-id="EkHo8C096uBVizTNgjE97C"><td colspan="5" class="empty-state" data-page-node-id="l0I3wJcpAYlNKGQtmPKgMB"><span class="loading-spinner" data-page-node-id="DwsyEIZk7nWttA2lTy6G5T"></span> 加载中...</td></tr></tbody>
-    </table>
-    </div>
-    <div class="save-note" id="term-note" data-page-node-id="YNKMtVEeDPwkIYlpbkDziI">📌 --</div>
+  <div class="card-header" data-page-node-id="sAl8iA1XmTT8fQpDvFFyDG">
+  <span class="card-title" data-page-node-id="AsItF1KvmF4LWs2PAFEZue">📅 期限结构与展期收益</span>
+  <span class="card-tag auto" data-page-node-id="1hiNGCEnQBQNYY6eetu4ya">合约价差</span>
+  </div>
+  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="uMMswcdszMi6MPTbsWIrvq">
+  月差 = (次主力 − 主力) ÷ 主力，年化后即期限结构斜率。主力/次主力按成交量排序，合约链按月份递增排列。<br data-page-node-id="uMMswcdszMi6MPTbsWIrvqB">
+  <b style="color:#e5e7eb;" data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcE">Contango</b>(正向市场)
+  = 现货价 &lt; 近月价 &lt; 远月价，<b>近低远高</b>，逐月递增 → 多头移仓付成本；<br data-page-node-id="DVhnDUmaHGEbFwwQ4AuTcEB">
+  <b style="color:#e5e7eb;" data-page-node-id="YEvw59VZHEWnEb8tD8EFzl">Backwardation</b>(反向市场)
+  = 现货价 &gt; 近月价 &gt; 远月价，<b>近高远低</b>，逐月递减 → 多头移仓占便宜，展期正收益。<br data-page-node-id="YEvw59VZHEWnEb8tD8EFzlB">
+  两者都要求<b>逐月严格单调</b>：只要有任何一个月份没有按方向递减/递增（含持平、反弹），曲线就不是单调的，不套用这两个术语，标「非单调」。这块收益不依赖看对方向，只看结构。点品种看详情。
+  </div>
+  <div id="term-sortbar" style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;" data-page-node-id="y9m909easZob1TB4tAzX3n">
+  <span class="mn-item" id="term-sort-back" onclick="setTermSort('back')" data-page-node-id="MODGvUPN4EdMSxM4shACoT">多头展期优先</span>
+  <span class="mn-item" id="term-sort-cont" onclick="setTermSort('cont')" data-page-node-id="qr4g8reb0DBcBfpR9bfw5o">空头展期优先</span>
+  </div>
+  <div class="table-wrap" data-page-node-id="TAVb80pkAi7PBfTL2AcYnJ">
+  <table class="data-table" id="term-table" data-page-node-id="v5ZNq28V5NvX6FCyUCBNNc">
+  <thead data-page-node-id="81kl1K4fiVkmcE7gbM6avD"><tr data-page-node-id="B6MfxKd6I8YtCAzVWx1xve"><th data-page-node-id="ovEWYS6rzHgtHw4oP2VvB3">品种</th><th data-page-node-id="rwuDL5JmqZMdDxC28DJtaB">现货→C1→C2→C3</th><th style="text-align:right;" data-page-node-id="IXvnrCFAdTgJJG8dDmHJhL">月差</th><th style="text-align:right;" data-page-node-id="EtV7UyCM1JAHX4dvRokbI9">年化</th><th data-page-node-id="sug5HnqTrqNEpRfeCgEoHm">结构</th></tr></thead>
+  <tbody id="term-body" data-page-node-id="Yo3HASwGvfDh90GFv8hlQT"><tr data-page-node-id="EkHo8C096uBVizTNgjE97C"><td colspan="5" class="empty-state" data-page-node-id="l0I3wJcpAYlNKGQtmPKgMB"><span class="loading-spinner" data-page-node-id="DwsyEIZk7nWttA2lTy6G5T"></span> 加载中...</td></tr></tbody>
+  </table>
+  </div>
+  <div class="save-note" id="term-note" data-page-node-id="YNKMtVEeDPwkIYlpbkDziI">📌 --</div>
   </div>
 
-  <!-- 基差透视(自动: 生意社现期表 + 自建近一年分位) V3.1 新增 -->
   <div class="card" id="card-basis" data-page-node-id="zaprV5fH31WtSqGGiMZQty">
-    <div class="card-header" data-page-node-id="rIOHktmCTwIT9EuKU1TIwI">
-      <span class="card-title" data-page-node-id="E9krN1ppfXiu41focGMCDp">📊 基差透视(现货 vs 期货)</span>
-      <span class="card-tag auto" data-page-node-id="F9C5JqlinEBOuAkq6ovZjj">自动</span>
-    </div>
-    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;" data-page-node-id="BMjeJYp5fmZ1bmibTldxf2">基差 = 现货 − 期货主力。按 |基差率| 排列。分位越高 = 基差处于近一年偏高位(现货相对偏强); 越低 = 现货相对偏弱。点品种看详情。</div>
-    <div class="table-wrap" data-page-node-id="mH7Zvd4bGNnsac8uJDQrZS">
-    <table class="data-table" id="basis-table" data-page-node-id="cTtw5yGm00IeyIFlGzFIfL">
-      <thead data-page-node-id="LKjrG2BMUUynIfwYd3p3Mb"><tr data-page-node-id="8fHeOTDdDXVFhZGbQEgf25"><th data-page-node-id="pWn84H9yYAY2o9AczHSE8K">品种</th><th style="text-align:right;" data-page-node-id="oUZ6TY97iujUeVAAIeXtsl">现货</th><th style="text-align:right;" data-page-node-id="yNRhExGJZYmTo8fGVNVoY4">期货</th><th style="text-align:right;" data-page-node-id="jtvUoPELlpxe6vJMZjEXzQ">基差</th><th style="text-align:left;padding-left:8px;" data-page-node-id="IqH5ISJ6gKwOaoK1AUECvF">近1年分位</th></tr></thead>
-      <tbody id="basis-body" data-page-node-id="kBE7w2437w6ix5IpiV4HUH"><tr data-page-node-id="gs27j7VyBTtKClIXzRdLFp"><td colspan="5" class="empty-state" data-page-node-id="3fQUmCYoBL8EBVtyR9jH8d"><span class="loading-spinner" data-page-node-id="i0B7bPlrCKhKqN04MBVyIu"></span> 加载中...</td></tr></tbody>
-    </table>
-    </div>
-    <div class="save-note" data-page-node-id="0ndtpBjPOLeoXf2JS6du3P">📌 现货口径: 生意社基准价(现期表); 期货: 当日主力合约。点行可看 180 日基差区间。原油、20号胶、苹果等生意社无对应现货口径的品种未列入。仅供参考。</div>
+  <div class="card-header" data-page-node-id="rIOHktmCTwIT9EuKU1TIwI">
+  <span class="card-title" data-page-node-id="E9krN1ppfXiu41focGMCDp">📊 基差透视(现货 vs 期货)</span>
+  <span class="card-tag auto" data-page-node-id="F9C5JqlinEBOuAkq6ovZjj">自动</span>
   </div>
-
+  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;" data-page-node-id="BMjeJYp5fmZ1bmibTldxf2">基差 = 现货 − 期货主力。按 |基差率| 排列。分位越高 = 基差处于近一年偏高位(现货相对偏强); 越低 = 现货相对偏弱。点品种看详情。</div>
+  <div class="table-wrap" data-page-node-id="mH7Zvd4bGNnsac8uJDQrZS">
+  <table class="data-table" id="basis-table" data-page-node-id="cTtw5yGm00IeyIFlGzFIfL">
+  <thead data-page-node-id="LKjrG2BMUUynIfwYd3p3Mb"><tr data-page-node-id="8fHeOTDdDXVFhZGbQEgf25"><th data-page-node-id="pWn84H9yYAY2o9AczHSE8K">品种</th><th style="text-align:right;" data-page-node-id="oUZ6TY97iujUeVAAIeXtsl">现货</th><th style="text-align:right;" data-page-node-id="yNRhExGJZYmTo8fGVNVoY4">期货</th><th style="text-align:right;" data-page-node-id="jtvUoPELlpxe6vJMZjEXzQ">基差</th><th style="text-align:left;padding-left:8px;" data-page-node-id="IqH5ISJ6gKwOaoK1AUECvF">近1年分位</th></tr></thead>
+  <tbody id="basis-body" data-page-node-id="kBE7w2437w6ix5IpiV4HUH"><tr data-page-node-id="gs27j7VyBTtKClIXzRdLFp"><td colspan="5" class="empty-state" data-page-node-id="3fQUmCYoBL8EBVtyR9jH8d"><span class="loading-spinner" data-page-node-id="i0B7bPlrCKhKqN04MBVyIu"></span> 加载中...</td></tr></tbody>
+  </table>
+  </div>
+  <div class="save-note" data-page-node-id="0ndtpBjPOLeoXf2JS6du3P">📌 现货口径: 生意社基准价(现期表); 期货: 当日主力合约。点行可看 180 日基差区间。原油、20号胶、苹果等生意社无对应现货口径的品种未列入。仅供参考。</div>
+  </div>
 
   <div class="card" id="card-spread" data-page-node-id="CHn8xacGiPvooQD8Y2sd6w">
-    <div class="card-header" data-page-node-id="p6pUkc8RBICHXjTKDXZWfQ">
-      <span class="card-title" data-page-node-id="DT2iAwViqM7gYlTTLubw5q">⚖️ 跨品种价差(自动)</span>
-      <span class="card-tag auto" data-page-node-id="smfLxFu0L3FHySYQj11XtY">自动</span>
-    </div>
-    <table class="data-table" data-page-node-id="Ddphmw2RaYVEjYFGoKURJE">
-      <thead data-page-node-id="5pOm1wJW1ka42PPobCdwHF"><tr data-page-node-id="at9RUdVOJRIQkpf3PXC5PC"><th data-page-node-id="BwvOcMRgRlHFsBstsN824Y">价差对</th><th style="text-align:right;" data-page-node-id="VYqKKDHPcNBXgvLFPlWUAc">当前价差</th><th style="text-align:right;" data-page-node-id="P5zZ80Um99feALgmFgICjS">说明</th></tr></thead>
-      <tbody id="spread-table-body" data-page-node-id="kgznapCGKBbd8U00PFXesZ"><tr data-page-node-id="IGmYYrpMAZJ7QxeqFLyKLD"><td colspan="3" class="empty-state" data-page-node-id="4AEf1urpMLm8vnLNkBoCPv"><span class="loading-spinner" data-page-node-id="V1FMwZBETfGbdhWq7A6BMN"></span> 计算中...</td></tr></tbody>
-    </table>
+  <div class="card-header" data-page-node-id="p6pUkc8RBICHXjTKDXZWfQ">
+  <span class="card-title" data-page-node-id="DT2iAwViqM7gYlTTLubw5q">⚖️ 跨品种价差(自动)</span>
+  <span class="card-tag auto" data-page-node-id="smfLxFu0L3FHySYQj11XtY">自动</span>
+  </div>
+  <table class="data-table" data-page-node-id="Ddphmw2RaYVEjYFGoKURJE">
+  <thead data-page-node-id="5pOm1wJW1ka42PPobCdwHF"><tr data-page-node-id="at9RUdVOJRIQkpf3PXC5PC"><th data-page-node-id="BwvOcMRgRlHFsBstsN824Y">价差对</th><th style="text-align:right;" data-page-node-id="VYqKKDHPcNBXgvLFPlWUAc">当前价差</th><th style="text-align:right;" data-page-node-id="P5zZ80Um99feALgmFgICjS">说明</th></tr></thead>
+  <tbody id="spread-table-body" data-page-node-id="kgznapCGKBbd8U00PFXesZ"><tr data-page-node-id="IGmYYrpMAZJ7QxeqFLyKLD"><td colspan="3" class="empty-state" data-page-node-id="4AEf1urpMLm8vnLNkBoCPv"><span class="loading-spinner" data-page-node-id="V1FMwZBETfGbdhWq7A6BMN"></span> 计算中...</td></tr></tbody>
+  </table>
   </div>
 
-  <!-- 期货端信号(V2.6 新增:基于当日数据自动派生) -->
-
-  <!-- 价差监控(自动: 豆油价差/铜沪伦比 等) -->
-  <!-- 技术面扫描(自动, 基于日K计算的均线/MACD/RSI/布林/历史分位) -->
-  <div class="card" id="card-tech" data-page-node-id="ljLIOTmyaaIlFT0pOhRFml">
-    <div class="card-header" data-page-node-id="y12U73h9KIRXuFw9eEMAq6">
-      <span class="card-title" data-page-node-id="Nf0IEC3A00srdkgLf0W9iM">📐 技术面扫描(自动)</span>
-      <span class="card-tag auto" data-page-node-id="sCIai7sSWsfvp20KTTVQDU">自动</span>
-    </div>
-    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;" data-page-node-id="R5W2BRZvw874LaZC1rImnW">按"近1年价格分位"从高到低排列。分位越高越接近阶段高位(注意回调), 越低越接近阶段低位。点品种看详情。<br><b style="color:#7dd3fc;">盘中已接入实时价</b>，MA/MACD/RSI 等指标随盘面同步变化，未收盘前数值可能反复。</div>
-    <div id="tech-list" style="max-height:460px;overflow-y:auto;" data-page-node-id="0A2dmVlzxBmeXAhIaBFEYF">--</div>
-    <div class="save-note" data-page-node-id="tf4UkinCg0rz0hssGx8XBi">📌 基于日线收盘价计算: MA5/10/20/60、MACD、RSI14、KDJ、布林、ATR。指标滞后于价格, 仅供参考。</div>
+  <div class="card foldable folded" id="card-quotes">
+  <div class="card-header" onclick="toggleCardFold(this)">
+    <span class="card-title">📊 国内期货主力</span>
+    <span class="card-tag auto">参考</span>
+    <span class="fold-arrow">▸</span>
+  </div>
+  <div style="margin-bottom: 8px;" data-page-node-id="iJcW6sSsLiEUnYeCsaBUlX">
+  <select id="category-select" onchange="renderQuotes()" style="background:#141a26;color:#e5e7eb;border:1px solid #2a3142;padding:6px 8px;border-radius:4px;font-size:12px;width:100%;" data-page-node-id="LHXIJHWAA7f0Cef984458k">
+  <option value="all" data-page-node-id="IiVy8XyY3EBhcv9j2AK8cc">全部</option>
+  <option value="metal" data-page-node-id="mV5DJyNAzS5MD21AppyS0Z">有色金属</option>
+  <option value="black" data-page-node-id="VTharFXdMvi7GfknCVWkTG">黑色系</option>
+  <option value="energy" data-page-node-id="95l7BJX7rqZik9NVLmRJt0">能源化工</option>
+  <option value="agri" data-page-node-id="f911f2jJDj7QbXoCv4w4kF">农产品</option>
+  <option value="finance" data-page-node-id="3qRkOyGrqUVuFmxvZc2Ffo">股指国债</option>
+  </select>
+  </div>
+  <div style="font-size:11px;color:#6b7280;margin:0 0 6px;line-height:1.5;" data-page-node-id="B079GsuQ20aj9p6PCvMhFV">
+  品种后灰色标签为该品种<b style="color:#8b95a5;" data-page-node-id="zfTSDwcxNkV50zGacbGEiT">当前主力合约</b>（按各月份合约持仓量自动判定，换月时自动更新），价格/涨跌/持仓/成交量均取该合约真实数据。
+  </div>
+  <div class="table-wrap" data-page-node-id="JU48MFNo1kycu6VFwFzAkl">
+  <table class="data-table" id="quotes-table" data-page-node-id="TYYokXrqoCzVaIA9gc3ZAD">
+  <thead data-page-node-id="ZlIDrNb9tjiFT6yg2hGXbV">
+  <tr data-page-node-id="5gtnbJsJflfFhEYEo5c5cA"><th class="sortable" data-sort="quotes" data-field="cn_name" data-page-node-id="5l81b0nvunAyFqyK1mX8dV">品种<span class="sort-icon" data-page-node-id="bx6L3xGzzd3wND3Op9eqg2"></span></th><th class="sortable" data-sort="quotes" data-field="last" data-page-node-id="SaEEQVmpEkO1HVXD59qW85">最新<span class="sort-icon" data-page-node-id="U2VyfB4yZI8BUdswhzbyc9"></span></th><th class="sortable" data-sort="quotes" data-field="change" data-page-node-id="q7mCaQ4JiF3prhIdx4RTU6">涨跌<span class="sort-icon" data-page-node-id="s4mgAJkEyY0QxM93V5IDZC"></span></th><th class="sortable" data-sort="quotes" data-field="pct" data-page-node-id="usC5dEvNtaAmBHJozsvxe1">涨跌幅<span class="sort-icon" data-page-node-id="FQ4KAe7RNsMp2IkExYLvB8"></span></th><th class="sortable" data-sort="quotes" data-field="volume" data-page-node-id="whv7ahydyQPcNauHilpJoC">成交量<span class="sort-icon" data-page-node-id="Ba12RPApLvPz8uS8nnnC9V"></span></th></tr>
+  </thead>
+  <tbody data-page-node-id="vCeXFmZWFHrNPDqd4pED2k"><tr data-page-node-id="Coj7MB0lAU2vylfSgEcpBE"><td colspan="5" class="empty-state" data-page-node-id="J7jg64RE24OOrNX8X9bbGw"><span class="loading-spinner" data-page-node-id="IpXGVFWXWwxjcn6CypDqtG"></span> 加载中...</td></tr></tbody>
+  </table>
+  </div>
   </div>
 
-  <!-- 期限结构与展期收益(主力 vs 次主力价差 -> 年化斜率) V3.5 新增 -->
+  <div class="card foldable folded" id="card-outer">
+  <div class="card-header" onclick="toggleCardFold(this)">
+    <span class="card-title">🌏 外围市场</span>
+    <span class="card-tag auto">自动</span>
+    <span class="fold-arrow">▸</span>
+  </div>
+  <div class="sub-label first">隔夜外盘</div>
+  <div class="table-wrap" data-page-node-id="k317UhQGBkEccjUZ5WzXTv">
+  <table class="data-table" id="overnight-table" data-page-node-id="tdZ7WnmGAr4ffjqvrLxzBj">
+  <thead data-page-node-id="MmXeX5p5tODGpj5Y9YiEFq">
+  <tr data-page-node-id="KcARkGMnSthTzbBWDoqIHj"><th class="sortable" data-sort="overnight" data-field="name" data-page-node-id="UmZ7oCP2KWd3qoru7Rq7NM">品种<span class="sort-icon" data-page-node-id="HjBmQLRZOoo5oDYxVOcHLl"></span></th><th class="sortable" data-sort="overnight" data-field="last" data-page-node-id="aO32MnrGnEeWtzMHYrOJbe">最新<span class="sort-icon" data-page-node-id="DytLFcW77EJGU5mX3AXVYY"></span></th><th class="sortable" data-sort="overnight" data-field="change" data-page-node-id="wNQpKytTWnZbzKQAH8PXYj">涨跌<span class="sort-icon" data-page-node-id="LgzVgdjG2vFAoKwe1A1Y1i"></span></th><th class="sortable" data-sort="overnight" data-field="pct" data-page-node-id="AQ3Huq3vNiFBm55omdzamK">涨跌幅<span class="sort-icon" data-page-node-id="PtAErmgBFxHgCIdJvKdoub"></span></th></tr>
+  </thead>
+  <tbody data-page-node-id="sYiANLg6J0jNnFDHoHUnPF"><tr data-page-node-id="WA7mbMLVaAZyJlpEryYUVL"><td colspan="4" class="empty-state" data-page-node-id="1p8MTelfjPWQaJ70pMEEBS"><span class="loading-spinner" data-page-node-id="u117e7QOTh1kSp2Nd0Npub"></span> 加载中...</td></tr></tbody>
+  </table>
+  </div>
+  <div class="sub-label sub-divide">A股指数</div>
+  <table class="data-table" data-page-node-id="3BRaEFzErLnyZX4nyl3Fk9">
+  <thead data-page-node-id="xZdcTOIv3gIHDJK6YJf4Wc"><tr data-page-node-id="T9Pzk61AA3ZSJrUGN1hACz"><th data-page-node-id="Bp9zmIRpLQiGn4XpQPGFYf">指数</th><th style="text-align:right;" data-page-node-id="0AuSwn9FfJVdcaRBpgg7cs">最新</th><th style="text-align:right;" data-page-node-id="YIkQKR8s5ZUsK3F8zTD6vj">涨跌</th></tr></thead>
+  <tbody id="astock-table-body" data-page-node-id="bNkyy6PyflXYQnx7nAE0Hq"><tr data-page-node-id="uHIjDX814KumR5xvJsLiuY"><td colspan="3" class="empty-state" data-page-node-id="bDqm6gW4M8KPjprbZFWDyf"><span class="loading-spinner" data-page-node-id="LtJ65VTsoblAK8t0yxre69"></span> 加载中...</td></tr></tbody>
+  </table>
+  </div>
 
+  <div class="card" id="card-cal">
+  <div class="card-header">
+    <span class="card-title">⏰ 到期与清仓日历</span>
+    <span class="card-tag auto">自动</span>
+  </div>
+  <div class="sub-label first">主力合约到期</div>
+  <div id="expiry-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="ZEnyAnEx0fe2cHBgmB2mm8">--</div>
+  <div class="sub-label sub-divide">期权到期日(未来45天)</div>
+  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="dOQeQr4SIlAPFicWfuoE7R">
+  <b style="color:#e5e7eb;" data-page-node-id="h3lfVgETH8GNdQzWCKg0v2">商品期权为美式</b>(买方可在到期日当日前行权): 到期日当天<b style="color:#e5e7eb;" data-page-node-id="2i4myBcSg7Gyh4HbtPoR4s">平仓截止 15:00, 行权/放弃申请及行权资金入金截止 15:15</b>。
+  实值期权买方行权资金不足将被自动放弃行权; 卖方到期未平仓将按交易所配对履约。
+  <b style="color:#e5e7eb;" data-page-node-id="dsKkGCRo5tHttc1iuCmIk7">中金所股指期权为欧式</b>(仅最后交易日可行权), 采用现金交割。
+  </div>
+  <div id="optexp-list" style="max-height:460px;overflow-y:auto;" data-page-node-id="POxlMYKibhC8rLkvsETF3p">--</div>
+  <div class="save-note" id="optexp-note" data-page-node-id="REpmDhzAHua82YamtMcqvc">📌 --</div>
+  <div class="sub-label sub-divide">自然人清仓(取整/取零)</div>
+  <div id="lot-round-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="x9fXcmM0oj6g7gFI57FQg5">--</div>
+  </div>
+
+  <div class="card foldable folded" id="card-news">
+  <div class="card-header" onclick="toggleCardFold(this)">
+    <span class="card-title">📰 要闻</span>
+    <span class="card-tag auto">自动</span>
+    <button id="btn-multi-source-refresh" onclick="event.stopPropagation();onMultiSourceRefreshClick()" style="background:rgba(74,158,255,0.15);border:1px solid #4a9eff;color:#4a9eff;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600;margin-left:6px;">
+      🔄 多源刷新
+    </button>
+    <span class="fold-arrow">▸</span>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:6px;">
+    <span id="chip-fnews" onclick="switchNews('f')" style="padding:4px 12px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff;border-radius:13px;font-size:12px;cursor:pointer;white-space:nowrap;">期货快讯</span>
+    <span id="chip-nws" onclick="switchNews('n')" style="padding:4px 12px;border:1px solid #2a3142;background:#0f1419;color:#9ca3af;border-radius:13px;font-size:12px;cursor:pointer;white-space:nowrap;">7×24 要闻</span>
+  </div>
+  <div id="wrap-fnews">
+  <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteFnews">盘中随盘面同步更新；多源刷新可即时拉取。</div>
+  <div id="futures-news-list" style="max-height:380px;overflow-y:auto;font-size:12.5px;line-height:1.6;" data-page-node-id="qzS3bScSFbNGsaSfeYH6hz">--</div>
+  </div>
+  <div id="wrap-news" style="display:none;">
+  <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteNews">随每次行情抓取同步更新，盘中可持续刷出新条目。</div>
+  <div id="news-list" style="max-height:500px;overflow-y:auto;" data-page-node-id="jqNv6M3POWDnDigXngFVyt">--</div>
+  </div>
+  </div>
+
+  <div class="card foldable folded" id="card-data">
+  <div class="card-header" onclick="toggleCardFold(this)">
+    <span class="card-title">📊 重要数据(回顾 + 日历)</span>
+    <span class="card-tag auto">自动</span>
+    <span class="fold-arrow">▸</span>
+  </div>
+  <div class="sub-label first">已公布数据回顾</div>
+  <div id="events-list" style="font-size:13px;" data-page-node-id="ZOLJnKbEGnJ6gsnKO49pLM">--</div>
+  <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #2a3142;font-size:10.5px;color:#6b7280;line-height:1.7;">
+  实际值经多家权威来源交叉核对一致后录入；预期值可能因机构而异，标注为市场主流预期。
+  关联品种涨跌幅取行情快照当日真实涨跌，口径已在各项注明。
+  展示保留期按重要度分级：高（美联储/CPI/非农/USDA）保留 1 年、中（EIA/社零/LPR/CFTC 持仓）3 个月、低 30 天；超期自动隐去。
+  近 14 天为「最近回顾」，更早归入「历史回顾」折叠区。以上为客观数据整理，不构成投资建议。投资有风险，入市需谨慎。
+  </div>
+  <div class="sub-label sub-divide">未来 14 天日历</div>
+  <div id="calendar-list" style="font-size:13px;" data-page-node-id="ZOLJnKbEGnJ6gsnKO49pLM2">--</div>
+  </div>
 </section>
 
 <!-- ========== 数据透视 ========== -->
@@ -962,8 +914,8 @@ body { padding-top: 150px; padding-bottom: 16px; }
       每个品种下方一句话总结方向、支撑压力、止损与仓位参考。点品种看完整详情。
     </div>
     <div id="opp-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px;" data-page-node-id="oppFilt">
-      <span class="mn-item active" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
-      <span class="mn-item" data-opp="spec" onclick="setOppFilter('spec')" data-page-node-id="oppSpec">投机</span>
+      <span class="mn-item" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
+      <span class="mn-item active" data-opp="spec" onclick="setOppFilter('spec')" data-page-node-id="oppSpec">投机</span>
       <span class="mn-item" data-opp="hedge" onclick="setOppFilter('hedge')" data-page-node-id="oppHedge">套保</span>
       <span class="mn-item" data-opp="arb" onclick="setOppFilter('arb')" data-page-node-id="oppArb">套利</span>
       <span class="mn-item" data-opp="opt" onclick="setOppFilter('opt')" data-page-node-id="oppOpt">期权</span>
@@ -1072,7 +1024,6 @@ body { padding-top: 150px; padding-bottom: 16px; }
 
   <div class="module-nav" id="strategy-nav" data-page-node-id="mD49JPVbGzRl1cVOqDUBb7">
     <div class="mn-item" onclick="gotoCard('card-hedge')" data-page-node-id="bFCbjqp5h5GVx2tJF2IABM">套保决策</div>
-    <div class="mn-item" onclick="gotoCard('card-match')" data-page-node-id="4AoI1YkCGAjYAWbv0bFUoO">策略×品种匹配</div>
     <div class="mn-item" data-cat="spec" onclick="filterStrategyActive('spec')" data-page-node-id="strNavSpec">投机</div>
     <div class="mn-item" data-cat="hedge" onclick="filterStrategyActive('hedge')" data-page-node-id="strNavHedge">套保</div>
     <div class="mn-item" data-cat="arb" onclick="filterStrategyActive('arb')" data-page-node-id="strNavArb">套利</div>
@@ -1142,18 +1093,6 @@ body { padding-top: 150px; padding-bottom: 16px; }
     </div>
   </div>
 
-  <!-- 策略×品种实时匹配 (V4.0 研究视角) -->
-  <div class="card" id="card-match" style="border-left:3px solid #f59e0b;" data-page-node-id="YWe2uqg6UoV7RNgqjPORlw">
-    <div class="card-header" data-page-node-id="H5vWliOKZJ9zuLSgUdnxr5">
-      <span class="card-title" data-page-node-id="RoygEAjuM1z2yhMPvXkTyy">🎯 策略研究 · 多视角匹配</span>
-      <span class="card-tag auto" data-page-node-id="7NBq7BnsI3Wzthog8J5Ecq">自动</span>
-    </div>
-    <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;line-height:1.7;" data-page-node-id="2BEgEDSI4jBnh34a9ctaUu">
-      以研究员视角, 把当前行情异动映射到 <b style="color:#e5e7eb;" data-page-node-id="MQDLQkPJc3nIMw18LDSHrU">自然人(趋势/波段) · 企业(套保/基差) · 基金(套利/资金)</b> 三类画像。
-      每条附完整证据链, 点击品种看详情。
-    </div>
-    <div id="strategy-match-list" style="font-size:12.5px;line-height:1.7;" data-page-node-id="IRDYP91ILTOnYj9bvyJnTH">--</div>
-  </div>
 
   <!-- 投机 -->
   <div class="strategy-card" data-cat="spec" data-key="trend" data-page-node-id="Bu8RU4i1QbykAnZc21j84F">
@@ -2487,6 +2426,7 @@ function _resCard(code, s, opts) {
 function renderStrategyMatches() {
   const box = document.getElementById('strategy-match-list');
   if (!box) return;
+  if (!box) return;
   const sigs = (quotesData && quotesData.future_signals) || [];
   const tech = (quotesData && quotesData.tech) || {};
   const hedge = (quotesData && quotesData.hedge) || {};
@@ -3561,6 +3501,27 @@ function paneOfCard(el) {
   }
   return null;
 }
+function toggleCardFold(hd) {
+  const card = hd.closest('.card');
+  if (!card || !card.classList.contains('foldable')) return;
+  const folded = card.classList.toggle('folded');
+  const ar = hd.querySelector('.fold-arrow');
+  if (ar) ar.textContent = folded ? '▸' : '▾';
+}
+
+function switchNews(w) {
+  const f = document.getElementById('wrap-fnews'), n = document.getElementById('wrap-news');
+  const cf = document.getElementById('chip-fnews'), cn = document.getElementById('chip-nws');
+  if (!f || !n || !cf || !cn) return;
+  const onF = w === 'f';
+  f.style.display = onF ? '' : 'none';
+  n.style.display = onF ? 'none' : '';
+  const ON  = 'padding:4px 12px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff;border-radius:13px;font-size:12px;cursor:pointer;white-space:nowrap;';
+  const OFF = 'padding:4px 12px;border:1px solid #2a3142;background:#0f1419;color:#9ca3af;border-radius:13px;font-size:12px;cursor:pointer;white-space:nowrap;';
+  cf.style.cssText = onF ? ON : OFF;
+  cn.style.cssText = onF ? OFF : ON;
+}
+
 function gotoCard(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -3570,6 +3531,7 @@ function gotoCard(id) {
     switchTab(tab, true);      // true=不回到顶部, 交给下面的 scrollToEl 精确定位
   }
   if (id === 'card-rank') ensureRank();
+  if (el.classList.contains('foldable') && el.classList.contains('folded')) toggleCardFold(el.querySelector('.card-header'));
   if (pane) {
     // 卡片隐藏时(如品种详情)先让它可见, 否则滚动位置算不准
     if (getComputedStyle(el).display === 'none') el.style.display = '';
@@ -3902,7 +3864,7 @@ const SL_OPP_GRP_CN = { spec: '投机', hedge: '套保', arb: '套利', opt: '�
 const SL_OPP_ORDER = ['黑色', '有色', '能化', '农产', '金融'];
 // 真正的"方向/套保/期权信号"类型(区别于波动率/跨期/跨品种等特征型)
 const SL_OPP_PRIMARY = { trend: 1, reversal: 1, breakout: 1, buy_hedge: 1, sell_hedge: 1, opt_dir: 1, opt_enhance: 1, opt_hedge: 1 };
-let oppFilter = 'all';
+let oppFilter = 'spec';
 let oppSecFilter = 'all';
 let oppStrong = false;
 function setOppFilter(g) {
