@@ -470,14 +470,14 @@ body { padding-top: 150px; padding-bottom: 16px; }
 }
 .tech-row:last-child { border-bottom: none; }
 .tech-name { width: 62px; flex: 0 0 auto; color: #e5e7eb; font-weight: 500; }
-.tech-bar-wrap { flex: 1; height: 6px; background: #1f2536; border-radius: 3px; position: relative; overflow: hidden; }
+.tech-bar-wrap { flex: 0 0 64px; width: 64px; height: 6px; background: #1f2536; border-radius: 3px; position: relative; overflow: hidden; }
 .tech-bar { height: 100%; border-radius: 3px; }
 .tech-pct { width: 46px; flex: 0 0 auto; text-align: right; font-variant-numeric: tabular-nums; color: #9ca3af; font-size: 11.5px; }
 .tech-tag {
   flex: 0 0 auto; font-size: 10.5px; padding: 1px 5px; border-radius: 3px;
   background: #1f2536; color: #9ca3af;
 }
-.tech-sum { flex: 0 0 auto; max-width: 32%; font-size: 11px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tech-sum { flex: 1 1 0; min-width: 0; font-size: 11px; color: #9ca3af; line-height: 1.5; }
 @media (max-width: 480px) {
   .tech-row { flex-wrap: wrap; row-gap: 3px; }
   .tech-name { width: 56px; }
@@ -679,6 +679,15 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <span class="card-tag auto" data-page-node-id="sCIai7sSWsfvp20KTTVQDU">自动</span>
   </div>
   <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;" data-page-node-id="R5W2BRZvw874LaZC1rImnW">按"近1年价格分位"从高到低排列。分位越高越接近阶段高位(注意回调), 越低越接近阶段低位。点品种看详情。<br><b style="color:#7dd3fc;">盘中已接入实时价</b>，MA/MACD/RSI 等指标随盘面同步变化，未收盘前数值可能反复。</div>
+  <div id="tech-sec-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;" data-page-node-id="techSecF">
+    <span class="mn-item active" data-sec="all" onclick="setTechSec('all')" data-page-node-id="techSecAll">全部</span>
+    <span class="mn-item" data-sec="precious" onclick="setTechSec('precious')" data-page-node-id="techSecPre">贵金属</span>
+    <span class="mn-item" data-sec="metal" onclick="setTechSec('metal')" data-page-node-id="techSecMetal">有色</span>
+    <span class="mn-item" data-sec="energy" onclick="setTechSec('energy')" data-page-node-id="techSecEnergy">原油·能化</span>
+    <span class="mn-item" data-sec="black" onclick="setTechSec('black')" data-page-node-id="techSecBlack">黑色</span>
+    <span class="mn-item" data-sec="agri" onclick="setTechSec('agri')" data-page-node-id="techSecAgri">农产品</span>
+    <span class="mn-item" data-sec="finance" onclick="setTechSec('finance')" data-page-node-id="techSecFin">金融</span>
+  </div>
   <div id="tech-list" style="max-height:460px;overflow-y:auto;" data-page-node-id="0A2dmVlzxBmeXAhIaBFEYF">--</div>
   <div class="save-note" data-page-node-id="tf4UkinCg0rz0hssGx8XBi">📌 基于日线收盘价计算: MA5/10/20/60、MACD、RSI14、KDJ、布林、ATR。指标滞后于价格, 仅供参考。</div>
   </div>
@@ -3555,6 +3564,12 @@ window.addEventListener('resize', fitHeader);
 window.addEventListener('orientationchange', fitHeader);
 
 // ===== 技术面扫描渲染 =====
+let techSec = 'all';
+function setTechSec(s) {
+  techSec = s;
+  document.querySelectorAll('#tech-sec-filter .mn-item').forEach(el => el.classList.toggle('active', el.dataset.sec === s));
+  renderTechScan();
+}
 function renderTechScan() {
   const box = document.getElementById('tech-list');
   if (!box) return;
@@ -3562,7 +3577,14 @@ function renderTechScan() {
   const rows = Object.keys(tech).map(code => Object.assign({ code }, tech[code])).filter(t => t && t.pct_1y != null);
   if (!rows.length) { box.innerHTML = '<div style="color:#9ca3af;font-size:12px;">暂无技术面数据, 待下个交易日收盘后生成。</div>'; return; }
   rows.sort((a, b) => b.pct_1y - a.pct_1y);
-  box.innerHTML = rows.map(t => {
+  // 板块归属: categories 映射, 贵金属(金银)单列, 外盘/未知归其他
+  const cats = (quotesData && quotesData.categories) || {};
+  const codeSec = {};
+  Object.keys(cats).forEach(sec => (cats[sec] || []).forEach(o => { if (o && o.code) codeSec[o.code] = sec; }));
+  const secOf = c => (c === 'AU0' || c === 'AG0') ? 'precious' : (codeSec[c] === 'overseas' ? 'other' : (codeSec[c] || 'other'));
+  const shown = techSec === 'all' ? rows : rows.filter(t => secOf(t.code) === techSec);
+  if (!shown.length) { box.innerHTML = '<div style="color:#9ca3af;font-size:12px;">该板块暂无数据。</div>'; return; }
+  box.innerHTML = shown.map(t => {
     const p = Math.max(0, Math.min(100, t.pct_1y));
     const color = p >= 80 ? '#ef4444' : p >= 60 ? '#f59e0b' : p <= 20 ? '#10b981' : p <= 40 ? '#4a9eff' : '#8b95a5';
     const sigs = [];
