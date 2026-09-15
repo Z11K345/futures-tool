@@ -771,6 +771,8 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div class="save-note" id="optexp-note" data-page-node-id="REpmDhzAHua82YamtMcqvc">📌 --</div>
   <div class="sub-label sub-divide">自然人清仓(取整/取零)</div>
   <div id="lot-round-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="x9fXcmM0oj6g7gFI57FQg5">--</div>
+  <div class="sub-label sub-divide">金融期货(股指/国债)到期·清仓</div>
+  <div id="fin-calendar" style="font-size:13px;line-height:1.7;">--</div>
   </div>
 
   <div class="card foldable folded" id="card-news">
@@ -1758,6 +1760,7 @@ function onQuotesLoaded() {
   renderExpiryAlerts();
   renderOptionExpiry();
   renderLotRoundAlerts();
+  renderFinCalendar();
   renderFuturesNews();
   renderStrategyMatches();
   renderTechScan();
@@ -2959,6 +2962,64 @@ function renderLotRoundAlerts() {
 
   html += '<div style="margin-top:6px;font-size:10.5px;color:#6b7280;line-height:1.5;">'
     + '规则来源:上期所《交割管理办法》第四条、上期所风控专题(交割单位对应手数表)、郑商所《风控办法》第二十五条;'
+    + '交易日已排除2026年法定休市。实际执行以期货公司通知为准。</div>';
+  box.innerHTML = html;
+}
+
+// 金融期货(股指/国债)到期·清仓日历
+function renderFinCalendar() {
+  const box = document.getElementById('fin-calendar');
+  if (!box) return;
+  const list = (quotesData && quotesData.fin_calendar) || [];
+  if (!list.length) {
+    box.innerHTML = '<div style="color:#9ca3af;font-size:12px;">暂无金融期货到期/清仓数据。</div>';
+    return;
+  }
+  const WD = ['日', '一', '二', '三', '四', '五', '六'];
+  const md = s => { const d = new Date(s + 'T00:00:00'); return `${d.getMonth() + 1}月${d.getDate()}日`; };
+  const mdw = s => { const d = new Date(s + 'T00:00:00'); return `${d.getMonth() + 1}月${d.getDate()}日(周${WD[d.getDay()]})`; };
+
+  const idx = list.filter(i => !i.is_treasury);   // 股指期货
+  const tre = list.filter(i => i.is_treasury);    // 国债期货
+
+  const lvOf = (d) => {
+    if (d == null) return { c: '#d1d5db', bg: '#111827', bd: '#4b5563' };
+    if (d <= 3)  return { c: '#fca5a5', bg: '#450a0a', bd: '#ef4444' };
+    if (d <= 8)  return { c: '#fcd34d', bg: '#422006', bd: '#f59e0b' };
+    return { c: '#d1d5db', bg: '#111827', bd: '#4b5563' };
+  };
+
+  const row = (i) => {
+    const lv = lvOf(i.days_to_ltd);
+    const ct = i.contract || '';
+    let sub = '';
+    if (i.is_treasury && i.clear_day) {
+      const clv = lvOf(i.days_to_clear);
+      sub = `自然人清仓 <b style="color:${clv.c};">${mdw(i.clear_day)}</b>`
+        + ` <span style="color:#6b7280;">(剩 ${i.days_to_clear} 日 · 未申报国债托管账户)</span>`;
+    } else if (!i.is_treasury) {
+      sub = '<span style="color:#9ca3af;">现金交割 · 自然人可持有至最后交易日, 无需提前清仓</span>';
+    }
+    return `<div style="padding:6px 9px;margin-bottom:5px;background:${lv.bg};border-left:3px solid ${lv.bd};border-radius:4px;">`
+      + `<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px;">`
+      + `<span style="font-size:13px;font-weight:700;color:${lv.c};">${i.cn}</span>`
+      + `<span style="font-size:11px;color:${lv.c};">${ct} · 剩 ${i.days_to_ltd} 日</span></div>`
+      + `<div style="font-size:11.5px;color:#d1d5db;margin-top:2px;">最后交易日 <b style="color:${lv.c};">${mdw(i.ltd)}</b></div>`
+      + (sub ? `<div style="font-size:11px;color:#9ca3af;margin-top:2px;line-height:1.5;">${sub}</div>` : '')
+      + `</div>`;
+  };
+
+  let html = '';
+  if (idx.length) {
+    html += '<div style="font-size:11.5px;color:#93c5fd;margin:2px 0 5px;font-weight:700;">📈 股指期货（现金交割 · 可持有至最后交易日）</div>';
+    idx.forEach(i => html += row(i));
+  }
+  if (tre.length) {
+    html += '<div style="font-size:11.5px;color:#93c5fd;margin:8px 0 5px;font-weight:700;">🏦 国债期货（实物交割 · 未申报托管账户须提前清仓）</div>';
+    tre.forEach(i => html += row(i));
+  }
+  html += '<div style="margin-top:6px;font-size:10.5px;color:#6b7280;line-height:1.5;">'
+    + '规则来源:中金所《股指期货合约交易细则》《国债期货合约交割细则》(证监会法规库);'
     + '交易日已排除2026年法定休市。实际执行以期货公司通知为准。</div>';
   box.innerHTML = html;
 }

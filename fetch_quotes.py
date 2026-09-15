@@ -786,6 +786,86 @@ def compute_lot_round_alerts():
     return compute_delivery_deadlines()
 
 
+def compute_financial_futures_calendar(main_map=None):
+    """
+    金融期货(股指/国债)到期·清仓日历。 [V3.x 新增, 解决"金融期货清仓日历难找"问题]
+
+    口径(2026-09-15 中金所官网 + 证监会法规库交叉核对):
+      · 股指期货 IF/IH/IC/IM: 最后交易日 = 交割月第3个周五; 现金交割,
+        自然人可持有至最后交易日当天, 未平仓持仓收盘后按交割结算价自动现金结算,
+        **无强制提前清仓**要求 → 本日历展示其"最后交易日(到期日)"即可。
+      · 国债期货 T/TF/TS/TL: 最后交易日 = 交割月第2个周五;
+        自然人未申报国债托管账户者, 须在**交割月前第2个交易日收盘前**清仓
+        (《中金所国债期货合约交割细则》第十一条: 交割月份之前的二个交易日尚未通过
+         托管账户审核的客户, 自交割月份之前的一个交易日至最后交易日持仓应为0)。
+        已申报托管账户者方可持仓进入交割月参与实物交割。
+    返回: [{'code','cn','exchange','contract','ltd','is_treasury',
+            'clear_day','days_to_ltd','days_to_clear'}]
+    """
+    main_map = main_map or {}
+    out = []
+    today = datetime.now().date()
+    FIN = {'IF0', 'IH0', 'IC0', 'IM0', 'T0', 'TF0', 'TS0', 'TL0'}
+    for code, spec in CONTRACT_SPECS.items():
+        if code not in FIN:
+            continue
+        ex = spec['exchange']
+        is_treasury = code in ('T0', 'TF0', 'TS0', 'TL0')
+
+        # ---- 起始月份: 优先真实主力合约 ----
+        start_year, start_month = today.year, today.month
+        mc = main_map.get(code)
+        if mc and mc.get('month') and len(mc['month']) == 4:
+            try:
+                yy, mm = int(mc['month'][:2]), int(mc['month'][2:])
+                cur_yy = today.year % 100
+                year = today.year + (yy - cur_yy if yy >= cur_yy else yy + 100 - cur_yy)
+                if (year, mm) >= (today.year, today.month):
+                    start_year, start_month = year, mm
+            except (ValueError, TypeError):
+                pass
+
+        # 从起始月份起向后找第一个"最后交易日尚未到期"的合约月份
+        cur_year, cur_month = start_year, start_month
+        hit_ym = None
+        ltd = None
+        for _ in range(4):
+            cand = compute_last_trading_day(spec, cur_year, cur_month)
+            if cand and cand >= today:
+                hit_ym = (cur_year, cur_month)
+                ltd = cand
+                break
+            cur_month += 1
+            if cur_month > 12:
+                cur_month = 1
+                cur_year += 1
+        if not hit_ym or not ltd:
+            continue
+
+        # 国债自然人清仓日 = 交割月前第2个交易日收盘前
+        clear_day = None
+        if is_treasury:
+            py, pm = prev_month(hit_ym[0], hit_ym[1])
+            tds = trading_days_of_month(py, pm)
+            if len(tds) >= 2:
+                clear_day = tds[-2]
+
+        out.append({
+            'code': code,
+            'cn': spec['product'],
+            'exchange': ex,
+            'contract': code[:-1].upper() + '%02d%02d' % (hit_ym[0] % 100, hit_ym[1]),
+            'ltd': ltd.isoformat(),
+            'is_treasury': is_treasury,
+            'clear_day': clear_day.isoformat() if clear_day else None,
+            'days_to_ltd': (ltd - today).days,
+            'days_to_clear': (clear_day - today).days if clear_day else None,
+        })
+
+    out.sort(key=lambda x: (x['is_treasury'], x['ltd']))
+    return out
+
+
 OI_BASELINE_PATH = DATA_DIR / 'oi_baseline.json'
 
 
@@ -1371,6 +1451,9 @@ def main():
 
     result['lot_round_alerts'] = compute_lot_round_alerts()
     print(f'[OK] lot_round_alerts: {len(result["lot_round_alerts"])} 项取整/1手起提示')
+
+    result['fin_calendar'] = compute_financial_futures_calendar(main_map)
+    print(f'[OK] fin_calendar: {len(result["fin_calendar"])} 项金融期货到期/清仓')
 
     _lap('新闻+日历')
     # 6) 期货端信号(基于当日数据自动派生,附量价仓证据)
