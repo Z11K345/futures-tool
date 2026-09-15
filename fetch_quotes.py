@@ -790,6 +790,9 @@ def compute_financial_futures_calendar(main_map=None):
     """
     金融期货(股指/国债)到期·清仓日历。 [V3.x 新增, 解决"金融期货清仓日历难找"问题]
 
+    合约选取: 取各品种**最近到期**的挂牌合约(按中金所合约月份规则枚举)。
+      不用"主力合约"——股指主力按持仓量常落在远季月, 会把临近到期的近月漏掉。
+
     口径(2026-09-15 中金所官网 + 证监会法规库交叉核对):
       · 股指期货 IF/IH/IC/IM: 最后交易日 = 交割月第3个周五; 现金交割,
         自然人可持有至最后交易日当天, 未平仓持仓收盘后按交割结算价自动现金结算,
@@ -812,33 +815,47 @@ def compute_financial_futures_calendar(main_map=None):
         ex = spec['exchange']
         is_treasury = code in ('T0', 'TF0', 'TS0', 'TL0')
 
-        # ---- 起始月份: 优先真实主力合约 ----
-        start_year, start_month = today.year, today.month
-        mc = main_map.get(code)
-        if mc and mc.get('month') and len(mc['month']) == 4:
-            try:
-                yy, mm = int(mc['month'][:2]), int(mc['month'][2:])
-                cur_yy = today.year % 100
-                year = today.year + (yy - cur_yy if yy >= cur_yy else yy + 100 - cur_yy)
-                if (year, mm) >= (today.year, today.month):
-                    start_year, start_month = year, mm
-            except (ValueError, TypeError):
-                pass
+        # ---- 合约月份: 按中金所规则枚举真实挂牌月份, 取"最近一个尚未到期"的合约 ----
+        #   · 股指 IF/IH/IC/IM: 当月、下月及随后两个季月(季月=3/6/9/12)
+        #   · 国债 T/TF/TS/TL : 最近的三个季月
+        # 不取"主力合约": 股指按持仓量评出的主力常是远季月(如 9 月时主力为 2612),
+        # 会把临近到期的近月(如 3 天后到期的 2609)整个漏掉 → 改为取最近到期合约。
+        QUARTERS = (3, 6, 9, 12)
+        candidates = []
+        if is_treasury:
+            y, m = today.year, today.month
+            while len(candidates) < 3:
+                if m in QUARTERS:
+                    candidates.append((y, m))
+                m += 1
+                if m > 12:
+                    m, y = 1, y + 1
+        else:
+            candidates.append((today.year, today.month))
+            if today.month == 12:
+                ny, nm = today.year + 1, 1
+            else:
+                ny, nm = today.year, today.month + 1
+            candidates.append((ny, nm))
+            y, m = ny, nm
+            m += 1
+            if m > 12:
+                m, y = 1, y + 1
+            while len(candidates) < 4:
+                if m in QUARTERS:
+                    candidates.append((y, m))
+                m += 1
+                if m > 12:
+                    m, y = 1, y + 1
 
-        # 从起始月份起向后找第一个"最后交易日尚未到期"的合约月份
-        cur_year, cur_month = start_year, start_month
         hit_ym = None
         ltd = None
-        for _ in range(4):
-            cand = compute_last_trading_day(spec, cur_year, cur_month)
+        for (cy, cm) in candidates:
+            cand = compute_last_trading_day(spec, cy, cm)
             if cand and cand >= today:
-                hit_ym = (cur_year, cur_month)
+                hit_ym = (cy, cm)
                 ltd = cand
                 break
-            cur_month += 1
-            if cur_month > 12:
-                cur_month = 1
-                cur_year += 1
         if not hit_ym or not ltd:
             continue
 

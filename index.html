@@ -632,6 +632,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <div class="mn-item" onclick="gotoCard('card-cal')">日历</div>
     <div class="mn-item" onclick="gotoCard('card-news')">要闻</div>
     <div class="mn-item" onclick="gotoCard('card-data')">数据</div>
+    <div class="mn-item" onclick="gotoFinCalendar()">清仓</div>
   </div>
 
   <div class="card" id="card-focus" style="border-left:3px solid #4a9eff;background:linear-gradient(135deg,#1a1f2e 0%,#141a26 100%);">
@@ -771,7 +772,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div class="save-note" id="optexp-note" data-page-node-id="REpmDhzAHua82YamtMcqvc">📌 --</div>
   <div class="sub-label sub-divide">自然人清仓(取整/取零)</div>
   <div id="lot-round-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="x9fXcmM0oj6g7gFI57FQg5">--</div>
-  <div class="sub-label sub-divide">金融期货(股指/国债)到期·清仓</div>
+  <div class="sub-label sub-divide">金融期货(股指/国债)到期·清仓（列各品种最近到期合约）</div>
   <div id="fin-calendar" style="font-size:13px;line-height:1.7;">--</div>
   </div>
 
@@ -3880,6 +3881,29 @@ function gotoCard(id) {
     scrollToEl(el, 8);
     el.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
     setTimeout(() => { el.style.boxShadow = ''; }, 1200);
+  });
+}
+
+// 快标「清仓」: 直达「到期与清仓日历」卡内的「金融期货(股指/国债)到期·清仓」小节
+function gotoFinCalendar() {
+  const el = document.getElementById('fin-calendar');
+  if (!el) return;
+  const card = document.getElementById('card-cal') || el.closest('.card');
+  if (card) {
+    const pane = paneOfCard(card);
+    if (pane && !pane.classList.contains('active')) {
+      switchTab(pane.id.replace(/^tab-/, ''), true);   // true=不回到顶部, 交给下面精确定位
+    }
+    if (card.classList.contains('foldable') && card.classList.contains('folded')) {
+      toggleCardFold(card.querySelector('.card-header'));
+    }
+    if (getComputedStyle(card).display === 'none') card.style.display = '';
+  }
+  requestAnimationFrame(() => {
+    scrollToEl(el, 8);
+    el.style.transition = 'box-shadow .2s';
+    el.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
+    setTimeout(() => { el.style.boxShadow = ''; }, 1400);
   });
 }
 
