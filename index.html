@@ -3151,10 +3151,13 @@ function renderPostReview() {
   statusEl.innerHTML = `<span style="color:${statusColor};font-weight:600;">${statusTxt}</span>
     <div style="color:#8b95a5;margin-top:3px;">交易日口径：前一晚 21:00 夜盘开盘 → 当日收盘（商品/股指约 15:00，国债 15:15），构成一个完整交易日。当日分析不含股指期货，聚焦商品期货期权。</div>`;
 
+  // html 累加器：教学板块与正文共用，必须先声明（否则下方 html += 触发 TDZ ReferenceError，导致整页数据不渲染）
+  let html = '';
+
   // —— 教学板块：怎么读当日分析（只教方法，不喊单、不判涨跌、不给买卖点）——
   if (window.__rvTeachCollapsed === undefined) window.__rvTeachCollapsed = false;
   html += `<div style="border:1px solid #2a3346;border-radius:8px;background:#0d1117;margin:6px 0 10px;overflow:hidden;">
-    <div onclick="window.__rvTeachCollapsed=!window.__rvTeachCollapsed;renderReview();" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:#121a28;">
+    <div onclick="window.__rvTeachCollapsed=!window.__rvTeachCollapsed;renderPostReview();" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:#121a28;">
       <span style="font-weight:600;color:#e5e7eb;font-size:13px;">📖 怎么读当日分析 <span style="color:#8b95a5;font-weight:400;font-size:11px;">（教学 · 只讲方法，不喊单、不判涨跌、不给买卖点）</span></span>
       <span style="color:#6b7280;font-size:12px;">${window.__rvTeachCollapsed ? '▸ 展开' : '▾ 收起'}</span>
     </div>
@@ -3176,7 +3179,6 @@ function renderPostReview() {
 
   // —— 正文 ——
   const rv = (quotesData && quotesData.review) || null;
-  let html = '';
 
   // ① 当日盘面主线
   html += `<div style="font-weight:600;color:#e5e7eb;margin:2px 0 4px;">📌 当日盘面主线</div>`;
