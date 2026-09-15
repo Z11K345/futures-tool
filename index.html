@@ -3062,7 +3062,7 @@ function getPostReviewState() {
   const isWeekend = dow === 0 || dow === 6;
   // 全市场下午收盘时点: 取 15:15(覆盖商品/股指 15:00 与国债 15:15)
   const afterFullClose = (h > 15) || (h === 15 && m >= 15);
-  // 复盘定稿状态: 周末展示上一交易日完整复盘; 工作日须等收盘
+  // 复盘定稿状态: 周末/工作日盘中(收盘前)展示上一交易日分析; 收盘后(15:15)展示当日分析
   const finalized = isWeekend ? true : (isWorkday ? afterFullClose : true);
   return { dow, isWorkday, isWeekend, afterFullClose, finalized, now };
 }
@@ -3085,7 +3085,7 @@ function renderPostReview() {
     statusTxt = `✅ ${dayCn}${dayOfWeek ? '（' + dayOfWeek + '）' : ''} 完整交易日分析已生成`;
   } else {
     statusColor = '#f59e0b';
-    statusTxt = `🕐 今日交易进行中，当日分析将于 15:15 收盘后定稿（当前为盘中数据）`;
+    statusTxt = `🕐 今日交易进行中，当前显示上一交易日分析，当日分析将于 15:15 收盘后定稿`;
   }
   statusEl.innerHTML = `<span style="color:${statusColor};font-weight:600;">${statusTxt}</span>
     <div style="color:#8b95a5;margin-top:3px;">交易日口径：前一晚 21:00 夜盘开盘 → 当日收盘（商品/股指约 15:00，国债 15:15），构成一个完整交易日。当日分析不含股指期货，聚焦商品期货期权。</div>`;
