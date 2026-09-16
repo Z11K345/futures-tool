@@ -3884,26 +3884,24 @@ function gotoCard(id) {
   });
 }
 
-// 快标「清仓」: 直达「到期与清仓日历」卡内的「金融期货(股指/国债)到期·清仓」小节
+// 快标「清仓」: 直达「到期与清仓日历」卡片顶部(从标题"⏰ 到期与清仓日历"开始), 而非卡内某小节
 function gotoFinCalendar() {
-  const el = document.getElementById('fin-calendar');
-  if (!el) return;
-  const card = document.getElementById('card-cal') || el.closest('.card');
-  if (card) {
-    const pane = paneOfCard(card);
-    if (pane && !pane.classList.contains('active')) {
-      switchTab(pane.id.replace(/^tab-/, ''), true);   // true=不回到顶部, 交给下面精确定位
-    }
-    if (card.classList.contains('foldable') && card.classList.contains('folded')) {
-      toggleCardFold(card.querySelector('.card-header'));
-    }
-    if (getComputedStyle(card).display === 'none') card.style.display = '';
+  const card = document.getElementById('card-cal');
+  if (!card) return;
+  const pane = paneOfCard(card);
+  if (pane && !pane.classList.contains('active')) {
+    switchTab(pane.id.replace(/^tab-/, ''), true);   // true=不回到顶部, 交给下面精确定位
   }
+  if (card.classList.contains('foldable') && card.classList.contains('folded')) {
+    toggleCardFold(card.querySelector('.card-header'));
+  }
+  if (getComputedStyle(card).display === 'none') card.style.display = '';
   requestAnimationFrame(() => {
-    scrollToEl(el, 8);
-    el.style.transition = 'box-shadow .2s';
-    el.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
-    setTimeout(() => { el.style.boxShadow = ''; }, 1400);
+    scrollToEl(card, 8);
+    const hl = card.querySelector('.card-header') || card;
+    hl.style.transition = 'box-shadow .2s';
+    hl.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
+    setTimeout(() => { hl.style.boxShadow = ''; }, 1400);
   });
 }
 
