@@ -2909,9 +2909,10 @@ function renderLotRoundAlerts() {
   const days = Object.keys(g).sort();
 
   let html = '<div style="font-size:11.5px;color:#9ca3af;margin-bottom:7px;line-height:1.55;">'
-    + '自然人不得参与实物交割。'
-    + '<b style="color:#e5e7eb;">上期所·能源中心</b>可进交割月,须<b style="color:#fcd34d;">先取整、再取零</b>;'
-    + '<b style="color:#e5e7eb;">郑商所·大商所·广期所</b>不得进交割月,<b style="color:#fca5a5;">直接取零</b>。</div>';
+    + '自然人不得参与实物交割,各交易所规则不同:'
+    + '<br>· <b style="color:#e5e7eb;">上期所/能源中心</b>仅个别品种允许自然人持仓进交割月,须<b style="color:#fcd34d;">先取整、再取零</b>;原油、燃料油、低硫燃料油不得进交割月。'
+    + '<br>· <b style="color:#e5e7eb;">郑商所/大商所/广期所</b>不得进交割月,<b style="color:#fca5a5;">直接取零</b>。'
+    + '<br>· <b style="color:#e5e7eb;">中金所</b>现金交割,自然人可持有至最后交易日(国债须先申报托管账户)。</div>';
 
   days.forEach(d => {
     const items = g[d];
