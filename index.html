@@ -643,7 +643,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div style="font-size:11.5px;color:#9ca3af;line-height:1.65;margin-bottom:8px;" data-page-node-id="focusGuide">
     <b style="color:#e5e7eb;">盘中三步看（点文字直达）：</b><br>
     ① <span style="color:#4a9eff;cursor:pointer;text-decoration:underline;" onclick="gotoCard('card-movers')">涨跌幅榜 + 期货端信号</span> → 谁在异动、哪些品种触发了买卖信号<br>
-    ② <span style="color:#4a9eff;cursor:pointer;text-decoration:underline;" onclick="gotoCard('card-tech')">技术面扫描</span> → 近1年分位极端（高=接近阶段顶/低=接近阶段底）的品种<br>
+    ② <span style="color:#4a9eff;cursor:pointer;text-decoration:underline;" onclick="gotoCard('card-tech')">技术面扫描</span> → 突破信号（逼近250日新高/新低、布林收口变盘）的品种<br>
     ③ <span style="color:#4a9eff;cursor:pointer;text-decoration:underline;" onclick="gotoCard('card-news')">要闻 + 重要数据</span> → 今天市场为何这么走、受哪些消息/数据影响<br>
     <span style="color:#6b7280;">找具体机会 → 顶部切「机会」页；</span>点任意品种名可看该品种档案与策略。
   </div>
@@ -690,7 +690,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <span class="card-title" data-page-node-id="Nf0IEC3A00srdkgLf0W9iM">📐 技术面扫描(自动)</span>
   <span class="card-tag auto" data-page-node-id="sCIai7sSWsfvp20KTTVQDU">自动</span>
   </div>
-  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;" data-page-node-id="R5W2BRZvw874LaZC1rImnW">按"近1年价格分位"从高到低排列。分位越高越接近阶段高位(注意回调), 越低越接近阶段低位。点品种看详情。<br><b style="color:#7dd3fc;">盘中已接入实时价</b>，MA/MACD/RSI 等指标随盘面同步变化，未收盘前数值可能反复。</div>
+  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;" data-page-node-id="R5W2BRZvw874LaZC1rImnW">按"突破信号"分组展示：向上突破候选(逼近250日新高) / 向下破位候选(逼近250日新低) / 变盘蓄势(布林收口)。点品种看详情。<br><b style="color:#7dd3fc;">盘中已接入实时价</b>，MA/MACD/RSI 等指标随盘面同步变化，未收盘前数值可能反复。</div>
   <div id="tech-sec-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;" data-page-node-id="techSecF">
     <span class="mn-item active" data-sec="all" onclick="setTechSec('all')" data-page-node-id="techSecAll">全部</span>
     <span class="mn-item" data-sec="precious" onclick="setTechSec('precious')" data-page-node-id="techSecPre">贵金属</span>
@@ -1090,7 +1090,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
       <div id="hedge-count" style="font-size:11px;color:#6b7280;margin-top:5px;" data-page-node-id="Uw1UO8p81BiIu9WoU9vcBq">--</div>
     </div>
     <div id="hedge-list" style="max-height:520px;overflow-y:auto;" data-page-node-id="31GNphvcSx3h8m8zWzDIii">--</div>
-    <div class="save-note" data-page-node-id="J39s5VL1qOn9zaOvGDKYYr">📌 依据: 价格分位(近1年, 自算) + 基差分位(近1年, 自算) + ATR波动率 + 未来3日重要数据。比例为常见参考区间, 非个别建议, 仅供参考。</div>
+    <div class="save-note" data-page-node-id="J39s5VL1qOn9zaOvGDKYYr">📌 依据: 基差分位(近1年) + 突破信号 + ATR波动率 + 未来3日重要数据。比例为常见参考区间, 非个别建议, 仅供参考。</div>
   </div>
 
   <!-- 分类入口 -->
@@ -3928,9 +3928,8 @@ function renderTechScan() {
   const box = document.getElementById('tech-list');
   if (!box) return;
   const tech = (quotesData && quotesData.tech) || {};
-  const rows = Object.keys(tech).map(code => Object.assign({ code }, tech[code])).filter(t => t && t.pct_1y != null);
+  const rows = Object.keys(tech).map(code => Object.assign({ code }, tech[code])).filter(t => t && t.high_250 != null);
   if (!rows.length) { box.innerHTML = '<div style="color:#9ca3af;font-size:12px;">暂无技术面数据, 待下个交易日收盘后生成。</div>'; return; }
-  rows.sort((a, b) => b.pct_1y - a.pct_1y);
   // 板块归属: categories 映射, 贵金属(金银)单列, 外盘/未知归其他
   const cats = (quotesData && quotesData.categories) || {};
   const codeSec = {};
@@ -3938,22 +3937,34 @@ function renderTechScan() {
   const secOf = c => (c === 'AU0' || c === 'AG0') ? 'precious' : (codeSec[c] === 'overseas' ? 'other' : (codeSec[c] || 'other'));
   const shown = techSec === 'all' ? rows : rows.filter(t => secOf(t.code) === techSec);
   if (!shown.length) { box.innerHTML = '<div style="color:#9ca3af;font-size:12px;">该板块暂无数据。</div>'; return; }
-  box.innerHTML = shown.map(t => {
-    const p = Math.max(0, Math.min(100, t.pct_1y));
-    const color = p >= 80 ? '#ef4444' : p >= 60 ? '#f59e0b' : p <= 20 ? '#10b981' : p <= 40 ? '#4a9eff' : '#8b95a5';
-    const sigs = [];
-    if (t.macd && t.macd.signal) sigs.push('MACD' + t.macd.signal);
-    if (t.boll && t.boll.pos) sigs.push('布林' + t.boll.pos);
-    if (t.ma_arr) sigs.push(t.ma_arr);
-    if (t.pattern) sigs.push(t.pattern);
-    return `<div class="tech-row" onclick="showVarietyDetail('${t.code}')">
-      <span class="tech-name">${t.cn || t.code}</span>
-      <span class="tech-bar-wrap"><span class="tech-bar" style="width:${p}%;background:${color};"></span></span>
-      <span class="tech-pct">${p.toFixed(0)}%</span>
-      <span class="tech-tag" style="color:${color};">${t.trend || ''}</span>
-      <span class="tech-sum">${sigs.join('·')}</span>
-    </div>`;
-  }).join('');
+  // 突破信号分组(替代原"近1年分位"排序 —— 用户2026-09-19要求)
+  const grp = (label, arr, color) => {
+    if (!arr.length) return '';
+    const items = arr.map(t => {
+      const sigs = [];
+      if (t.macd && t.macd.signal) sigs.push('MACD' + t.macd.signal);
+      if (t.boll && t.boll.pos) sigs.push('布林' + t.boll.pos);
+      if (t.ma_arr) sigs.push(t.ma_arr);
+      if (t.pattern) sigs.push(t.pattern);
+      const dist = t.breakout === 'near_high' ? (t.dist_high_pct != null ? '距新高' + t.dist_high_pct + '%' : '')
+                 : t.breakout === 'near_low' ? (t.dist_low_pct != null ? '距新低' + t.dist_low_pct + '%' : '')
+                 : '';
+      return `<div class="tech-row" onclick="showVarietyDetail('${t.code}')">
+        <span class="tech-name">${t.cn || t.code}</span>
+        <span class="tech-tag" style="color:${color};font-weight:600;">${label}</span>
+        <span class="tech-sum">${dist}${dist && sigs.length ? ' · ' : ''}${sigs.join('·')}</span>
+      </div>`;
+    }).join('');
+    return `<div style="font-size:11px;color:${color};margin:8px 0 3px;font-weight:600;">${label}（${arr.length}）</div>` + items;
+  };
+  const ups = shown.filter(t => t.breakout === 'near_high').sort((a, b) => (a.dist_high_pct == null ? 99 : a.dist_high_pct) - (b.dist_high_pct == null ? 99 : b.dist_high_pct));
+  const dns = shown.filter(t => t.breakout === 'near_low').sort((a, b) => (a.dist_low_pct == null ? 99 : a.dist_low_pct) - (b.dist_low_pct == null ? 99 : b.dist_low_pct));
+  const sq = shown.filter(t => t.breakout === 'squeeze');
+  const others = shown.filter(t => !t.breakout);
+  box.innerHTML = grp('⬆️ 向上突破候选', ups, '#ef4444')
+    + grp('⬇️ 向下破位候选', dns, '#10b981')
+    + grp('🌪️ 变盘蓄势(布林收口)', sq, '#f59e0b')
+    + (others.length ? grp('— 区间震荡', others, '#8b95a5') : '');
 }
 
 // ===== 期限结构与展期收益渲染 =====

@@ -535,6 +535,18 @@ def compute_tech(bars, last_price=None, live=None):
         parts.append(f'近1年分位{p1y}%')
     summary = '、'.join(parts) if parts else '技术面中性'
 
+    # 突破信号(替代近1年分位作为技术面主指标 —— 用户2026-09-19要求: 不要用价格分位, 改用突破)
+    breakout = ''
+    dist_high_pct = round((hi250 - price) / hi250 * 100, 2) if hi250 else None
+    dist_low_pct = round((price - lo250) / lo250 * 100, 2) if lo250 else None
+    boll_width_pct = round(b['width'] / price * 100, 2) if (b and b.get('width') and price) else None
+    if dist_high_pct is not None and dist_high_pct <= 2.0:
+        breakout = 'near_high'          # 距250日高点≤2% → 向上突破候选
+    elif dist_low_pct is not None and dist_low_pct <= 2.0:
+        breakout = 'near_low'            # 距250日低点≤2% → 向下破位候选
+    elif boll_width_pct is not None and boll_width_pct <= 4.0:
+        breakout = 'squeeze'             # 布林带宽≤4% → 波动压缩, 变盘蓄势
+
     return {
         'date': bars[-1]['d'],
         'close': round(closes[-1], 2),
@@ -563,6 +575,10 @@ def compute_tech(bars, last_price=None, live=None):
         'low_250': round(lo250, 2),
         'bars': len(bars),
         'summary': summary,
+        'breakout': breakout,
+        'dist_high_pct': dist_high_pct,
+        'dist_low_pct': dist_low_pct,
+        'boll_width_pct': boll_width_pct,
         '_merged': merged,
         'merge_note': merge_note,
     }
