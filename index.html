@@ -727,6 +727,12 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .liq-ex-h{padding:7px 12px;font-weight:700;color:#e5e7eb;background:#1b212c;font-size:13px;display:flex;align-items:center;gap:8px}
 .liq-ex-n{font-weight:500;font-size:11px;color:#8b95a5;background:#262b36;padding:1px 8px;border-radius:10px}
 .liq-ex .tl{margin:8px 12px 12px}
+.tl-left{display:inline-block;margin-left:7px;font-size:11px;color:#f0a020;font-weight:500}
+.liq-kind{display:inline-block;padding:0 6px;border-radius:8px;font-size:10.5px;font-weight:600;margin-right:6px;vertical-align:1px}
+.liq-kind.fut{background:rgba(74,158,255,.16);color:#7cb8ff}
+.liq-kind.opt{background:rgba(167,139,250,.2);color:#c4b5fd}
+.tl-line{font-size:12.5px;color:#cbd5e1;line-height:1.75;margin:3px 0}
+.tl-line .tl-type{margin-left:0;margin-right:7px}
 </style>
 <div class="card" id="card-edu">
   <div class="card-header">
@@ -5298,29 +5304,55 @@ function renderMultiFactor(){
 function renderLiquidate(){
   const box=document.getElementById('liquidate-list'); if(!box) return;
   const Q=quotesData||{}; const ev=[];
-  (Q.expiry_alerts||[]).forEach(e=>ev.push({date:e.date,exchange:e.exchange,type:'主力合约到期',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days||'?')+' 天',level:e.level||'soon',code:e.code}));
+  const add=(date,exchange,type,title,contract,level,code)=>{
+    if(!date) return;
+    const kind=(String(type).indexOf('期权')>=0)?'期权':'期货';
+    ev.push({date:date,exchange:exchange,type:type,kind:kind,title:title||code||'',contract:contract||'',level:level||'soon'});
+  };
+  (Q.expiry_alerts||[]).forEach(e=>add(e.date,e.exchange,'主力合约到期',e.cn||e.code,e.contract,e.level,e.code));
   const op=(Q.option_expiry&&Q.option_expiry.items)||[];
-  op.forEach(e=>ev.push({date:e.expiry,exchange:e.exchange,type:'期权到期',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days||'?')+' 天',level:e.level||'soon',code:e.code}));
-  (Q.lot_round_alerts||[]).forEach(e=>{const d=e.clear_day||e.ltd; if(d) ev.push({date:d,exchange:e.exchange,type:'自然人清仓',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+(e.note?(' · '+e.note):''),level:e.level||'soon',code:e.code});});
+  op.forEach(e=>add(e.expiry,e.exchange,'期权到期',e.cn||e.code,e.contract,e.level,e.code));
+  (Q.lot_round_alerts||[]).forEach(e=>add(e.clear_day||e.ltd,e.exchange,'自然人清仓',e.cn||e.code,e.contract,e.level,e.code));
   (Q.fin_calendar||[]).forEach(e=>{
-    ev.push({date:e.ltd,exchange:e.exchange,type:(e.is_treasury?'国债到期':'股指到期'),title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days_to_ltd||'?')+' 天',level:'soon',code:e.code});
-    if(e.clear_day) ev.push({date:e.clear_day,exchange:e.exchange,type:'国债自然人清仓',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days_to_clear||'?')+' 天',level:'caution',code:e.code});
+    add(e.ltd,e.exchange,(e.is_treasury?'国债到期':'股指到期'),e.cn||e.code,e.contract,'soon',e.code);
+    if(e.clear_day) add(e.clear_day,e.exchange,'国债自然人清仓',e.cn||e.code,e.contract,'caution',e.code);
   });
   if(!ev.length){box.innerHTML='<div style="color:#6b7280;text-align:center;padding:8px;">暂无临近的清仓/到期事项</div>';return;}
+  const today=new Date().toISOString().slice(0,10);
+  const dleft=d=>Math.round((Date.parse(d+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000);
+  const dlabel=d=>{const n=dleft(d); return n===0?'今天':(n===1?'明天':(n>1?('剩 '+n+' 天'):''));};
+  const PRI={imminent:1,caution:2,warn:3,soon:4};
   const exName={CFFEX:'中金所',CZCE:'郑商所',DCE:'大商所',GFEX:'广期所',INE:'能源中心',SHFE:'上期所'};
   const exTitle=k=>exName[k]||(k==='OTHER'?'其他':('交易所'+k));
   const order=['SHFE','INE','DCE','CZCE','GFEX','CFFEX'];
+  // 归类: 交易所 -> 日期 -> 类型(合并同类型同日期品种)
   const groups={};
-  ev.forEach(e=>{const k=e.exchange||'OTHER'; (groups[k]=groups[k]||[]).push(e);});
-  const renderGroup=(k,arr)=>{arr=arr.slice().sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:0));
-    let h='<div class="liq-ex"><div class="liq-ex-h">'+exTitle(k)+'<span class="liq-ex-n">'+arr.length+' 项</span></div><div class="tl">';
-    h+=arr.map(e=>{const lvl=e.level||'soon';
-      return '<div class="tl-item '+lvl+'"><div class="tl-date">'+e.date+'<span class="tl-type">'+e.type+'</span></div>'
-        +'<div class="tl-sub">'+e.title+'　'+e.sub+'</div></div>';}).join('');
+  ev.forEach(e=>{const k=e.exchange||'OTHER';
+    const g=groups[k]||(groups[k]={});
+    const d=g[e.date]||(g[e.date]={});
+    const t=d[e.type]||(d[e.type]={kind:e.kind,level:e.level,items:[]});
+    if((PRI[e.level]||9)<(PRI[t.level]||9)) t.level=e.level;
+    t.items.push(e);});
+  const renderEx=k=>{
+    const g=groups[k]; const dates=Object.keys(g).sort();
+    let cnt=0; dates.forEach(d=>{Object.keys(g[d]).forEach(t=>{cnt+=g[d][t].items.length;});});
+    let h='<div class="liq-ex"><div class="liq-ex-h">'+exTitle(k)+'<span class="liq-ex-n">'+cnt+' 项</span></div><div class="tl">';
+    h+=dates.map(d=>{
+      const types=g[d]; let lvl='soon';
+      Object.keys(types).forEach(t=>{if((PRI[types[t].level]||9)<(PRI[lvl]||9)) lvl=types[t].level;});
+      const lines=Object.keys(types).map(t=>{
+        const o=types[t];
+        const names=o.items.map(e=>e.title+(e.contract?(' '+e.contract):'')).join('、');
+        const kcls=(o.kind==='期权')?'opt':'fut';
+        return '<div class="tl-line"><span class="liq-kind '+kcls+'">'+o.kind+'</span><span class="tl-type">'+t+'</span>'+names+'</div>';
+      }).join('');
+      const dl=dlabel(d);
+      return '<div class="tl-item '+lvl+'"><div class="tl-date">'+d+(dl?('<span class="tl-left">'+dl+'</span>'):'')+'</div>'+lines+'</div>';
+    }).join('');
     return h+'</div></div>';};
   let html='';
-  order.filter(k=>groups[k]&&groups[k].length).forEach(k=>{html+=renderGroup(k,groups[k]);});
-  Object.keys(groups).filter(k=>!order.includes(k)).forEach(k=>{html+=renderGroup(k,groups[k]);});
+  order.filter(k=>groups[k]).forEach(k=>{html+=renderEx(k);});
+  Object.keys(groups).filter(k=>!order.includes(k)).forEach(k=>{html+=renderEx(k);});
   box.innerHTML=html;
 }
 
