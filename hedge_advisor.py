@@ -12,11 +12,11 @@ hedge_advisor.py V1 — 企业套保决策(期货 vs 期权 / 现在套不套)
     · 想保留有利方向的收益空间、不愿追加保证金、事件前护尾部 → 期权(买权为主)
     · 波动率低 → 期权权利金便宜, 期权性价比高; 波动率高 → 期权贵, 期货更直接
   是否套保的紧迫度:
-    · 双条件共振(价格分位 + 基差分位同向支持) → 积极(建议比例 70-100%)
+    · 双条件共振(价格位置+基差分位同向支持) → 积极(建议比例 70-100%)
     · 单条件支持 → 适度套保(40-60%)
     · 条件不利 → 暂缓/小比例(0-30%), 并说明等什么信号
 
-数据输入: tech(价格分位/ATR波动率/趋势) + basis(基差/近一年基差分位) + calendar(事件)
+数据输入: tech(突破状态/ATR波动率/趋势) + basis(基差/近一年基差分位) + calendar(事件)
 """
 import statistics
 
@@ -66,37 +66,49 @@ def build_hedge_advice(tech_map, basis_items, calendar, cn_fallback=None):
     for code in codes:
         t = tech_map[code]
         b = basis_items[code]
-        price_pct = t.get('pct_1y')
+        # 价格位置(突破视角, 不用分位): near_low=阶段低位, near_high=阶段高位, 其余中性
+        bo = t.get('breakout') or ''
+        price_low = (bo == 'near_low')
+        price_high = (bo == 'near_high')
+        if price_low:
+            price_pos = '接近阶段低位'
+        elif price_high:
+            price_pos = '接近阶段高位'
+        elif bo == 'squeeze':
+            price_pos = '波动压缩·方向待选'
+        else:
+            price_pos = '区间震荡'
+
         basis_prc = b.get('prc_hist')
         atr_pct = t.get('atr_pct')
-        if price_pct is None or basis_prc is None:
+        if basis_prc is None:
             continue
 
         # ---------- 用料企业(买入套保) ----------
         if basis_prc >= 60:
-            if price_pct <= 40:
-                buyer = ('积极买保', 70, '价格处近1年低位(%d%%)+基差处高位(%d%%),双重有利:锁定低价,基差回落还能再降成本' % (round(price_pct), round(basis_prc)), 3)
-            elif price_pct >= 60:
-                buyer = ('买保优先级高', 60, '价格已处高位(%d%%),涨价风险大于基差风险,先锁大头;基差高位(%d%%)提供额外缓冲' % (round(price_pct), round(basis_prc)), 2)
+            if price_low:
+                buyer = ('积极买保', 70, '价格处阶段低位(接近250日低点)+基差处高位(%d%%),双重有利:锁定低价,基差回落还能再降成本' % round(basis_prc), 3)
+            elif price_high:
+                buyer = ('买保优先级高', 60, '价格已接近阶段高位,涨价风险大于基差风险,先锁大头;基差高位(%d%%)提供额外缓冲' % round(basis_prc), 2)
             else:
-                buyer = ('适度买保', 50, '价格中性(%d%%),基差高位(%d%%)是主要买保理由' % (round(price_pct), round(basis_prc)), 1)
+                buyer = ('适度买保', 50, '价格中性(区间震荡),基差高位(%d%%)是主要买保理由' % round(basis_prc), 1)
         elif basis_prc <= 30:
             buyer = ('暂缓买保', 20, '基差处近1年低位(%d%%),买保后基差回升会抬高净成本;等基差回升至中位再建仓' % round(basis_prc), 0)
         else:
-            buyer = ('分批买保', 40, '价格分位%d%%、基差分位%d%%,均中性:按采购计划分批,不追一次锁死' % (round(price_pct), round(basis_prc)), 1)
+            buyer = ('分批买保', 40, '基差分位%d%%,价格位置中性:按采购计划分批,不追一次锁死' % round(basis_prc), 1)
 
         # ---------- 供货/库存企业(卖出套保) ----------
         if basis_prc <= 30:
-            if price_pct >= 60:
-                seller = ('积极卖保', 70, '价格处近1年高位(%d%%)+基差处低位(%d%%),双重有利:高位锁价,基差回升还能增厚销售价' % (round(price_pct), round(basis_prc)), 3)
-            elif price_pct <= 40:
-                seller = ('卖保保库存', 50, '价格偏低(%d%%),卖保主要目的是稳库存价值而非锁高价;基差低位(%d%%)回升有增厚空间' % (round(price_pct), round(basis_prc)), 1)
+            if price_high:
+                seller = ('积极卖保', 70, '价格处阶段高位(接近250日高点)+基差处低位(%d%%),双重有利:高位锁价,基差回升还能增厚销售价' % round(basis_prc), 3)
+            elif price_low:
+                seller = ('卖保保库存', 50, '价格偏低(接近阶段低位),卖保主要目的是稳库存价值而非锁高价;基差低位(%d%%)回升有增厚空间' % round(basis_prc), 1)
             else:
-                seller = ('适度卖保', 50, '价格中性(%d%%),基差低位(%d%%)是主要卖保理由' % (round(price_pct), round(basis_prc)), 1)
+                seller = ('适度卖保', 50, '价格中性(区间震荡),基差低位(%d%%)是主要卖保理由' % round(basis_prc), 1)
         elif basis_prc >= 60:
             seller = ('暂缓卖保', 20, '基差处近1年高位(%d%%),卖保后基差回落会侵蚀销售价;等基差回落至中位再建仓' % round(basis_prc), 0)
         else:
-            seller = ('分批卖保', 40, '价格分位%d%%、基差分位%d%%,均中性:按销售计划分批,保留部分敞口' % (round(price_pct), round(basis_prc)), 1)
+            seller = ('分批卖保', 40, '基差分位%d%%,价格位置中性:按销售计划分批,保留部分敞口' % round(basis_prc), 1)
 
         # ---------- 工具选择: 期货 vs 期权 ----------
         if atr_pct and atr_hi and atr_pct >= atr_hi:

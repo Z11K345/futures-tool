@@ -627,12 +627,14 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <div class="mn-item" onclick="gotoCard('card-movers')">涨跌</div>
     <div class="mn-item" onclick="gotoCard('card-signals')">信号</div>
     <div class="mn-item" onclick="gotoCard('card-tech')">技术</div>
+    <div class="mn-item" onclick="gotoCard('card-mf')">多因子</div>
     <div class="mn-item" onclick="gotoCard('card-quotes')">行情</div>
     <div class="mn-item" onclick="gotoCard('card-outer')">外围</div>
     <div class="mn-item" onclick="gotoCard('card-cal')">日历</div>
     <div class="mn-item" onclick="gotoCard('card-news')">要闻</div>
     <div class="mn-item" onclick="gotoCard('card-data')">数据</div>
-    <div class="mn-item" onclick="gotoFinCalendar()">清仓</div>
+    <div class="mn-item" onclick="gotoCard('card-edu')">投教</div>
+    <div class="mn-item" onclick="gotoCard('card-liquidate')">清仓</div>
   </div>
 
   <div class="card" id="card-focus" style="border-left:3px solid #4a9eff;background:linear-gradient(135deg,#1a1f2e 0%,#141a26 100%);">
@@ -685,7 +687,87 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div id="future-signals" style="font-size:13px;line-height:1.6;" data-page-node-id="pW8BgPZHUrzrMW9mIIwlaH">--</div>
   </div>
 
-  <div class="card" id="card-tech" data-page-node-id="ljLIOTmyaaIlFT0pOhRFml">
+  <div class="card" <style>
+.mf-bar{position:relative;flex:1;height:9px;background:#262b36;border-radius:5px;overflow:hidden}
+.mf-bar .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#4b5563;z-index:2}
+.mf-fill{position:absolute;top:0;bottom:0}
+.mf-fill.pos{left:50%;background:#e0533d}
+.mf-fill.neg{right:50%;background:#2dbd6e}
+.mf-row{display:flex;align-items:center;gap:8px;margin:3px 0}
+.mf-fl{width:64px;color:#9ca3af;font-size:12px;flex:none}
+.mf-fv{width:44px;text-align:right;font-size:12px;color:#cbd5e1;flex:none}
+.mf-item{border:1px solid #2a2f3a;border-radius:8px;padding:8px 10px;margin:7px 0;background:#171b22}
+.mf-item.bull{border-left:3px solid #e0533d}
+.mf-item.bear{border-left:3px solid #2dbd6e}
+.mf-item.flat{border-left:3px solid #5b6472}
+.mf-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.mf-name{font-weight:700;color:#e5e7eb}
+.mf-bias{padding:1px 7px;border-radius:10px;font-size:11px;font-weight:600}
+.mf-bias.bull{background:rgba(224,83,61,.18);color:#ff8a73}
+.mf-bias.bear{background:rgba(45,189,110,.18);color:#5fe0a0}
+.mf-bias.flat{background:rgba(148,163,184,.18);color:#cbd5e1}
+.mf-comp{margin-left:auto;font-size:12px;color:#9ca3af}
+.mf-note{margin-top:5px;font-size:12px;color:#94a3b8;line-height:1.6}
+.mf-legend{font-size:11px;color:#6b7280;margin:4px 0 8px;line-height:1.6}
+.tl{position:relative;margin:6px 0 0 4px;padding-left:16px}
+.tl:before{content:"";position:absolute;left:4px;top:2px;bottom:2px;width:2px;background:#2a2f3a}
+.tl-item{position:relative;margin:9px 0}
+.tl-item:before{content:"";position:absolute;left:-15px;top:4px;width:9px;height:9px;border-radius:50%;background:#5b6472;border:2px solid #0d1117}
+.tl-item.imminent:before{background:#e0533d}
+.tl-item.caution:before{background:#f0a020}
+.tl-item.warn:before{background:#4a9eff}
+.tl-item.soon:before{background:#5b6472}
+.tl-date{font-weight:700;color:#e5e7eb;font-size:13px}
+.tl-type{display:inline-block;margin-left:6px;font-size:11px;color:#9ca3af}
+.tl-sub{color:#94a3b8;font-size:12px;margin-top:1px}
+.edu-h{font-size:15px;font-weight:700;color:#e5e7eb;margin:14px 0 4px}
+.edu-p{font-size:13px;color:#cbd5e1;line-height:1.85;margin:4px 0}
+.edu-b{font-size:12px;color:#8b95a5;line-height:1.7;margin:2px 0 0;padding-left:14px}
+</style>
+<div class="card" id="card-edu">
+  <div class="card-header">
+    <span class="card-title">📚 期货入门 · 策略科普</span>
+    <span class="card-tag auto">静态</span>
+  </div>
+  <div class="edu-p">本栏用大白话讲清楚期货里最常用的几类策略与概念，方便新手建立框架。策略可以很专业，但表达尽量简单；所有内容仅作学习参考，不构成任何交易建议。</div>
+
+  <div class="edu-h">一、期货到底是什么</div>
+  <div class="edu-p">期货就是“约定在未来某个时间，按今天说好的价格买卖一批货物”的标准化合约。它的价格跟着现货供求、资金、情绪一起波动，既能用来对冲现货风险，也能通过判断涨跌赚取价差。和股票不同，期货是保证金交易（自带杠杆），涨跌都按合约总价值计算，所以风险控制是第一位的。</div>
+
+  <div class="edu-h">二、趋势跟踪策略</div>
+  <div class="edu-p">核心思想只有一句：跟着已经形成的方向做，“截断亏损、让利润奔跑”。常用的信号是均线排列（多头排列看多、空头排列看空）、MACD 金叉/死叉、价格接近阶段高低点（突破）。趋势策略在单边行情里表现最好，在区间震荡里会反复挨打，所以一定要配合止损和仓位管理。</div>
+  <div class="edu-b">新手提示：本工具的“技术”卡片给出了均线排列、趋势、突破状态，趋势跟踪者优先看均线多头 + 突破信号的品种。</div>
+
+  <div class="edu-h">三、套利策略（期现 / 跨期）</div>
+  <div class="edu-p">套利赚的是“定价偏差回归”的钱，而不是猜涨跌，因此风险通常比单边小。最常见的两类：①期现套利——当期货价格明显高于（或低于）现货+持有成本时，做空（或做多）期货并反向做现货，等价差回归；②跨期套利——在同一品种不同月份合约之间，利用“近月贵还是远月贵”的价差波动获利。</div>
+
+  <div class="edu-h">四、套期保值（套保）</div>
+  <div class="edu-p">套保是实体企业用来“锁定成本或锁定利润”的工具，不是用来赌方向的。例如未来要买入原材料的企业，担心涨价就提前在期货上买入（买保）；手里有现货担心跌价就提前卖出（卖保）。套保效果好不好，关键看“基差”（现货减期货）在保值时和平仓时怎么变——基差朝有利方向变动，套保就省了钱。</div>
+
+  <div class="edu-h">五、期限结构：Contango 与 Back</div>
+  <div class="edu-p">把同一品种“近月合约”和“远月合约”的价格连成一条曲线，就得到期限结构。近月便宜、远月贵叫 Contango（正向市场），往往说明现货不紧张；近月贵、远月便宜叫 Back（反向市场），通常意味着现货偏紧、供不应求。对做多的投资者来说，Back 结构每次移仓都能占点便宜（展期收益），Contango 则要付出成本。本工具“期限结构”卡片直接给出每个品种的展期年化收益。</div>
+
+  <div class="edu-h">六、基差（现货 vs 期货）</div>
+  <div class="edu-p">基差 = 现货价格 − 期货价格。它衡量“现实”和“预期”的差距。基差处于历史高位，说明现货相对期货偏强（供应偏紧），对价格往往有支撑；处于历史低位则相反。看基差不能只看一天的数字，要看它在过去一年的什么位置（分位），本工具“基差”卡片给出近一年基差分位。</div>
+
+  <div class="edu-h">七、多因子分析怎么看（本工具新功能）</div>
+  <div class="edu-p">单一指标容易误判，所以本工具把四个流行因子合成一个“综合分”：①趋势动量（均线/突破/MACD）②期限结构（Back 利多、Contango 利空）③基差位置（高位利多）④持仓变化（资金流入流出）。每个因子打分 −100~+100（红=偏多、绿=偏空），加权得到综合分与多空倾向。综合分高不代表一定涨，它只是把多个维度的一致信号量化出来，帮你缩小观察范围。</div>
+
+  <div class="edu-h">八、给新手最重要的三句话</div>
+  <div class="edu-p">①先想清楚自己是套保、套利还是投机，不同目标用的工具和仓位完全不同。②杠杆是双刃剑，单笔亏损控制在可承受范围内，永远带止损。③多看“期限结构 / 基差 / 多因子”这些硬数据，少听小道消息；本工具的所有数字都来自交易所与公开数据源，可交叉核对。</div>
+  <div class="edu-b" style="margin-top:8px;color:#e0533d">风险提示：期货杠杆交易可能损失全部本金，以上仅为知识科普，不构成任何投资建议。投资有风险，入市需谨慎。</div>
+</div>
+
+<div class="card" id="card-mf">
+  <div class="card-header">
+    <span class="card-title">📊 多因子分析</span>
+    <span class="card-tag auto">自动</span>
+  </div>
+  <div class="mf-legend">综合分 = 趋势动量 33% + 期限结构 28% + 基差位置 22% + 持仓变化 17%。各因子 −100~+100（红=偏多 / 绿=偏空），按综合分由高到低排列。因子为量化参考，不构成交易依据。</div>
+  <div id="mf-list">加载中…</div>
+  <div class="save-note" id="mf-note"></div>
+</div>
+id="card-tech" data-page-node-id="ljLIOTmyaaIlFT0pOhRFml">
   <div class="card-header" data-page-node-id="y12U73h9KIRXuFw9eEMAq6">
   <span class="card-title" data-page-node-id="Nf0IEC3A00srdkgLf0W9iM">📐 技术面扫描(自动)</span>
   <span class="card-tag auto" data-page-node-id="sCIai7sSWsfvp20KTTVQDU">自动</span>
@@ -755,7 +837,17 @@ body { padding-top: 150px; padding-bottom: 16px; }
   </table>
   </div>
 
-  <div class="card" id="card-cal">
+  <div class="card" 
+<div class="card" id="card-liquidate">
+  <div class="card-header">
+    <span class="card-title">🧹 清仓 / 到期速览</span>
+    <span class="card-tag auto">自动</span>
+  </div>
+  <div class="sub-label first">统一时间轴（主力合约到期 · 期权到期 · 自然人清仓 · 金融期货到期·清仓）</div>
+  <div id="liquidate-list" style="font-size:13px;line-height:1.7;">加载中…</div>
+  <div class="save-note">📌 商品期货自然人一般须在交割月前按规定清仓（仅个别品种可取整进交割月）；国债期货须于交割月前第 2 个交易日收盘前清仓。具体以交易所及期货公司通知为准。</div>
+</div>
+id="card-cal">
   <div class="card-header">
     <span class="card-title">⏰ 到期与清仓日历</span>
     <span class="card-tag auto">自动</span>
@@ -950,7 +1042,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <div id="opp-list" style="font-size:12.5px;line-height:1.55;" data-page-node-id="oppList">--</div>
     <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #2a3142;font-size:10.5px;color:#6b7280;line-height:1.7;" data-page-node-id="oppDisclaimer">
       总结句中的方向、支撑压力、止损与仓位档位，均由公开行情按固定算法推导，仅为客观数据参考，不构成投资建议。
-      止损位取现价 ±1.2 倍 ATR(14日平均真实波幅)；仓位档位按波动率与价格分位划分。实际交易请结合自身风险承受能力与资金情况独立判断。
+      止损位取现价 ±1.2 倍 ATR(14日平均真实波幅)；仓位档位按波动率与突破状态划分。实际交易请结合自身风险承受能力与资金情况独立判断。
       投资有风险，入市需谨慎。
     </div>
   </div>
@@ -1064,7 +1156,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <div class="mn-item active" data-cat="all" onclick="filterStrategyActive('all')" data-page-node-id="strNavAll">全部</div>
   </div>
 
-  <!-- 企业套保决策(V3.2 自动: 价格分位+基差分位+波动率+事件) -->
+  <!-- 企业套保决策(V3.2 自动: 突破状态+基差分位+波动率+事件) -->
   <div class="card" id="card-hedge" style="border-left:3px solid #0ea5e9;" data-page-node-id="39xZjoksq5bkdCKMz7SnRN">
     <div class="card-header" data-page-node-id="EU7Nlo1RvayL80bqJjWZ2T">
       <span class="card-title" data-page-node-id="HdIUE4iUP1GBKAdnw72C09">🛡️ 企业套保决策(期货 vs 期权)</span>
@@ -1762,12 +1854,14 @@ function onQuotesLoaded() {
   renderOptionExpiry();
   renderLotRoundAlerts();
   renderFinCalendar();
+  renderLiquidate();
   renderFuturesNews();
   renderStrategyMatches();
   renderTechScan();
   renderTerm();
   renderBasis();
   renderHedge();
+  renderMultiFactor();
   renderStrategyLive();
   renderOpportunities();
   renderRank();
@@ -2366,7 +2460,7 @@ function renderOptSignals() {
    — 以「研究员」视角, 把当前行情信号映射到三类投资者画像:
       自然人(趋势/波段) · 企业(套保/基差) · 基金(套利/资金/波动率)
    — 每条匹配附完整证据链: 涨跌 + 量价仓定性 + 技术面(均线/MACD/RSI/布林/ATR)
-     + 价格分位 + 基差分位 + 套保建议 + 资金沉淀
+     + 突破信号 + 基差分位 + 套保建议 + 资金沉淀
    — 数据源: future_signals + tech(技术面) + basis(基差) + hedge(套保) + 资金
    ============================================================ */
 let matchFilter = { q: '', aud: 'all', sec: 'all' };
@@ -2520,7 +2614,7 @@ function _resCard(code, s, opts) {
   ev += `<div><span class="k">板块</span> ${catCn}</div>`;
   ev += `<div><span class="k">量价仓</span> ${_poseTag(s)}<br>${_poseNote(s)}</div>`;
   if (techL) ev += `<div><span class="k">技术面</span> ${techL}</div>`;
-  if (t && t.pct_1y != null) ev += `<div><span class="k">价格分位</span> 近1年 ${t.pct_1y.toFixed(0)}%</div>`;
+  if (t) { const boTxt = t.breakout === 'near_high' ? '接近阶段新高' : t.breakout === 'near_low' ? '接近阶段新低' : t.breakout === 'squeeze' ? '波动压缩·变盘蓄势' : '区间震荡'; ev += `<div><span class="k">突破状态</span> ${boTxt}${t.dist_high_pct != null ? ` · 距高${t.dist_high_pct.toFixed(1)}%` : ''}</div>`; }
   if (basL) ev += `<div><span class="k">基差</span> <span style="color:${basL.color};">${basL.text}</span></div>`;
   if (s.vol_oi != null) ev += `<div><span class="k">活跃度</span> 量/仓 ${s.vol_oi.toFixed(2)}</div>`;
   if (s.driver) ev += `<div><span class="k">驱动</span> ${s.driver}</div>`;
@@ -2653,7 +2747,7 @@ function renderStrategyMatches() {
     const corpItems = [...corpUp, ...corpDown].filter(hit).filter(secFilter).filter(s => hedge[s.code]);
     let sub = '';
     if (corpItems.length) {
-      sub += `<div class="res-grp"><div class="res-grp-head">🛡️ 套保窗口 <span class="res-grp-tag" style="background:#1d4a2d;color:#22c55e;">基于 价格分位×基差分位</span><span style="color:#9ca3af;font-size:11px;margin-left:auto;">${corpItems.length}个</span></div>${corpItems.map(it => _resCard(it.code, it, { aud: 'corp' })).join('')}</div>`;
+      sub += `<div class="res-grp"><div class="res-grp-head">🛡️ 套保窗口 <span class="res-grp-tag" style="background:#1d4a2d;color:#22c55e;">基于 突破状态×基差分位</span><span style="color:#9ca3af;font-size:11px;margin-left:auto;">${corpItems.length}个</span></div>${corpItems.map(it => _resCard(it.code, it, { aud: 'corp' })).join('')}</div>`;
     }
     html += audBlock(sub, [], { aud: 'corp' });
   }
@@ -2678,7 +2772,7 @@ function renderStrategyMatches() {
     html += audBlock(sub, [], { aud: 'fund' });
   }
 
-  html += `<div style="margin-top:6px;font-size:11px;color:#6b7280;line-height:1.7;">研究框架: 涨跌 + 量价仓定性 + 技术面(均线/MACD/RSI/布林/ATR) + 价格分位 + 基差分位 + 套保建议 + 资金沉淀, 基于公开行情自动生成, 属方法学展示, 不构成投资建议。投资有风险, 入市需谨慎。</div>`;
+  html += `<div style="margin-top:6px;font-size:11px;color:#6b7280;line-height:1.7;">研究框架: 涨跌 + 量价仓定性 + 技术面(均线/MACD/RSI/布林/ATR/突破) + 基差分位 + 套保建议 + 资金沉淀, 基于公开行情自动生成, 属方法学展示, 不构成投资建议。投资有风险, 入市需谨慎。</div>`;
   box.innerHTML = html;
 }
 
@@ -3317,7 +3411,7 @@ function renderVarietyKB(code) {
     }
     const t = (quotesData.tech || {})[code];
     if (t) {
-      ev.push(`· 技术面：${t.trend || ''} / RSI ${Math.round(t.rsi14)} / 近1年价格分位 ${t.pct_1y == null ? '--' : Math.round(t.pct_1y)}%`);
+      ev.push(`· 技术面：${t.trend || ''} / RSI ${Math.round(t.rsi14)} / 突破 ${t.breakout === 'near_high' ? '接近新高' : t.breakout === 'near_low' ? '接近新低' : t.breakout === 'squeeze' ? '变盘蓄势' : '区间'}`);
     }
     if (ev.length) {
       evBox.innerHTML = ev.join('<br>');
@@ -4055,7 +4149,7 @@ function renderTerm() {
   }
 }
 
-// ===== 企业套保决策渲染(价格分位+基差分位+波动率+事件) =====
+// ===== 企业套保决策渲染(突破状态+基差分位+波动率+事件) =====
 // ===== 企业套保决策渲染(带筛选: 关键词 / 板块 / 角色 / 强度) =====
 /* ========== 策略卡 · 实时匹配品种 (V4.1) ==========
    把每张策略卡从"名词解释"变成"当前哪些品种符合该策略"。
@@ -4080,6 +4174,7 @@ function slSectorMap() {
 }
 function slNum(v) { return (typeof v === 'number' && isFinite(v)) ? v : null; }
 function slP(v, d) { const n = slNum(v); return n == null ? '--' : n.toFixed(d == null ? 1 : d) + '%'; }
+function boTag(t) { if (!t) return ''; const b = t.breakout; if (b === 'near_high') return '接近新高'; if (b === 'near_low') return '接近新低'; if (b === 'squeeze') return '变盘蓄势'; return '区间'; }
 function slMedian(a) {
   const b = a.filter(function (x) { return x != null; }).sort(function (x, y) { return x - y; });
   if (!b.length) return null;
@@ -4111,19 +4206,19 @@ function slMatch(key) {
     case 'trend': {
       const up = R.filter(function (r) { return r.t.ma_arr === '多头排列' && r.t.trend === '上升趋势'; })
         .sort(dsc(function (r) { return r.t.pct_1y; }))
-        .map(function (r) { return it(r, r.t.ma_arr + '·' + slMacd(r) + '·分位' + slP(r.t.pct_1y, 0)); });
+        .map(function (r) { return it(r, r.t.ma_arr + '·' + slMacd(r) + boTag(r.t)); });
       const dn = R.filter(function (r) { return r.t.ma_arr === '空头排列' && r.t.trend === '下降趋势'; })
         .sort(asc(function (r) { return r.t.pct_1y; }))
-        .map(function (r) { return it(r, r.t.ma_arr + '·' + slMacd(r) + '·分位' + slP(r.t.pct_1y, 0)); });
+        .map(function (r) { return it(r, r.t.ma_arr + '·' + slMacd(r) + boTag(r.t)); });
       return { badge: '多' + up.length + '·空' + dn.length, groups: [G('🔴 顺势做多(均线多头+上升趋势)', up), G('🟢 顺势做空(均线空头+下降趋势)', dn)] };
     }
     case 'reversal': {
-      const hi = R.filter(function (r) { return (slNum(r.t.pct_1y) || 0) >= 90 && ((slNum(r.t.rsi14) || 0) >= 70 || slKdj(r) === '超买'); })
+      const hi = R.filter(function (r) { return (r.t.breakout === 'near_high' || (slNum(r.t.rsi14) || 0) >= 70 || slKdj(r) === '超买'); })
         .sort(dsc(function (r) { return r.t.pct_1y; }))
-        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·RSI' + slP(r.t.rsi14, 0) + '·' + slKdj(r)); });
-      const lo = R.filter(function (r) { const p = slNum(r.t.pct_1y); return p != null && p <= 10 && ((r.t.rsi14 == null || r.t.rsi14 <= 30) || slKdj(r) === '超卖'); })
+        .map(function (r) { return it(r, boTag(r.t) + '·RSI' + slP(r.t.rsi14, 0) + '·' + slKdj(r)); });
+      const lo = R.filter(function (r) { const p = r.t.breakout === 'near_low'; return p && ((r.t.rsi14 == null || r.t.rsi14 <= 30) || slKdj(r) === '超卖'); })
         .sort(asc(function (r) { return r.t.pct_1y; }))
-        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·RSI' + slP(r.t.rsi14, 0) + '·' + slKdj(r)); });
+        .map(function (r) { return it(r, boTag(r.t) + '·RSI' + slP(r.t.rsi14, 0) + '·' + slKdj(r)); });
       return { badge: '高' + hi.length + '·低' + lo.length, groups: [G('🔻 高位超买(潜在回调, 逆势做空)', hi, '需"高分位+动能衰竭+库存累积"共振才动, 小仓快进快出'), G('🔺 低位超卖(潜在反弹, 逆势做多)', lo, '逆趋势风险高, 严格止损')] };
     }
     case 'breakout': {
@@ -4149,19 +4244,19 @@ function slMatch(key) {
     case 'buy_hedge': {
       const l = R.filter(function (r) { return r.h.buyer && (slNum(r.h.buyer.ratio) || 0) >= 50; })
         .sort(dsc(function (r) { return r.h.buyer.ratio; }))
-        .map(function (r) { return it(r, r.h.buyer.action + ' ' + r.h.buyer.ratio + '%·基差分位' + slP(r.h.basis_prc, 0) + '·价分位' + slP(r.h.price_pct, 0)); });
+        .map(function (r) { return it(r, r.h.buyer.action + ' ' + r.h.buyer.ratio + '%·基差分位' + slP(r.h.basis_prc, 0) + ' · ' + (r.h.price_pos || '')); });
       return { badge: '建议≥50% ' + l.length + '个', groups: [G('🏭 用料企业买保(建议比例≥50%的品种)', l, '其余品种建议比例偏低(基差位置不利), 可等基差回升再建仓')] };
     }
     case 'sell_hedge': {
       const l = R.filter(function (r) { return r.h.seller && (slNum(r.h.seller.ratio) || 0) >= 50; })
         .sort(dsc(function (r) { return r.h.seller.ratio; }))
-        .map(function (r) { return it(r, r.h.seller.action + ' ' + r.h.seller.ratio + '%·基差分位' + slP(r.h.basis_prc, 0) + '·价分位' + slP(r.h.price_pct, 0)); });
+        .map(function (r) { return it(r, r.h.seller.action + ' ' + r.h.seller.ratio + '%·基差分位' + slP(r.h.basis_prc, 0) + ' · ' + (r.h.price_pos || '')); });
       return { badge: '建议≥50% ' + l.length + '个', groups: [G('🏪 供货企业卖保(建议比例≥50%的品种)', l, '价格高位+基差低位=卖保双重有利')] };
     }
     case 'delta_hedge': {
       const atrOf = function (r) { return slNum(r.h.atr_pct) != null ? r.h.atr_pct : slNum(r.t.atr_pct); };
       const arr = R.filter(function (r) { return atrOf(r) != null; }).sort(dsc(atrOf));
-      const l = arr.map(function (r) { return it(r, 'ATR' + slP(atrOf(r), 2) + '·价分位' + slP(r.h.price_pct, 0) + '·' + (r.h.trend || r.t.trend || '')); });
+      const l = arr.map(function (r) { return it(r, 'ATR' + slP(atrOf(r), 2) + ' · ' + (r.h.price_pos || '') + ' · ' + (r.h.trend || r.t.trend || '')); });
       return { badge: arr.length ? '最高ATR' + slP(atrOf(arr[0]), 2) : '--', groups: [G('🎚️ 波动率最高(最需动态调整/期权替代)', l, 'ATR 越高, 期货保证金压力越大, 越适合用期权或分批调整')] };
     }
     case 'basis_arb': {
@@ -4186,16 +4281,16 @@ function slMatch(key) {
         arr.sort(dsc(function (r) { return r.t.pct_1y; }));
         const s1 = arr[0], s2 = arr[arr.length - 1];
         const gap = (s1.t.pct_1y - s2.t.pct_1y);
-        l.push({ code: s1.code, cn: s + ': 强' + s1.cn + '/弱' + s2.cn, m: '分位' + slP(s1.t.pct_1y, 0) + ' vs ' + slP(s2.t.pct_1y, 0) + '(差' + gap.toFixed(0) + ')' });
+        l.push({ code: s1.code, cn: s + ': 强' + s1.cn + '/弱' + s2.cn, m: boTag(s1.t) + ' vs ' + boTag(s2.t) + '(差' + gap.toFixed(0) + ')' });
       });
       l.sort(function (a, b) { return parseInt((b.m.match(/差(\d+)/) || [0, 0])[1], 10) - parseInt((a.m.match(/差(\d+)/) || [0, 0])[1], 10); });
       return { badge: l.length + '组', groups: [G('🔀 同板块强弱差最大(多强空弱)', l, '仅为同板块截面强弱对比, 非统计套利价差分位(无历史价差数据), 不构成配对交易建议')] };
     }
     case 'opt_dir': {
-      const call = R.filter(function (r) { return r.t.ma_arr === '多头排列' && (slNum(r.t.pct_1y) || 0) >= 70; })
+      const call = R.filter(function (r) { return r.t.ma_arr === '多头排列' && (r.t.breakout === 'near_high' || (slNum(r.t.rsi14) || 0) >= 70); })
         .sort(dsc(function (r) { return r.t.pct_1y; }))
         .map(function (r) { return it(r, '买看涨·分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '(权利金)'); });
-      const put = R.filter(function (r) { return r.t.ma_arr === '空头排列' && (slNum(r.t.pct_1y) != null) && r.t.pct_1y <= 30; })
+      const put = R.filter(function (r) { return r.t.ma_arr === '空头排列' && r.t.breakout === 'near_low'; })
         .sort(asc(function (r) { return r.t.pct_1y; }))
         .map(function (r) { return it(r, '买看跌·分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '(权利金)'); });
       return { badge: '涨' + call.length + '·跌' + put.length, groups: [G('📈 方向看涨(趋势+高位共振, 买权替代期货)', call), G('📉 方向看跌(空头+低位共振, 买权替代期货)', put), G('', [], '买权最大亏损=权利金, 适合方向明确但怕跳空的场景')] };
@@ -4203,24 +4298,24 @@ function slMatch(key) {
     case 'opt_vol': {
       const withAtr = R.filter(function (r) { return slNum(r.t.atr_pct) != null; });
       const low = withAtr.slice().sort(asc(function (r) { return r.t.atr_pct; }))
-        .map(function (r) { return it(r, 'ATR' + slP(r.t.atr_pct, 2) + '·分位' + slP(r.t.pct_1y, 0)); });
+        .map(function (r) { return it(r, 'ATR' + slP(r.t.atr_pct, 2) + boTag(r.t)); });
       const high = withAtr.slice().sort(dsc(function (r) { return r.t.atr_pct; }))
-        .map(function (r) { return it(r, 'ATR' + slP(r.t.atr_pct, 2) + '·分位' + slP(r.t.pct_1y, 0)); });
+        .map(function (r) { return it(r, 'ATR' + slP(r.t.atr_pct, 2) + boTag(r.t)); });
       const atrs = withAtr.map(function (r) { return r.t.atr_pct; }).sort(function (a, b) { return a - b; });
       const mn = atrs.length ? atrs[0] : null, mx = atrs.length ? atrs[atrs.length - 1] : null;
       return { badge: '低' + slP(mn, 2) + '·高' + slP(mx, 2), groups: [G('🫧 波动率最低(权利金便宜, 适合买权/做多波动)', low), G('🔥 波动率最高(权利金贵, 适合卖权/做空波动)', high)] };
     }
     case 'opt_enhance': {
       const med = slMedian(R.map(function (r) { return slNum(r.t.atr_pct); }));
-      const l = R.filter(function (r) { const a = slNum(r.t.atr_pct); return (slNum(r.t.pct_1y) || 0) >= 70 && a != null && med != null && a >= med; })
+      const l = R.filter(function (r) { const a = slNum(r.t.atr_pct); return (r.t.breakout === 'near_high') && a != null && med != null && a >= med; })
         .sort(dsc(function (r) { return r.t.atr_pct; }))
-        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '·' + (r.t.pattern || '')); });
+        .map(function (r) { return it(r, boTag(r.t) + '·ATR' + slP(r.t.atr_pct, 2) + '·' + (r.t.pattern || '')); });
       return { badge: l.length + '个', groups: [G('💰 高位+高波动(备兑/卖权增强收益候选)', l, '卖出期权收取权利金, 但上方收益被封顶, 需能接受被行权')] };
     }
     case 'opt_hedge': {
-      const l = R.filter(function (r) { return r.t.ma_arr === '多头排列' && (slNum(r.t.pct_1y) || 0) >= 80; })
+      const l = R.filter(function (r) { return r.t.ma_arr === '多头排列' && (r.t.breakout === 'near_high' || (slNum(r.t.pct_1y) || 0) >= 80); })
         .sort(dsc(function (r) { return r.t.pct_1y; }))
-        .map(function (r) { return it(r, '分位' + slP(r.t.pct_1y, 0) + '·ATR' + slP(r.t.atr_pct, 2) + '·' + (r.t.trend || '')); });
+        .map(function (r) { return it(r, boTag(r.t) + '·ATR' + slP(r.t.atr_pct, 2) + '·' + (r.t.trend || '')); });
       return { badge: l.length + '个', groups: [G('🛡️ 高位浮盈(买看跌保护利润候选)', l, '已有浮盈且处高位时, 用买权锁定下行, 保留上行空间')] };
     }
   }
@@ -4329,7 +4424,7 @@ function slPlan(r, opps) {
   if (!r) return '';
   const t = r.t || {}, h = r.h || {}, b = r.b || {}, tm = r.tm || {};
   const dir = (opps || []).length ? slDir(opps[0].k, opps[0].m || '') : '';
-  const px = slRound(t.close != null ? t.close : (slNum(h.price_pct) != null && b.fut ? b.fut : null), 0);
+  const px = slRound(t.close != null ? t.close : (b.fut != null ? b.fut : null), 0);
   const arr = t.ma_arr || '';
   const isUp = arr === '多头排列';
   const isDn = arr === '空头排列';
@@ -4362,12 +4457,12 @@ function slPlan(r, opps) {
   if (atrPct != null && px != null) {
     const atrPx = px * atrPct / 100;
     const stopRef = 1.2;
-    const pct1y = slNum(t.pct_1y);
-    // 仓位档: 高分位或高波动 → 轻仓; 低波动+中位 → 可稍重
+    const bo = t.breakout || '';
+    // 仓位档: 高波动 → 轻仓; 低波动 → 半仓以内; 临近突破临界再加提示
     let size = '轻仓';
     if (atrPct >= 2.5) size = '轻仓';
     else if (atrPct >= 1.2) size = '轻仓至半仓';
-    else if (atrPct < 1.2 && pct1y != null && pct1y > 20 && pct1y < 80) size = '半仓以内';
+    else size = (bo === 'near_high' || bo === 'near_low') ? '半仓以内(临近突破,注意方向)' : '半仓以内';
     let stopTxt = '';
     if (dir === 'up' || isUp) stopTxt = '止损参考 ' + slFmt(px - atrPx * stopRef, 0) + '（约 1.2 倍 ATR）';
     else if (dir === 'down' || isDn) stopTxt = '止损参考 ' + slFmt(px + atrPx * stopRef, 0) + '（约 1.2 倍 ATR）';
@@ -4693,7 +4788,7 @@ function renderHedge() {
     return `<div class="hedge-item" onclick="showVarietyDetail('${code}')" style="cursor:pointer;">
       <div class="hedge-head">
         <span class="hedge-name">${h.cn} <span style="color:#8b95a5;font-weight:400;font-size:10px;">${cf}</span></span>
-        <span style="font-size:10px;color:#6b7280;">${catMap[code] || ''} · 价 ${h.price_pct}% · 基差 ${h.basis_prc}% <span style="color:${h.urgency >= 3 ? '#ef4444' : h.urgency >= 2 ? '#f59e0b' : '#6b7280'};">${dots}</span></span>
+        <span style="font-size:10px;color:#6b7280;">${catMap[code] || ''} · 价 ${h.price_pos || ''} · 基差 ${h.basis_prc}% <span style="color:${h.urgency >= 3 ? '#ef4444' : h.urgency >= 2 ? '#f59e0b' : '#6b7280'};">${dots}</span></span>
       </div>
       ${showB ? `<div class="hedge-why"><b style="color:#4a9eff;">用料企业</b> → <b style="color:${actColor(h.buyer.action)};">${h.buyer.action}</b>(建议比例 ${h.buyer.ratio}%)<br>${h.buyer.why}</div>` : ''}
       ${showS ? `<div class="hedge-why"><b style="color:#a78bfa;">供货企业</b> → <b style="color:${actColor(h.seller.action)};">${h.seller.action}</b>(建议比例 ${h.seller.ratio}%)<br>${h.seller.why}</div>` : ''}
@@ -5176,6 +5271,47 @@ async function onMultiSourceRefreshClick() {
     setTimeout(() => { if (tip.parentNode) tip.parentNode.removeChild(tip); }, 5000);
   }
 }
+function renderMultiFactor(){
+  const box=document.getElementById('mf-list'); if(!box) return;
+  const mf=(quotesData&&quotesData.multi_factor)||{}; const items=mf.items||{};
+  const arr=Object.values(items).sort((a,b)=>b.composite-a.composite);
+  if(!arr.length){box.innerHTML='<div style="color:#6b7280;text-align:center;padding:8px;">多因子数据生成中…</div>';return;}
+  const rows=(it)=>[['趋势动量',it.f_trend],['期限结构',it.f_term],['基差位置',it.f_basis],['持仓变化',it.f_oi]].map(([n,v])=>{
+    const w=Math.min(50,Math.abs(v)/2), side=v>=0?'pos':'neg', sign=v>0?'+':'';
+    return '<div class="mf-row"><span class="mf-fl">'+n+'</span><span class="mf-bar"><i class="mid"></i><i class="mf-fill '+side+'" style="width:'+w+'%"></i></span><span class="mf-fv">'+sign+v+'</span></div>';
+  }).join('');
+  box.innerHTML=arr.map(it=>{
+    const cls=it.composite>=10?'bull':(it.composite<=-10?'bear':'flat');
+    const sign=it.composite>0?'+':'';
+    return '<div class="mf-item '+cls+'"><div class="mf-head"><span class="mf-name">'+it.cn+'</span>'
+      +'<span class="mf-bias '+cls+'">'+it.bias+'</span>'
+      +'<span class="mf-comp">综合 '+sign+it.composite+'</span></div>'
+      +'<div class="mf-factors">'+rows(it)+'</div>'
+      +'<div class="mf-note">'+it.note+'</div></div>';
+  }).join('');
+  const ne=document.getElementById('mf-note'); if(ne) ne.textContent=mf.note||'';
+}
+
+function renderLiquidate(){
+  const box=document.getElementById('liquidate-list'); if(!box) return;
+  const Q=quotesData||{}; const ev=[];
+  (Q.expiry_alerts||[]).forEach(e=>ev.push({date:e.date,type:'主力合约到期',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days||'?')+' 天',level:e.level||'soon',code:e.code}));
+  const op=(Q.option_expiry&&Q.option_expiry.items)||[];
+  op.forEach(e=>ev.push({date:e.expiry,type:'期权到期',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days||'?')+' 天',level:e.level||'soon',code:e.code}));
+  (Q.lot_round_alerts||[]).forEach(e=>{const d=e.clear_day||e.ltd; if(d) ev.push({date:d,type:'自然人清仓',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+(e.note?(' · '+e.note):''),level:e.level||'soon',code:e.code});});
+  (Q.fin_calendar||[]).forEach(e=>{
+    ev.push({date:e.ltd,type:(e.is_treasury?'国债到期':'股指到期'),title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days_to_ltd||'?')+' 天',level:'soon',code:e.code});
+    if(e.clear_day) ev.push({date:e.clear_day,type:'国债自然人清仓',title:(e.cn||e.code),sub:'合约 '+(e.contract||'')+' · 剩余 '+(e.days_to_clear||'?')+' 天',level:'caution',code:e.code});
+  });
+  if(!ev.length){box.innerHTML='<div style="color:#6b7280;text-align:center;padding:8px;">暂无临近的清仓/到期事项</div>';return;}
+  ev.sort((a,b)=>(a.date<b.date?-1:a.date>b.date?1:0));
+  box.innerHTML='<div class="tl">'+ev.map(e=>{
+    const lvl=e.level||'soon';
+    return '<div class="tl-item '+lvl+'"><div class="tl-date">'+e.date+'<span class="tl-type">'+e.type+'</span></div>'
+      +'<div class="tl-sub">'+e.title+'　'+e.sub+'</div></div>';
+  }).join('')+'</div>';
+}
+
 </script>
 
 </body>

@@ -1541,7 +1541,7 @@ def main():
 
     _lap('基差')
     # 6.7) 企业套保决策(期货 vs 期权 / 现在套不套) (V3.2 新增)
-    #      依据: 价格分位(tech) + 基差分位(basis) + 波动率 + 临近事件
+    #      依据: 突破状态/趋势(tech) + 基差分位(basis) + 波动率 + 临近事件
     try:
         import hedge_advisor
         _cn_fb = {}
@@ -1624,6 +1624,20 @@ def main():
         result['term'] = {}
 
     _lap('期限结构')
+    # 6.13) 多因子分析(趋势动量 + 期限结构 + 基差 + 持仓变化) (V6.7 新增)
+    #       直接复用上面已算好的 tech / basis / term, 不重复抓 K 线;
+    #       持仓变化从 tech_indicators 的 K 线缓存读取历史持仓序列。
+    try:
+        import multi_factor
+        result['multi_factor'] = multi_factor.build(
+            result.get('tech') or {}, result.get('basis') or {},
+            result.get('term') or {}, verbose=False)
+        print(f'[OK] multi_factor: {len(result["multi_factor"].get("items", {}))} 品种')
+    except Exception as _e:
+        print(f'[WARN] multi_factor 失败: {_e}')
+        result['multi_factor'] = {}
+
+    _lap('多因子')
     # 7) 写文件(原子写: 先写临时文件再 rename, 避免 15 分钟刷新瞬间读到半截 JSON 导致页面打不开)
     out_path = DATA_DIR / 'quotes.json'
     tmp_path = DATA_DIR / 'quotes.json.tmp'
