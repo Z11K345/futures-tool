@@ -2297,7 +2297,7 @@ function renderTodayFocus() {
   const tomorrowItems = cal.filter(e => e.date === tomorrow);
 
   // 涨跌幅前 5 名(绝对值)
-  const flat = flatAll().filter(q => !q.paused && parseFloat(q.last || 0) > 0);
+  const flat = flatAll().filter(q => q.cat !== 'overseas' && !q.paused && parseFloat(q.last || 0) > 0);
   const topMovers = flat
     .map(q => ({...q, absPct: Math.abs(parseFloat(q.pct || 0))}))
     .sort((a, b) => b.absPct - a.absPct)
