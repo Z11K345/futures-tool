@@ -5323,11 +5323,13 @@ function renderLiquidate(){
   const dlabel=d=>{const n=dleft(d); return n===0?'今天':(n===1?'明天':(n>1?('剩 '+n+' 天'):''));};
   const PRI={imminent:1,caution:2,warn:3,soon:4};
   const exName={CFFEX:'中金所',CZCE:'郑商所',DCE:'大商所',GFEX:'广期所',INE:'能源中心',SHFE:'上期所'};
+  const exMap={'上期所':'SHFE','上海期货交易所':'SHFE','能源中心':'INE','上海国际能源交易中心':'INE','大商所':'DCE','大连商品交易所':'DCE','郑商所':'CZCE','郑州商品交易所':'CZCE','广期所':'GFEX','广州期货交易所':'GFEX','中金所':'CFFEX','中国金融期货交易所':'CFFEX'};
+  const exCode=k=>exMap[k]||k;
   const exTitle=k=>exName[k]||(k==='OTHER'?'其他':('交易所'+k));
   const order=['SHFE','INE','DCE','CZCE','GFEX','CFFEX'];
   // 归类: 交易所 -> 日期 -> 类型(合并同类型同日期品种)
   const groups={};
-  ev.forEach(e=>{const k=e.exchange||'OTHER';
+  ev.forEach(e=>{const k=exCode(e.exchange||'OTHER');
     const g=groups[k]||(groups[k]={});
     const d=g[e.date]||(g[e.date]={});
     const t=d[e.type]||(d[e.type]={kind:e.kind,level:e.level,items:[]});
