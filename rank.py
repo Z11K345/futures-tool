@@ -465,7 +465,10 @@ def build(force=False, verbose=True):
     if not force and os.path.exists(CACHE_FILE):
         try:
             c = json.load(open(CACHE_FILE, encoding='utf-8'))
-            if time.time() - c.get('_ts', 0) < TTL and c.get('items'):
+            # 任一交易所取到空/失败(常为收盘后数据稍晚发布的时序竞争)则不信任缓存, 强制重抓
+            _srcs = c.get('sources', {}) or {}
+            _all_ok = all(v not in ('empty', 'fail') for v in _srcs.values())
+            if time.time() - c.get('_ts', 0) < TTL and c.get('items') and _all_ok:
                 if verbose:
                     print(f'[rank] 使用缓存 {c.get("date")} ({len(c["items"])} 品种)')
                 return c
@@ -479,6 +482,7 @@ def build(force=False, verbose=True):
         mm = {}
 
     result = {'date': None, 'sources': {}, 'items': [], 'dce': None}
+    primary_day = None
     for day in recent_trade_days(8):
         if verbose:
             print(f'[rank] 尝试 {day} ...')
@@ -508,6 +512,7 @@ def build(force=False, verbose=True):
 
         got = sum(1 for v in merged.values() if v)
         if got >= 10:
+            primary_day = day
             result['date'] = day.strftime('%Y-%m-%d')
             result['sources'] = src
             # 大商所经东方财富 datacenter 接入(官网 412 无法直爬)
@@ -517,10 +522,26 @@ def build(force=False, verbose=True):
                 merged.setdefault(code, {}).update(d)
             break
 
-    if not result['date']:
+    if primary_day is None:
         result['sources'] = src
         result['dce'] = 'no-data'
         return result
+
+    # 中金所(CFFEX)/大商所(DCE)有时在收盘后稍晚发布, 主交易日取到空时,
+    # 回退到更早的交易日补取, 避免整栏缺数据(尤其股指/国债龙虎榜)
+    for _ex, _fetcher in (('CFFEX', fetch_cffex), ('DCE', fetch_eastmoney_dce)):
+        if result['sources'].get(_ex) in ('empty', 'fail', None):
+            for _day in recent_trade_days(8):
+                if _day >= primary_day:
+                    continue
+                _data, _st = _fetcher(_day)
+                if _data:
+                    result['sources'][_ex] = _st
+                    for _code, _d in _data.items():
+                        merged.setdefault(_code, {}).update(_d)
+                    if verbose:
+                        print(f'[rank] {_ex} 回退到 {_day} 补取成功')
+                    break
 
     # 选主力合约: 优先 main_contract 判定的月份, 否则取持仓最大的合约
     items = []
