@@ -2879,7 +2879,10 @@ function renderFuturesNews() {
 function renderFutureSignals() {
   const box = document.getElementById('future-signals');
   if (!box) return;
-  const sigs = (quotesData && quotesData.future_signals) || [];
+  // 本卡仅国内品种: 剔除海外品种(sector='overseas' 或代码 hf_*)
+  const _ovCodes = new Set((((quotesData || {}).categories || {}).overseas || []).map(x => x.code));
+  const sigs = ((quotesData && quotesData.future_signals) || [])
+    .filter(s => s.sector !== 'overseas' && !_ovCodes.has(s.code) && !String(s.code || '').startsWith('hf_'));
   if (!sigs.length) { box.innerHTML = '<div style="color:#9ca3af;">今日市场较为平稳,无明显异动信号。可手动刷新关注。</div>'; return; }
 
   let html = '';
