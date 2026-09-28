@@ -5315,7 +5315,11 @@ function renderLiquidate(){
   (Q.expiry_alerts||[]).forEach(e=>add(e.date,e.exchange,'主力合约到期',e.cn||e.code,e.contract,e.level,e.code));
   const op=(Q.option_expiry&&Q.option_expiry.items)||[];
   op.forEach(e=>add(e.expiry,e.exchange,'期权到期',e.cn||e.code,e.contract,e.level,e.code));
-  (Q.lot_round_alerts||[]).forEach(e=>add(e.clear_day||e.ltd,e.exchange,'自然人清仓',e.cn||e.code,e.contract,e.level,e.code));
+  (Q.lot_round_alerts||[]).forEach(e=>{
+    // 上期所/能源中心品种有「取整日」(round_day)与「取零日」(clear_day)两个节点, 时间轴需分别列出, 否则取整日(如 2610 的 9-30)会消失
+    if(e.round_day && e.round_day!==e.clear_day) add(e.round_day,e.exchange,'自然人取整',e.cn||e.code,e.contract,e.level,e.code);
+    add(e.clear_day||e.ltd,e.exchange,'自然人清仓',e.cn||e.code,e.contract,e.level,e.code);
+  });
   (Q.fin_calendar||[]).forEach(e=>{
     add(e.ltd,e.exchange,(e.is_treasury?'国债到期':'股指到期'),e.cn||e.code,e.contract,'soon',e.code);
     if(e.clear_day) add(e.clear_day,e.exchange,'国债自然人清仓',e.cn||e.code,e.contract,'caution',e.code);
