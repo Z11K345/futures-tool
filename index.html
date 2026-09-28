@@ -630,7 +630,6 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <div class="mn-item" onclick="gotoCard('card-mf')">多因子</div>
     <div class="mn-item" onclick="gotoCard('card-quotes')">行情</div>
     <div class="mn-item" onclick="gotoCard('card-outer')">外围</div>
-    <div class="mn-item" onclick="gotoCard('card-cal')">日历</div>
     <div class="mn-item" onclick="gotoCard('card-news')">要闻</div>
     <div class="mn-item" onclick="gotoCard('card-data')">数据</div>
     <div class="mn-item" onclick="gotoCard('card-edu')">投教</div>
@@ -733,6 +732,26 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .liq-kind.opt{background:rgba(167,139,250,.2);color:#c4b5fd}
 .tl-line{font-size:12.5px;color:#cbd5e1;line-height:1.75;margin:3px 0}
 .tl-line .tl-type{margin-left:0;margin-right:7px}
+/* 清仓/到期速览: 日期 → 期货/期权 → 交易所 */
+.liq-day{margin:0 0 10px;border:1px solid #2a2f3a;border-radius:10px;overflow:hidden;background:#141821}
+.liq-day.imminent{border-color:#5a2420}
+.liq-day.caution{border-color:#5a4520}
+.liq-day-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:7px 12px;background:#1b212c}
+.liq-day.imminent .liq-day-h{background:#2b1613}
+.liq-day.caution .liq-day-h{background:#241d10}
+.liq-dleft{font-size:11px;font-weight:600;color:#f0a020}
+.liq-day.soon .liq-dleft{color:#8b95a5}
+.liq-sec{padding:5px 10px 7px}
+.liq-sec-h{display:flex;align-items:center;gap:7px;margin:4px 2px 5px}
+.liq-ex{margin:5px 0 2px;border:1px solid #262b36;border-radius:8px;overflow:hidden;background:#10141c}
+.liq-ex-h{padding:5px 10px;font-weight:700;color:#dbe3ee;background:#1a1f29;font-size:12px}
+.liq-ex-body{padding:4px 10px 6px}
+.liq-act{display:inline-block;padding:0 6px;border-radius:8px;font-size:10.5px;font-weight:600;margin-right:7px;vertical-align:1px}
+.liq-act.imminent{background:rgba(224,83,61,.18);color:#ff8a73}
+.liq-act.caution{background:rgba(240,160,32,.18);color:#fbbf24}
+.liq-act.warn{background:rgba(74,158,255,.16);color:#7cb8ff}
+.liq-act.soon{background:rgba(148,163,184,.16);color:#cbd5e1}
+.liq-ct{color:#8b95a5;font-size:11px}
 </style>
 <div class="card" id="card-edu">
   <div class="card-header">
@@ -852,30 +871,10 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <span class="card-title">🧹 清仓 / 到期速览</span>
     <span class="card-tag auto">自动</span>
   </div>
-  <div class="sub-label first">统一时间轴（主力合约到期 · 期权到期 · 自然人清仓 · 金融期货到期·清仓）</div>
+  <div class="sub-label first">按日期（近→远）· 同日分「期货 / 期权」· 再按交易所（含主力到期 · 期权到期 · 自然人清仓取整/取零 · 金融期货到期清仓）</div>
   <div id="liquidate-list" style="font-size:13px;line-height:1.7;">加载中…</div>
   <div class="save-note">📌 商品期货自然人一般须在交割月前按规定清仓（仅个别品种可取整进交割月）；国债期货须于交割月前第 2 个交易日收盘前清仓。具体以交易所及期货公司通知为准。</div>
 </div>
-<div class="card" id="card-cal">
-  <div class="card-header">
-    <span class="card-title">⏰ 到期与清仓日历</span>
-    <span class="card-tag auto">自动</span>
-  </div>
-  <div class="sub-label first">主力合约到期</div>
-  <div id="expiry-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="ZEnyAnEx0fe2cHBgmB2mm8">--</div>
-  <div class="sub-label sub-divide">期权到期日(未来45天)</div>
-  <div style="font-size:11.5px;color:#9ca3af;margin-bottom:8px;line-height:1.7;" data-page-node-id="dOQeQr4SIlAPFicWfuoE7R">
-  <b style="color:#e5e7eb;" data-page-node-id="h3lfVgETH8GNdQzWCKg0v2">商品期权为美式</b>(买方可在到期日当日前行权): 到期日当天<b style="color:#e5e7eb;" data-page-node-id="2i4myBcSg7Gyh4HbtPoR4s">平仓截止 15:00, 行权/放弃申请及行权资金入金截止 15:15</b>。
-  实值期权买方行权资金不足将被自动放弃行权; 卖方到期未平仓将按交易所配对履约。
-  <b style="color:#e5e7eb;" data-page-node-id="dsKkGCRo5tHttc1iuCmIk7">中金所股指期权为欧式</b>(仅最后交易日可行权), 采用现金交割。
-  </div>
-  <div id="optexp-list" style="max-height:460px;overflow-y:auto;" data-page-node-id="POxlMYKibhC8rLkvsETF3p">--</div>
-  <div class="save-note" id="optexp-note" data-page-node-id="REpmDhzAHua82YamtMcqvc">📌 --</div>
-  <div class="sub-label sub-divide">自然人清仓(取整/取零)</div>
-  <div id="lot-round-alerts" style="font-size:13px;line-height:1.7;" data-page-node-id="x9fXcmM0oj6g7gFI57FQg5">--</div>
-  <div class="sub-label sub-divide">金融期货(股指/国债)到期·清仓（列各品种最近到期合约）</div>
-  <div id="fin-calendar" style="font-size:13px;line-height:1.7;">--</div>
-  </div>
 
   <div class="card foldable folded" id="card-news">
   <div class="card-header" onclick="toggleCardFold(this)">
@@ -1859,10 +1858,6 @@ function onQuotesLoaded() {
   renderFundSummary();
   renderOutlookAuto();
   renderFutureSignals();
-  renderExpiryAlerts();
-  renderOptionExpiry();
-  renderLotRoundAlerts();
-  renderFinCalendar();
   renderLiquidate();
   renderFuturesNews();
   renderStrategyMatches();
@@ -3991,9 +3986,9 @@ function gotoCard(id) {
   });
 }
 
-// 快标「清仓」: 直达「到期与清仓日历」卡片顶部(从标题"⏰ 到期与清仓日历"开始), 而非卡内某小节
+// 快标「清仓」: 直达「🧹 清仓 / 到期速览」卡片顶部
 function gotoFinCalendar() {
-  const card = document.getElementById('card-cal');
+  const card = document.getElementById('card-liquidate');
   if (!card) return;
   const pane = paneOfCard(card);
   if (pane && !pane.classList.contains('active')) {
@@ -5307,61 +5302,79 @@ function renderMultiFactor(){
 function renderLiquidate(){
   const box=document.getElementById('liquidate-list'); if(!box) return;
   const Q=quotesData||{}; const ev=[];
-  const add=(date,exchange,type,title,contract,level,code)=>{
+  // 统一事件: date / fut(期货|期权) / exchange(原样,渲染时归一) / action / title / contract / level
+  const add=(date,fut,exchange,action,title,contract,level,code)=>{
     if(!date) return;
-    const kind=(String(type).indexOf('期权')>=0)?'期权':'期货';
-    ev.push({date:date,exchange:exchange,type:type,kind:kind,title:title||code||'',contract:contract||'',level:level||'soon'});
+    ev.push({date:String(date).slice(0,10),fut:fut,exchange:exchange||'OTHER',action:action,title:title||code||'',contract:contract||'',level:level||'soon'});
   };
-  (Q.expiry_alerts||[]).forEach(e=>add(e.date,e.exchange,'主力合约到期',e.cn||e.code,e.contract,e.level,e.code));
-  const op=(Q.option_expiry&&Q.option_expiry.items)||[];
-  op.forEach(e=>add(e.expiry,e.exchange,'期权到期',e.cn||e.code,e.contract,e.level,e.code));
+  // ① 主力合约到期(期货)
+  (Q.expiry_alerts||[]).forEach(e=>add(e.date,'期货',e.exchange,'主力到期',e.cn||e.code,e.contract,e.level,e.code));
+  // ② 期权到期(期权)
+  ((Q.option_expiry&&Q.option_expiry.items)||[]).forEach(e=>add(e.expiry,'期权',e.exchange,'期权到期',e.cn||e.code,e.contract,e.level,e.code));
+  // ③ 自然人清仓: 上期所/能源中心有「取整」+「取零」两节点, 其余直接取零
   (Q.lot_round_alerts||[]).forEach(e=>{
-    // 上期所/能源中心品种有「取整日」(round_day)与「取零日」(clear_day)两个节点, 时间轴需分别列出, 否则取整日(如 2610 的 9-30)会消失
-    if(e.round_day && e.round_day!==e.clear_day) add(e.round_day,e.exchange,'自然人取整',e.cn||e.code,e.contract,e.level,e.code);
-    add(e.clear_day||e.ltd,e.exchange,'自然人清仓',e.cn||e.code,e.contract,e.level,e.code);
+    if(e.round_day && e.round_day!==e.clear_day) add(e.round_day,'期货',e.exchange,'取整',e.cn||e.code,e.contract,e.level,e.code);
+    add(e.clear_day||e.ltd,'期货',e.exchange,'清仓',e.cn||e.code,e.contract,e.level,e.code);
   });
+  // ④ 金融期货(股指/国债)到期 + 国债自然人清仓
   (Q.fin_calendar||[]).forEach(e=>{
-    add(e.ltd,e.exchange,(e.is_treasury?'国债到期':'股指到期'),e.cn||e.code,e.contract,'soon',e.code);
-    if(e.clear_day) add(e.clear_day,e.exchange,'国债自然人清仓',e.cn||e.code,e.contract,'caution',e.code);
+    add(e.ltd,'期货',e.exchange,(e.is_treasury?'国债到期':'股指到期'),e.cn||e.code,e.contract,'soon',e.code);
+    if(e.clear_day) add(e.clear_day,'期货',e.exchange,'国债清仓',e.cn||e.code,e.contract,'caution',e.code);
   });
   if(!ev.length){box.innerHTML='<div style="color:#6b7280;text-align:center;padding:8px;">暂无临近的清仓/到期事项</div>';return;}
   const today=new Date().toISOString().slice(0,10);
   const dleft=d=>Math.round((Date.parse(d+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000);
-  const dlabel=d=>{const n=dleft(d); return n===0?'今天':(n===1?'明天':(n>1?('剩 '+n+' 天'):''));};
+  const dlabel=d=>{const n=dleft(d); return n===0?'今天':(n===1?'明天':(n>1?('剩 '+n+' 天'):'已过'));};
+  const WD=['日','一','二','三','四','五','六'];
+  const dhead=d=>{const t=new Date(d+'T00:00:00'); return d+'（周'+WD[t.getDay()]+'）';};
   const PRI={imminent:1,caution:2,warn:3,soon:4};
+  const LVCLS=l=>(PRI[l]?l:'soon');
+  const ACTORD=['取整','清仓','主力到期','股指到期','国债到期','国债清仓','期权到期'];
   const exName={CFFEX:'中金所',CZCE:'郑商所',DCE:'大商所',GFEX:'广期所',INE:'能源中心',SHFE:'上期所'};
   const exMap={'上期所':'SHFE','上海期货交易所':'SHFE','能源中心':'INE','上海国际能源交易中心':'INE','大商所':'DCE','大连商品交易所':'DCE','郑商所':'CZCE','郑州商品交易所':'CZCE','广期所':'GFEX','广州期货交易所':'GFEX','中金所':'CFFEX','中国金融期货交易所':'CFFEX'};
   const exCode=k=>exMap[k]||k;
   const exTitle=k=>exName[k]||(k==='OTHER'?'其他':('交易所'+k));
   const order=['SHFE','INE','DCE','CZCE','GFEX','CFFEX'];
-  // 归类: 交易所 -> 日期 -> 类型(合并同类型同日期品种)
-  const groups={};
-  ev.forEach(e=>{const k=exCode(e.exchange||'OTHER');
-    const g=groups[k]||(groups[k]={});
-    const d=g[e.date]||(g[e.date]={});
-    const t=d[e.type]||(d[e.type]={kind:e.kind,level:e.level,items:[]});
-    if((PRI[e.level]||9)<(PRI[t.level]||9)) t.level=e.level;
-    t.items.push(e);});
-  const renderEx=k=>{
-    const g=groups[k]; const dates=Object.keys(g).sort();
-    let cnt=0; dates.forEach(d=>{Object.keys(g[d]).forEach(t=>{cnt+=g[d][t].items.length;});});
-    let h='<div class="liq-ex"><div class="liq-ex-h">'+exTitle(k)+'<span class="liq-ex-n">'+cnt+' 项</span></div><div class="tl">';
-    h+=dates.map(d=>{
-      const types=g[d]; let lvl='soon';
-      Object.keys(types).forEach(t=>{if((PRI[types[t].level]||9)<(PRI[lvl]||9)) lvl=types[t].level;});
-      const lines=Object.keys(types).map(t=>{
-        const o=types[t];
-        const names=o.items.map(e=>e.title+(e.contract?(' '+e.contract):'')).join('、');
-        const kcls=(o.kind==='期权')?'opt':'fut';
-        return '<div class="tl-line"><span class="liq-kind '+kcls+'">'+o.kind+'</span><span class="tl-type">'+t+'</span>'+names+'</div>';
-      }).join('');
-      const dl=dlabel(d);
-      return '<div class="tl-item '+lvl+'"><div class="tl-date">'+d+(dl?('<span class="tl-left">'+dl+'</span>'):'')+'</div>'+lines+'</div>';
-    }).join('');
-    return h+'</div></div>';};
+  // 归类: 日期 -> 期货/期权 -> 交易所 -> 动作 -> items
+  const days={};
+  ev.forEach(e=>{
+    const dd=days[e.date]||(days[e.date]={});
+    const fu=dd[e.fut]||(dd[e.fut]={});
+    const exk=exCode(e.exchange||'OTHER');
+    const ex=fu[exk]||(fu[exk]={});
+    const ac=ex[e.action]||(ex[e.action]={level:e.level,items:[]});
+    if((PRI[e.level]||9)<(PRI[ac.level]||9)) ac.level=e.level;
+    ac.items.push(e);
+  });
   let html='';
-  order.filter(k=>groups[k]).forEach(k=>{html+=renderEx(k);});
-  Object.keys(groups).filter(k=>!order.includes(k)).forEach(k=>{html+=renderEx(k);});
+  Object.keys(days).sort().forEach(d=>{
+    const dayMap=days[d];
+    let lvl='soon';
+    ['期货','期权'].forEach(f=>{const fu=dayMap[f]; if(!fu) return;
+      Object.keys(fu).forEach(k=>Object.keys(fu[k]).forEach(a=>{const L=fu[k][a].level; if((PRI[L]||9)<(PRI[lvl]||9)) lvl=L;}));});
+    const dl=dlabel(d);
+    html+='<div class="liq-day '+LVCLS(lvl)+'"><div class="liq-day-h"><span class="tl-date">'+dhead(d)+'</span>'+(dl?'<span class="liq-dleft">'+dl+'</span>':'')+'</div>';
+    ['期货','期权'].forEach(fut=>{
+      const fu=dayMap[fut]; if(!fu) return;
+      const kcls=(fut==='期权')?'opt':'fut';
+      const exs=order.filter(k=>fu[k]).concat(Object.keys(fu).filter(k=>order.indexOf(k)<0).sort());
+      let cnt=0; exs.forEach(k=>Object.keys(fu[k]).forEach(a=>{cnt+=fu[k][a].items.length;}));
+      html+='<div class="liq-sec"><div class="liq-sec-h"><span class="liq-kind '+kcls+'">'+fut+'</span><span class="liq-ex-n">'+cnt+' 项</span></div>';
+      exs.forEach(exk=>{
+        const ex=fu[exk];
+        const acts=ACTORD.filter(a=>ex[a]).concat(Object.keys(ex).filter(a=>ACTORD.indexOf(a)<0));
+        html+='<div class="liq-ex"><div class="liq-ex-h">'+exTitle(exk)+'</div><div class="liq-ex-body">';
+        acts.forEach(act=>{
+          const o=ex[act];
+          const names=o.items.map(i=>i.title+(i.contract?' <span class="liq-ct">'+i.contract+'</span>':'')).join('、');
+          html+='<div class="tl-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+names+'</div>';
+        });
+        html+='</div></div>';
+      });
+      html+='</div>';
+    });
+    html+='</div>';
+  });
   box.innerHTML=html;
 }
 
