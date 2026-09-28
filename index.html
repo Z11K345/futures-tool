@@ -752,6 +752,8 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .liq-act.warn{background:rgba(74,158,255,.16);color:#7cb8ff}
 .liq-act.soon{background:rgba(148,163,184,.16);color:#cbd5e1}
 .liq-ct{color:#8b95a5;font-size:11px}
+.liq-lots{display:inline-block;padding:0 6px;border-radius:8px;font-size:10.5px;font-weight:600;background:rgba(74,158,255,.16);color:#8fc0ff;margin-right:5px;vertical-align:1px}
+.liq-sep{color:#3f4653;margin:0 7px}
 </style>
 <div class="card" id="card-edu">
   <div class="card-header">
@@ -5303,9 +5305,9 @@ function renderLiquidate(){
   const box=document.getElementById('liquidate-list'); if(!box) return;
   const Q=quotesData||{}; const ev=[];
   // 统一事件: date / fut(期货|期权) / exchange(原样,渲染时归一) / action / title / contract / level
-  const add=(date,fut,exchange,action,title,contract,level,code)=>{
+  const add=(date,fut,exchange,action,title,contract,level,code,lots)=>{
     if(!date) return;
-    ev.push({date:String(date).slice(0,10),fut:fut,exchange:exchange||'OTHER',action:action,title:title||code||'',contract:contract||'',level:level||'soon'});
+    ev.push({date:String(date).slice(0,10),fut:fut,exchange:exchange||'OTHER',action:action,title:title||code||'',contract:contract||'',level:level||'soon',lots:lots||0});
   };
   // ① 主力合约到期(期货)
   (Q.expiry_alerts||[]).forEach(e=>add(e.date,'期货',e.exchange,'主力到期',e.cn||e.code,e.contract,e.level,e.code));
@@ -5313,7 +5315,7 @@ function renderLiquidate(){
   ((Q.option_expiry&&Q.option_expiry.items)||[]).forEach(e=>add(e.expiry,'期权',e.exchange,'期权到期',e.cn||e.code,e.contract,e.level,e.code));
   // ③ 自然人清仓: 上期所/能源中心有「取整」+「取零」两节点, 其余直接取零
   (Q.lot_round_alerts||[]).forEach(e=>{
-    if(e.round_day && e.round_day!==e.clear_day) add(e.round_day,'期货',e.exchange,'取整',e.cn||e.code,e.contract,e.level,e.code);
+    if(e.round_day && e.round_day!==e.clear_day) add(e.round_day,'期货',e.exchange,'取整',e.cn||e.code,e.contract,e.level,e.code,e.round_lots);
     add(e.clear_day||e.ltd,'期货',e.exchange,'清仓',e.cn||e.code,e.contract,e.level,e.code);
   });
   // ④ 金融期货(股指/国债)到期 + 国债自然人清仓
@@ -5366,8 +5368,14 @@ function renderLiquidate(){
         html+='<div class="liq-ex"><div class="liq-ex-h">'+exTitle(exk)+'</div><div class="liq-ex-body">';
         acts.forEach(act=>{
           const o=ex[act];
-          const names=o.items.map(i=>i.title+(i.contract?' <span class="liq-ct">'+i.contract+'</span>':'')).join('、');
-          html+='<div class="tl-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+names+'</div>';
+          const mkNames=arr=>arr.map(i=>i.title+(i.contract?' <span class="liq-ct">'+i.contract+'</span>':'')).join('、');
+          if(act==='取整' && o.items.some(i=>i.lots)){
+            const g={}; o.items.forEach(i=>{const k=i.lots||0;(g[k]=g[k]||[]).push(i);});
+            const parts=Object.keys(g).map(Number).sort((a,b)=>b-a).map(k=>'<span class="liq-lots">'+k+' 手倍数</span>'+mkNames(g[k]));
+            html+='<div class="tl-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+parts.join('<span class="liq-sep">｜</span>')+'</div>';
+          } else {
+            html+='<div class="tl-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+mkNames(o.items)+'</div>';
+          }
         });
         html+='</div></div>';
       });
