@@ -601,9 +601,23 @@ def compute_last_trading_day(spec, year, month):
             tds = trading_days_of_month(year, month)
             return tds[9] if len(tds) >= 10 else (tds[-1] if tds else None)
         if rule in ('month_3rd_fri', 'month_2nd_fri'):
-            fris = [d for d in trading_days_of_month(year, month) if d.weekday() == 4]
-            idx = 3 if rule == 'month_3rd_fri' else 2
-            return fris[idx - 1] if len(fris) >= idx else (fris[-1] if fris else None)
+            # 中金所规则: 最后交易日 = 合约到期月第 N 个星期五(按日历), 遇国家法定假日顺延至下一交易日
+            # 之前按「交易日中的周五」计数, 国庆等非交易日后会偏移到更晚一个周五(如 2610 偏到 10-23 而非 10-16)
+            n = 3 if rule == 'month_3rd_fri' else 2
+            cand = None
+            for dd in range(1, 32):
+                try:
+                    d = date(year, month, dd)
+                except ValueError:
+                    break
+                if d.weekday() == 4:
+                    n -= 1
+                    if n == 0:
+                        while not is_trading_day(d):
+                            d += timedelta(days=1)
+                        cand = d
+                        break
+            return cand
         if rule == 'ec_last_monday':
             mons = [d for d in trading_days_of_month(year, month) if d.weekday() == 0]
             return mons[-1] if mons else None
