@@ -517,22 +517,32 @@ SEED_HOLIDAY_BASELINE = {
 
 
 def compute_holiday_foreign(result, today, prev_baseline=None):
-    """长假期外盘区间统计。返回 (meta, items)；非假期窗口返回 (None, [])。
+    """长假期外盘区间统计。返回 (meta, items)。
 
-    展示窗口: 假期开始前 0 天 ~ 假期结束后 3 天(便于节后开盘查看最终统计)。
+    展示窗口:
+      - 假期期间及节后 3 天: 实时累计涨跌幅(进行中);
+      - 假期结束后(节后第 4 天起)14 天内: 保留最近一期「最终统计」(已结束), 便于节后回看;
+      - 其余时间: 返回 (None, []) 不展示。
     """
     if isinstance(today, datetime):
         today_d = today.date()
     else:
         today_d = today
     cur = None
+    ended = False
     for (s, e) in _HOLIDAY_RANGES_2026:
         sd = datetime.strptime(s, '%Y-%m-%d').date()
         ed = datetime.strptime(e, '%Y-%m-%d').date()
         if sd <= today_d <= ed + timedelta(days=3):
-            cur = (s, e)
-            break
-    if not cur:
+            cur = (s, e); ended = False; break
+    if cur is None:
+        # 假期刚结束: 展示最近一期的最终统计(节后第 4 天 ~ 第 14 天)
+        for (s, e) in _HOLIDAY_RANGES_2026:
+            sd = datetime.strptime(s, '%Y-%m-%d').date()
+            ed = datetime.strptime(e, '%Y-%m-%d').date()
+            if ed < today_d <= ed + timedelta(days=14):
+                cur = (s, e); ended = True; break
+    if cur is None:
         return None, []
     hid = '2026-' + _HOLIDAY_NAMES_2026.get(cur, '假期')
 
@@ -580,8 +590,11 @@ def compute_holiday_foreign(result, today, prev_baseline=None):
     meta = {
         'holiday_id': hid, 'start': cur[0], 'end': cur[1],
         'baseline_date': _base_date,
+        'ended': ended,
+        'label': (_HOLIDAY_NAMES_2026.get(cur, '假期')) + ('·已结束' if ended else '·进行中'),
         'note': ('外盘累计涨跌幅 = (当前价 − 假期前最后交易日收盘) / 假期前收盘；'
-                 '国内板为交易所国庆长假涨跌停板(参考)，|外盘累计|≥板幅时国内对应品种开盘或触板。'),
+                 '国内板为交易所长假涨跌停板(参考)，|外盘累计|≥板幅时国内对应品种开盘或触板。'
+                 + ('【假期已结束，以下为最终统计】' if ended else '')),
     }
     return meta, items
 

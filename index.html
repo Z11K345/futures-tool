@@ -602,6 +602,10 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .back-bar{position:fixed;left:0;right:0;top:var(--header-h,52px);z-index:60;display:none;align-items:center;gap:8px;padding:9px 14px;background:rgba(16,20,28,.97);backdrop-filter:blur(6px);border-bottom:1px solid #232b3a;font-size:13px;color:#e5e7eb;}
 .back-bar .bk{color:#4a9eff;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;}
 .back-bar .bt{color:#9ca3af;}
+/* 进入式导航(APP式): 总览态只显示首页入口, 隐藏所有卡片; 点入口进入详情态, 仅显示目标卡片 */
+.tab-pane .card { display: none; }
+.tab-pane.detail-mode .home-view { display: none; }
+.tab-pane.detail-mode .card.is-active { display: block; }
 </style>
 </head>
 <body data-page-node-id="nrr1MUVaKM5WthmocQzMwB">
@@ -4027,6 +4031,10 @@ function renderCloseTable() {
    Tab 切换 & 策略展示
    ============================================================ */
 function switchTab(tab, noScroll) {
+  // 切 Tab 回到该 Tab 的总览态(退出任何详情页)
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('detail-mode'));
+  document.querySelectorAll('.card.is-active').forEach(c => c.classList.remove('is-active'));
+  const _bb = document.getElementById('back-bar'); if (_bb) _bb.style.display = 'none';
   document.querySelectorAll('.tab-item').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
   document.querySelectorAll('.tab-pane').forEach(el => el.classList.toggle('active', el.id === 'tab-' + tab));
   fitHeader();
@@ -4093,11 +4101,18 @@ function openModule(id, tab) {
   if (tab) switchTab(tab, true);
   const el = document.getElementById(id);
   if (!el) return;
+  const pane = el.closest('.tab-pane');
+  if (!pane) return;
   if (id === 'card-rank') ensureRank();
+  // 进入详情态: 退出所有详情页, 仅显示目标卡片整页
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('detail-mode'));
+  pane.classList.add('detail-mode');
+  document.querySelectorAll('.tab-pane .card').forEach(c => c.classList.remove('is-active'));
+  el.classList.add('is-active');
   if (el.classList.contains('foldable') && el.classList.contains('folded')) toggleCardFold(el.querySelector('.card-header'));
   if (getComputedStyle(el).display === 'none') el.style.display = '';
+  window.scrollTo({ top: 0, behavior: 'auto' });
   const title = (el.querySelector('.card-title') || {}).textContent || '';
-  requestAnimationFrame(() => { scrollToEl(el, 8); });
   showBackBar(title);
 }
 function showBackBar(title){
@@ -4159,40 +4174,26 @@ function gotoCard(id) {
   const pane = paneOfCard(el);
   if (pane && !pane.classList.contains('active')) {
     const tab = pane.id.replace(/^tab-/, '');
-    switchTab(tab, true);      // true=不回到顶部, 交给下面的 scrollToEl 精确定位
+    switchTab(tab, true);
   }
+  // 进入详情态(与入口点击一致)
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('detail-mode'));
+  if (pane) pane.classList.add('detail-mode');
+  document.querySelectorAll('.tab-pane .card').forEach(c => c.classList.remove('is-active'));
+  el.classList.add('is-active');
   if (id === 'card-rank') ensureRank();
   if (el.classList.contains('foldable') && el.classList.contains('folded')) toggleCardFold(el.querySelector('.card-header'));
-  if (pane) {
-    // 卡片隐藏时(如品种详情)先让它可见, 否则滚动位置算不准
-    if (getComputedStyle(el).display === 'none') el.style.display = '';
-  }
+  if (getComputedStyle(el).display === 'none') el.style.display = '';
+  window.scrollTo({ top: 0, behavior: 'auto' });
   requestAnimationFrame(() => {
-    scrollToEl(el, 8);
     el.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
     setTimeout(() => { el.style.boxShadow = ''; }, 1200);
   });
 }
 
-// 快标「清仓」: 直达「🧹 清仓 / 到期速览」卡片顶部
+// 快标「清仓」: 进入「🧹 清仓 / 到期速览」详情页
 function gotoFinCalendar() {
-  const card = document.getElementById('card-liquidate');
-  if (!card) return;
-  const pane = paneOfCard(card);
-  if (pane && !pane.classList.contains('active')) {
-    switchTab(pane.id.replace(/^tab-/, ''), true);   // true=不回到顶部, 交给下面精确定位
-  }
-  if (card.classList.contains('foldable') && card.classList.contains('folded')) {
-    toggleCardFold(card.querySelector('.card-header'));
-  }
-  if (getComputedStyle(card).display === 'none') card.style.display = '';
-  requestAnimationFrame(() => {
-    scrollToEl(card, 8);
-    const hl = card.querySelector('.card-header') || card;
-    hl.style.transition = 'box-shadow .2s';
-    hl.style.boxShadow = '0 0 0 2px rgba(74,158,255,.55)';
-    setTimeout(() => { hl.style.boxShadow = ''; }, 1400);
-  });
+  openModule('card-liquidate', 'pre');
 }
 
 // ===== 头部高度自适应: fixed 头部含标签行, body 顶距必须动态校准 =====
@@ -5494,6 +5495,8 @@ function renderHolidayForeign(){
   const meta=Q.holiday_foreign_meta, items=Q.holiday_foreign||[];
   if(!meta || !items.length){ box.style.display='none'; return; }
   box.style.display='';
+  const _t=box.querySelector('.card-title');
+  if(_t) _t.textContent='📈 长假期外盘区间统计'+(meta.label?(' · '+meta.label):'');
   const sub=document.getElementById('holiday-foreign-sub');
   if(sub) sub.textContent='假期外盘累计涨跌幅（基准 '+meta.baseline_date+'，'+meta.start+' ~ '+meta.end+'）';
   const tb=document.getElementById('holiday-foreign-body');
