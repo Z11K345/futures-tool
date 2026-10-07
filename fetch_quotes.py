@@ -309,6 +309,32 @@ KEY_CALENDAR_2026 = [
     {'date': '2026-09-12', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
     {'date': '2026-09-19', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
     {'date': '2026-09-26', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    # ---- 2026 年 10 月 (国庆后恢复交易: 10/8 开市) ----
+    # 美国宏观(每月固定节奏: 非农=首周五 / CPI≈次旬 / PPI·零售≈中旬 / PCE≈月末)
+    {'date': '2026-10-02', 'time': '20:30', 'name': '美国 9 月非农就业', 'impact': 'high', 'cat': 'us_macro'},
+    {'date': '2026-10-08', 'time': '02:00', 'name': '美联储 9 月货币政策纪要', 'impact': 'high', 'cat': 'us_rate'},
+    {'date': '2026-10-09', 'time': '00:00', 'name': 'USDA 10 月供需报告(WASDE)', 'impact': 'high', 'cat': 'usda'},
+    {'date': '2026-10-10', 'time': '12:00', 'name': 'MPOB 9 月报告', 'impact': 'medium', 'cat': 'mpob'},
+    {'date': '2026-10-14', 'time': '20:30', 'name': '美国 9 月 CPI', 'impact': 'high', 'cat': 'us_macro'},
+    {'date': '2026-10-15', 'time': '20:30', 'name': '美国 9 月 PPI', 'impact': 'medium', 'cat': 'us_macro'},
+    {'date': '2026-10-15', 'time': '20:30', 'name': '美国 9 月零售销售', 'impact': 'medium', 'cat': 'us_macro'},
+    {'date': '2026-10-19', 'time': '09:30', 'name': '中国三季度 GDP', 'impact': 'high', 'cat': 'cn_macro'},
+    {'date': '2026-10-20', 'time': '09:15', 'name': '中国 10 月 LPR 报价', 'impact': 'medium', 'cat': 'cn_macro'},
+    {'date': '2026-10-30', 'time': '20:30', 'name': '美国 9 月 PCE', 'impact': 'medium', 'cat': 'us_macro'},
+    {'date': '2026-10-31', 'time': '09:30', 'name': '中国 10 月 官方制造业 PMI', 'impact': 'high', 'cat': 'cn_macro'},
+    # 中国宏观(9 月数据常规 10 月中旬发布窗口)
+    {'date': '2026-10-14', 'time': '09:30', 'name': '中国 9 月 CPI/PPI', 'impact': 'medium', 'cat': 'cn_macro'},
+    {'date': '2026-10-14', 'time': '09:30', 'name': '中国 9 月 社融/信贷', 'impact': 'medium', 'cat': 'cn_macro'},
+    # EIA 原油库存(每周三 22:30 ET)
+    {'date': '2026-10-14', 'time': '22:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-10-21', 'time': '22:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-10-28', 'time': '22:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    # CFTC 持仓报告(每周五 美东 15:30 = 北京周六 03:30)
+    {'date': '2026-10-03', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-10-10', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-10-17', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-10-24', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-10-31', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
 ]
 
 # ============================================================
@@ -436,6 +462,128 @@ for _s, _e in _HOLIDAY_RANGES_2026:
         _d += timedelta(days=1)
 for _s in _EXTRA_CLOSED_2026:
     _NON_TRADING_DAYS.add(datetime.strptime(_s, '%Y-%m-%d').date())
+
+# 假期名称(用于区间统计卡片标题)
+_HOLIDAY_NAMES_2026 = {
+    ('2026-01-01', '2026-01-03'): '元旦',
+    ('2026-02-15', '2026-02-23'): '春节',
+    ('2026-04-04', '2026-04-06'): '清明',
+    ('2026-05-01', '2026-05-05'): '劳动节',
+    ('2026-06-19', '2026-06-21'): '端午',
+    ('2026-09-25', '2026-09-27'): '中秋',
+    ('2026-10-01', '2026-10-07'): '国庆',
+}
+
+# ============================================================
+# 长假期外盘区间统计 (V7.4 新增)
+#   逻辑: 假期期间外盘照常交易, 国内休市。取"假期前最后交易日收盘"为基准,
+#         每轮刷新计算外盘累计涨跌幅, 并对照国内对应品种长假涨跌停板(参考),
+#         预判国内开盘是否触板。
+#   基准优先级: 种子表(本假期限定) > 上一轮 quotes.json 同 holiday 基线 > 首次运行自动捕获当前价
+#   数据来源: 外盘行情已在 OVERSEAS_CODES 抓取(新浪 hf_ 前缀)
+# ============================================================
+# 外盘代码 -> (国内对应品种, 交易所国庆长假涨跌停板%)
+#   涨跌停板取自各交易所《2026国庆节期间涨跌停板幅度调整通知》(中金财富/国信/五矿/长江期货公告援引, 多源一致)
+FOREIGN_LIMIT_MAP = {
+    'hf_GC':  ('沪金', 16),
+    'hf_SI':  ('沪银', 16),
+    'hf_CL':  ('原油', 16),
+    'hf_OIL': ('原油/燃油/沥青', 16),
+    'hf_CAD': ('沪铜', 9),
+    'hf_AHD': ('沪铝', 9),
+    'hf_ZSD': ('沪锌', 9),
+    'hf_PBD': ('沪铅', 9),
+    'hf_NID': ('沪镍', 10),
+    'hf_SND': ('沪锡', 12),
+    'hf_S':   ('豆一/豆二', 8),
+    'hf_C':   ('玉米', 6),
+    'hf_W':   ('强麦', 8),
+    'hf_SM':  ('豆粕', 8),
+    'hf_BO':  ('豆油', 8),
+    'hf_CT':  ('棉花', 8),
+}
+# 2026 国庆基准: 假期前最后交易日收盘 (2026-09-30 15:00), 口径来源: 国海良时期货 / 银河期货《国庆假期外盘金融市场涨跌幅》统计表
+SEED_HOLIDAY_BASELINE = {
+    '2026-国庆': {
+        'date': '2026-09-30',
+        'prices': {
+            'hf_GC': 4222.6, 'hf_SI': 61.565, 'hf_CL': 89.74, 'hf_OIL': 96.48,
+            'hf_CAD': 14465.5, 'hf_ZSD': 3857.0, 'hf_NID': 16005.0, 'hf_SND': 54075.0,
+            'hf_AHD': 3201.5, 'hf_PBD': 1896.5, 'hf_S': 1298.25, 'hf_C': 522.5,
+            'hf_W': 694.5, 'hf_SM': 359.2, 'hf_BO': 68.23, 'hf_CT': 79.1,
+        },
+    },
+}
+
+
+def compute_holiday_foreign(result, today, prev_baseline=None):
+    """长假期外盘区间统计。返回 (meta, items)；非假期窗口返回 (None, [])。
+
+    展示窗口: 假期开始前 0 天 ~ 假期结束后 3 天(便于节后开盘查看最终统计)。
+    """
+    if isinstance(today, datetime):
+        today_d = today.date()
+    else:
+        today_d = today
+    cur = None
+    for (s, e) in _HOLIDAY_RANGES_2026:
+        sd = datetime.strptime(s, '%Y-%m-%d').date()
+        ed = datetime.strptime(e, '%Y-%m-%d').date()
+        if sd <= today_d <= ed + timedelta(days=3):
+            cur = (s, e)
+            break
+    if not cur:
+        return None, []
+    hid = '2026-' + _HOLIDAY_NAMES_2026.get(cur, '假期')
+
+    ov = {}
+    for _cat, _lst in (result.get('categories') or {}).items():
+        for _q in (_lst or []):
+            _code = _q.get('code', '')
+            if _code.startswith('hf_') or _code.startswith('int_'):
+                ov[_code] = _q
+
+    # 选基准价
+    base = None
+    _seed = SEED_HOLIDAY_BASELINE.get(hid)
+    if _seed and _seed['date'] <= today_d.strftime('%Y-%m-%d'):
+        base = dict(_seed['prices'])
+    if base is None and prev_baseline and prev_baseline.get('holiday_id') == hid:
+        base = prev_baseline.get('prices')
+    if base is None:
+        base = {_c: float(_q['last']) for _c, _q in ov.items()
+                if _q.get('last') and float(_q['last'] or 0) > 0}
+        _base_date = today_d.strftime('%Y-%m-%d')
+    else:
+        _base_date = (_seed or {}).get('date', today_d.strftime('%Y-%m-%d'))
+
+    items = []
+    for _code, _q in ov.items():
+        try:
+            _last = float(_q.get('last') or 0)
+        except (ValueError, TypeError):
+            continue
+        _bp = base.get(_code)
+        if not _bp:
+            continue
+        _pct = (_last - _bp) / _bp * 100 if _bp else 0
+        _dom, _lim = FOREIGN_LIMIT_MAP.get(_code, (None, None))
+        _touch = (_lim is not None and abs(_pct) >= _lim)
+        items.append({
+            'code': _code, 'cn': _q.get('cn_name', _code),
+            'base': round(_bp, 3), 'last': round(_last, 3),
+            'pct': round(_pct, 2), 'domestic': _dom, 'limit': _lim,
+            'touch': _touch, 'time': _q.get('time', ''),
+        })
+    items.sort(key=lambda x: abs(x['pct']), reverse=True)
+
+    meta = {
+        'holiday_id': hid, 'start': cur[0], 'end': cur[1],
+        'baseline_date': _base_date,
+        'note': ('外盘累计涨跌幅 = (当前价 − 假期前最后交易日收盘) / 假期前收盘；'
+                 '国内板为交易所国庆长假涨跌停板(参考)，|外盘累计|≥板幅时国内对应品种开盘或触板。'),
+    }
+    return meta, items
 
 
 def is_trading_day(d):
@@ -1410,6 +1558,25 @@ def main():
 
     # A 股指数
     result['astock_indices'] = []
+
+    # 长假期外盘区间统计(假期窗口内才有效, 非假期返回空)
+    try:
+        _hf_meta, _hf_items = compute_holiday_foreign(result, datetime.now(), _prev_holiday_baseline)
+        result['holiday_foreign'] = _hf_items
+        result['holiday_foreign_meta'] = _hf_meta
+        if _hf_meta:
+            result['holiday_foreign_baseline'] = {
+                'holiday_id': _hf_meta['holiday_id'],
+                'date': _hf_meta['baseline_date'],
+                'prices': {it['code']: it['base'] for it in _hf_items},
+            }
+            print(f'[OK] holiday_foreign: {len(_hf_items)} 个外盘 ({_hf_meta["holiday_id"]}, 基准 {_hf_meta["baseline_date"]})')
+        else:
+            print('[INFO] holiday_foreign: 非假期窗口, 跳过')
+    except Exception as _e:
+        print(f'[WARN] holiday_foreign 失败: {_e}')
+        result['holiday_foreign'] = []
+        result['holiday_foreign_meta'] = None
     for code, cn in ASTOCK_INDICES:
         if code in raw:
             q = parse_astock_index(code, cn, raw[code])
@@ -1430,6 +1597,7 @@ def main():
     # 2) 抓新闻(股市/宏观/全球 + 新增:商品期货)
     # 先读旧 quotes.json,保留多源(tdx/wind/dzh)合并字段,避免自动刷新覆盖
     _preserved_multi_source = {'tdx': [], 'wind': [], 'dzh': []}
+    _prev_holiday_baseline = None
     try:
         _existing_path = DATA_DIR / 'quotes.json'
         if os.path.exists(_existing_path):
@@ -1440,6 +1608,7 @@ def main():
                     _items = _existing_news.get(_src)
                     if isinstance(_items, list) and _items:
                         _preserved_multi_source[_src] = _items
+                _prev_holiday_baseline = _existing.get('holiday_foreign_baseline')
             if any(_preserved_multi_source.values()):
                 print(f'[INFO] 保留多源新闻: tdx={len(_preserved_multi_source["tdx"])} '
                       f'wind={len(_preserved_multi_source["wind"])} '

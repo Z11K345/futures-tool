@@ -878,6 +878,21 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <div class="save-note">📌 商品期货自然人一般须在交割月前按规定清仓（仅个别品种可取整进交割月）；国债期货须于交割月前第 2 个交易日收盘前清仓。具体以交易所及期货公司通知为准。</div>
 </div>
 
+<div class="card" id="card-holiday-foreign" style="display:none;">
+  <div class="card-header">
+    <span class="card-title">📈 长假期外盘区间统计</span>
+    <span class="card-tag auto">自动</span>
+  </div>
+  <div class="sub-label first" id="holiday-foreign-sub">假期外盘累计涨跌幅</div>
+  <div class="table-wrap">
+    <table class="data-table" id="holiday-foreign-table">
+      <thead><tr><th>外盘品种</th><th style="text-align:right;">假期前收盘</th><th style="text-align:right;">当前</th><th style="text-align:right;">累计涨跌幅</th><th>国内对应(板)</th><th>预判</th></tr></thead>
+      <tbody id="holiday-foreign-body"><tr><td colspan="6" class="empty-state">加载中…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="save-note" id="holiday-foreign-note"></div>
+</div>
+
   <div class="card foldable folded" id="card-news">
   <div class="card-header" onclick="toggleCardFold(this)">
     <span class="card-title">📰 要闻</span>
@@ -1861,6 +1876,7 @@ function onQuotesLoaded() {
   renderOutlookAuto();
   renderFutureSignals();
   renderLiquidate();
+  renderHolidayForeign();
   renderFuturesNews();
   renderStrategyMatches();
   renderTechScan();
@@ -5299,6 +5315,37 @@ function renderMultiFactor(){
       +'<div class="mf-note">'+it.note+'</div></div>';
   }).join('');
   const ne=document.getElementById('mf-note'); if(ne) ne.textContent=mf.note||'';
+}
+
+function renderHolidayForeign(){
+  const box=document.getElementById('card-holiday-foreign');
+  if(!box) return;
+  const Q=quotesData||{};
+  const meta=Q.holiday_foreign_meta, items=Q.holiday_foreign||[];
+  if(!meta || !items.length){ box.style.display='none'; return; }
+  box.style.display='';
+  const sub=document.getElementById('holiday-foreign-sub');
+  if(sub) sub.textContent='假期外盘累计涨跌幅（基准 '+meta.baseline_date+'，'+meta.start+' ~ '+meta.end+'）';
+  const tb=document.getElementById('holiday-foreign-body');
+  let h='';
+  items.forEach(function(it){
+    const up=it.pct>0, dn=it.pct<0;
+    const cls=up?'up':(dn?'down':'flat');
+    const sign=up?'+':'';
+    const dom=it.domestic? (it.domestic+' ±'+it.limit+'%') : '—';
+    const flag=it.touch? '<span class="liq-act imminent">或触板</span>' : '';
+    h+='<tr>'
+      +'<td>'+it.cn+'</td>'
+      +'<td style="text-align:right;">'+it.base+'</td>'
+      +'<td style="text-align:right;">'+it.last+'</td>'
+      +'<td style="text-align:right;" class="'+cls+'">'+sign+it.pct.toFixed(2)+'%</td>'
+      +'<td>'+dom+'</td>'
+      +'<td>'+flag+'</td>'
+      +'</tr>';
+  });
+  tb.innerHTML=h;
+  const note=document.getElementById('holiday-foreign-note');
+  if(note) note.textContent='📌 '+meta.note;
 }
 
 function renderLiquidate(){
