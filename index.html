@@ -581,6 +581,27 @@ body { padding-top: 150px; padding-bottom: 16px; }
 }
 .src-note b { color: #9ca3af; }
 .src-note .src-t { color: #4a9eff; font-weight: 600; }
+
+/* ===== V4.6 首页入口总览(APP式: 一眼看全有什么) ===== */
+.home-view{margin:6px 0 14px;}
+.home-h{font-size:11px;color:#7c8696;font-weight:700;letter-spacing:.6px;margin:12px 2px 5px;}
+.home-h:first-child{margin-top:4px;}
+.entry-list{display:flex;flex-direction:column;gap:8px;}
+.entry-item{display:flex;align-items:center;gap:11px;padding:11px 13px;background:#141a26;border:1px solid #232b3a;border-radius:12px;cursor:pointer;transition:background .15s,border-color .15s;}
+.entry-item:active{background:#1a2230;border-color:#2f3a4d;}
+.entry-ico{width:36px;height:36px;flex:0 0 36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;background:#1d2533;}
+.entry-main{flex:1;min-width:0;}
+.entry-name{font-size:14px;font-weight:600;color:#e5e7eb;display:flex;align-items:center;}
+.entry-sub{font-size:11.5px;color:#8b95a5;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.entry-arrow{color:#5b6577;font-size:18px;flex:0 0 auto;line-height:1;}
+.entry-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:9px;margin-left:7px;white-space:nowrap;}
+.entry-badge.live{background:rgba(224,83,61,.18);color:#ff8a73;}
+.entry-badge.warn{background:rgba(240,160,32,.18);color:#fbbf24;}
+.entry-badge.mut{background:rgba(148,163,184,.16);color:#cbd5e1;}
+/* 返回条 */
+.back-bar{position:fixed;left:0;right:0;top:var(--header-h,52px);z-index:60;display:none;align-items:center;gap:8px;padding:9px 14px;background:rgba(16,20,28,.97);backdrop-filter:blur(6px);border-bottom:1px solid #232b3a;font-size:13px;color:#e5e7eb;}
+.back-bar .bk{color:#4a9eff;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;}
+.back-bar .bt{color:#9ca3af;}
 </style>
 </head>
 <body data-page-node-id="nrr1MUVaKM5WthmocQzMwB">
@@ -610,6 +631,11 @@ body { padding-top: 150px; padding-bottom: 16px; }
   </nav>
 </header>
 
+<div class="back-bar" id="back-bar">
+  <span class="bk" onclick="backToHome()">‹ 返回</span>
+  <span class="bt"></span>
+</div>
+
 <!-- ========== 信号变化警示条(V4.5) ========== -->
 <div id="chg-alert" class="chg-alert" style="display:none;" data-page-node-id="chgAlert">
   <div class="chg-head" onclick="toggleChgDetail()" data-page-node-id="chgHead">
@@ -622,44 +648,71 @@ body { padding-top: 150px; padding-bottom: 16px; }
 
 <!-- ========== 盘前预判 ========== -->
 <section class="tab-pane active" id="tab-pre" data-page-node-id="w8eponeT8Qk42BmruWeVxv">
-  <div class="module-nav">
-    <div class="mn-item" onclick="gotoCard('card-focus')">今日</div>
-    <div class="mn-item" onclick="gotoCard('card-movers')">涨跌</div>
-    <div class="mn-item" onclick="gotoCard('card-signals')">信号</div>
-    <div class="mn-item" onclick="gotoCard('card-tech')">技术</div>
-    <div class="mn-item" onclick="gotoCard('card-mf')">多因子</div>
-    <div class="mn-item" onclick="gotoCard('card-quotes')">行情</div>
-    <div class="mn-item" onclick="gotoCard('card-outer')">外围</div>
-    <div class="mn-item" onclick="gotoCard('card-news')">要闻</div>
-    <div class="mn-item" onclick="gotoCard('card-data')">数据</div>
-    <div class="mn-item" onclick="gotoCard('card-edu')">投教</div>
-    <div class="mn-item" onclick="gotoCard('card-liquidate')">清仓</div>
-  </div>
-
-  <div class="card" id="card-focus" style="border-left:3px solid #4a9eff;background:linear-gradient(135deg,#1a1f2e 0%,#141a26 100%);">
-  <div class="card-header">
-    <span class="card-title">📌 今日概览</span>
-    <span class="card-tag auto">自动</span>
-  </div>
-  <div style="font-size:11.5px;color:#9ca3af;line-height:1.65;margin-bottom:8px;" data-page-node-id="focusGuide">
-    <b style="color:#e5e7eb;">盘中三步看（点文字直达）：</b><br>
-    ① <span style="color:#4a9eff;cursor:pointer;text-decoration:underline;" onclick="gotoCard('card-movers')">涨跌幅榜 + 期货端信号</span> → 谁在异动、哪些品种触发了买卖信号<br>
-    ② <span style="color:#4a9eff;cursor:pointer;text-decoration:underline;" onclick="gotoCard('card-tech')">技术面扫描</span> → 突破信号（逼近250日新高/新低、布林收口变盘）的品种<br>
-    ③ <span style="color:#4a9eff;cursor:pointer;text-decoration:underline;" onclick="gotoCard('card-news')">要闻 + 重要数据</span> → 今天市场为何这么走、受哪些消息/数据影响<br>
-    <span style="color:#6b7280;">找具体机会 → 顶部切「机会」页；</span>点任意品种名可看该品种档案与策略。
-  </div>
-  <div class="sub-label first">数据归属</div>
-  <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;" data-page-node-id="SM2QiPvFLAM5RqVZBF7SRo">
-  <span style="color:#9ca3af;" data-page-node-id="QtSMB05e3RUFJ4bZjPVsrA">📅 数据归属交易日</span>
-  <span id="data-day-text" style="color:#e5e7eb;font-weight:600;" data-page-node-id="ebuNPdwbHe7nOTN2osV0GU">--</span>
-  </div>
-  <div id="data-day-detail" style="font-size:11px;color:#6b7280;margin-top:6px;" data-page-node-id="oPBxCVpc5XqLO5EIOCtJU3">--</div>
-  <div class="sub-label">要点</div>
-  <div class="list-row" data-page-node-id="57FEptQYjo9mNJ7TPHSrUQ"><span class="label" data-page-node-id="30DRz3OQrJjUdi7CZkS0S7">交易日</span><span class="value" id="today-trading" data-page-node-id="9ZntCLkLn3wXHr9FZ7VnM1">--</span></div>
-  <div class="list-row" data-page-node-id="6FcBi4HcT02n2e3ReUZEDI"><span class="label" data-page-node-id="o6Id8KaD3m2aGaYjht7R5F">主力合约切换</span><span class="value" id="main-switch" data-page-node-id="fIaUcClGa9iHfYnuv0u74x">--</span></div>
-  <div class="list-row" data-page-node-id="odOzHfq0x6n9RZMV7qCpZi"><span class="label" data-page-node-id="9icv2RjY3RFNiZbetbYde7">重要数据/事件</span><span class="value" id="today-events" data-page-node-id="HfClrNcUbBA0cM33IAfhRG">--</span></div>
-  <div class="sub-label sub-divide">🤖 AI 焦点</div>
-  <div id="today-focus" style="font-size:13px;line-height:1.6;" data-page-node-id="3FVK0h5VjULPY3Dwv4yIUI">--</div>
+  <div class="home-view" id="home-pre">
+    <div class="home-h">行情</div>
+    <div class="entry-list">
+      <div class="entry-item" onclick="openModule('card-movers','pre')">
+        <div class="entry-ico">📊</div>
+        <div class="entry-main"><div class="entry-name">涨跌榜</div><div class="entry-sub" id="st-movers">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-signals','pre')">
+        <div class="entry-ico">📡</div>
+        <div class="entry-main"><div class="entry-name">买卖信号</div><div class="entry-sub" id="st-signals">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-tech','pre')">
+        <div class="entry-ico">📐</div>
+        <div class="entry-main"><div class="entry-name">技术面扫描</div><div class="entry-sub" id="st-tech">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-mf','pre')">
+        <div class="entry-ico">🔢</div>
+        <div class="entry-main"><div class="entry-name">多因子评分</div><div class="entry-sub" id="st-mf">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-quotes','pre')">
+        <div class="entry-ico">💹</div>
+        <div class="entry-main"><div class="entry-name">行情报价</div><div class="entry-sub" id="st-quotes">全部主力合约实时价</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-outer','pre')">
+        <div class="entry-ico">🌐</div>
+        <div class="entry-main"><div class="entry-name">外围 / 外盘</div><div class="entry-sub" id="st-outer">美股 · 原油 · 伦铜</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+    </div>
+    <div class="home-h">资讯</div>
+    <div class="entry-list">
+      <div class="entry-item" onclick="openModule('card-news','pre')">
+        <div class="entry-ico">📰</div>
+        <div class="entry-main"><div class="entry-name">要闻</div><div class="entry-sub" id="st-news">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-data','pre')">
+        <div class="entry-ico">📅</div>
+        <div class="entry-main"><div class="entry-name">重要数据 / 事件</div><div class="entry-sub" id="st-data">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-edu','pre')">
+        <div class="entry-ico">🎓</div>
+        <div class="entry-main"><div class="entry-name">投教</div><div class="entry-sub" id="st-edu">期货基础</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+    </div>
+    <div class="home-h">工具</div>
+    <div class="entry-list">
+      <div class="entry-item" onclick="openModule('card-liquidate','pre')">
+        <div class="entry-ico">🧹</div>
+        <div class="entry-main"><div class="entry-name">清仓 / 到期速览</div><div class="entry-sub" id="st-liquidate">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-holiday-foreign','pre')">
+        <div class="entry-ico">📈</div>
+        <div class="entry-main"><div class="entry-name">长假期外盘统计<span class="entry-badge live" id="badge-holiday" style="display:none;"></span></div><div class="entry-sub" id="st-holiday">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+    </div>
   </div>
 
   <div class="card" id="card-movers" data-page-node-id="r4de2LSuSRpo4GkHA7Qa3c">
@@ -873,7 +926,6 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <span class="card-title">🧹 清仓 / 到期速览</span>
     <span class="card-tag auto">自动</span>
   </div>
-  <div class="sub-label first">按日期（近→远）· 同日分「期货 / 期权」· 再按交易所（含主力到期 · 期权到期 · 自然人清仓取整/取零 · 金融期货到期清仓）</div>
   <div id="liquidate-list" style="font-size:13px;line-height:1.7;">加载中…</div>
   <div class="save-note">📌 商品期货自然人一般须在交割月前按规定清仓（仅个别品种可取整进交割月）；国债期货须于交割月前第 2 个交易日收盘前清仓。具体以交易所及期货公司通知为准。</div>
 </div>
@@ -883,7 +935,6 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <span class="card-title">📈 长假期外盘区间统计</span>
     <span class="card-tag auto">自动</span>
   </div>
-  <div class="sub-label first" id="holiday-foreign-sub">假期外盘累计涨跌幅</div>
   <div class="table-wrap">
     <table class="data-table" id="holiday-foreign-table">
       <thead><tr><th>外盘品种</th><th style="text-align:right;">假期前收盘</th><th style="text-align:right;">当前</th><th style="text-align:right;">累计涨跌幅</th><th>国内对应(板)</th><th>预判</th></tr></thead>
@@ -938,11 +989,29 @@ body { padding-top: 150px; padding-bottom: 16px; }
 <!-- ========== 数据透视 ========== -->
 <section class="tab-pane" id="tab-live" data-page-node-id="Mi1ydC5GkuYGPjqpSHvx3y">
 
-  <div class="module-nav" data-page-node-id="1fNFO5ksa1fpxDH9jCdWhc">
-    <div class="mn-item" onclick="gotoCard('card-opts')" data-page-node-id="5bgYFUlUeuZXrkuBmGnfwX">期权信号</div>
-    <div class="mn-item" onclick="gotoCard('card-term')" data-page-node-id="mnTerm">期限结构</div>
-    <div class="mn-item" onclick="gotoCard('card-basis')" data-page-node-id="mnBasis">基差</div>
-    <div class="mn-item" onclick="gotoCard('card-spread')" data-page-node-id="mnSpread">跨品种价差</div>
+  <div class="home-view" id="home-live">
+    <div class="entry-list">
+      <div class="entry-item" onclick="openModule('card-opts','live')">
+        <div class="entry-ico">🔔</div>
+        <div class="entry-main"><div class="entry-name">期权信号</div><div class="entry-sub" id="st-opts">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-term','live')">
+        <div class="entry-ico">📊</div>
+        <div class="entry-main"><div class="entry-name">期限结构</div><div class="entry-sub" id="st-term">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-basis','live')">
+        <div class="entry-ico">🔗</div>
+        <div class="entry-main"><div class="entry-name">基差</div><div class="entry-sub" id="st-basis">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-spread','live')">
+        <div class="entry-ico">⚖️</div>
+        <div class="entry-main"><div class="entry-name">跨品种价差</div><div class="entry-sub" id="st-spread">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+    </div>
   </div>
 
   <!-- 品种深度分析(默认隐藏, 点击品种时弹出) -->
@@ -1042,6 +1111,16 @@ body { padding-top: 150px; padding-bottom: 16px; }
 
 <!-- ========== 机会总览(独立选项卡) ========== -->
 <section class="tab-pane" id="tab-opp" data-page-node-id="tabOppPane">
+  <div class="home-view" id="home-opp">
+    <div class="entry-list">
+      <div class="entry-item" onclick="openModule('card-opp','opp')">
+        <div class="entry-ico">🎯</div>
+        <div class="entry-main"><div class="entry-name">品种机会总览</div><div class="entry-sub" id="st-opp">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+    </div>
+  </div>
+
   <!-- 品种机会总览(V4.3 客户版: 带方向+依据) -->
   <div class="card" id="card-opp" style="border-left:3px solid #22c55e;" data-page-node-id="oppCardTop">
     <div class="card-header" data-page-node-id="oppHead">
@@ -1049,8 +1128,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
       <span class="card-tag auto" data-page-node-id="oppAuto">自动</span>
     </div>
     <div style="font-size:11.5px;color:#9ca3af;margin-bottom:6px;line-height:1.6;" data-page-node-id="oppDesc">
-      当前有信号的品种，按产业归类。<span style="color:#fca5a5;">↑ 看多/做多方向</span> · <span style="color:#86efac;">↓ 看空/做空方向</span>。
-      每个品种下方一句话总结方向、支撑压力、止损与仓位参考。点品种看完整详情。
+      <span style="color:#fca5a5;">↑ 看多/做多方向</span> · <span style="color:#86efac;">↓ 看空/做空方向</span>。
     </div>
     <div id="opp-filter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:5px;" data-page-node-id="oppFilt">
       <span class="mn-item" data-opp="all" onclick="setOppFilter('all')" data-page-node-id="oppAll">全部</span>
@@ -1076,13 +1154,39 @@ body { padding-top: 150px; padding-bottom: 16px; }
 <!-- ========== 盘后复盘 ========== -->
 <section class="tab-pane" id="tab-post" data-page-node-id="21PfTj0EDvidF83zmVlhAB">
 
-  <div class="module-nav" data-page-node-id="qez0qH4RcL7ruIksxhoAnh">
-    <div class="mn-item" onclick="gotoCard('card-post-review')" data-page-node-id="postReviewNav">复盘专栏</div>
-    <div class="mn-item" onclick="gotoCard('card-review')" data-page-node-id="0AGMxlabBwQdD5rE11eC6q">涨跌归因</div>
-    <div class="mn-item" onclick="gotoCard('card-close')" data-page-node-id="BmPibWrN8NbUPbAvZJkqVV">全品种收盘</div>
-    <div class="mn-item" onclick="gotoCard('card-rank')" data-page-node-id="cNQuW5k9FHbTUi4thAFCEb">持仓龙虎榜</div>
-    <div class="mn-item" onclick="gotoCard('card-fund')" data-page-node-id="VZ3qscw6TE9k3YGLZpY9N6">资金沉淀</div>
-    <div class="mn-item" onclick="gotoCard('card-outlook')" data-page-node-id="DxNkyqJUVAdyE9qf71wjP8">明日关注</div>
+  <div class="home-view" id="home-post">
+    <div class="entry-list">
+      <div class="entry-item" onclick="openModule('card-post-review','post')">
+        <div class="entry-ico">🗓️</div>
+        <div class="entry-main"><div class="entry-name">复盘专栏</div><div class="entry-sub" id="st-post-review">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-review','post')">
+        <div class="entry-ico">🔍</div>
+        <div class="entry-main"><div class="entry-name">涨跌归因</div><div class="entry-sub" id="st-review">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-close','post')">
+        <div class="entry-ico">📋</div>
+        <div class="entry-main"><div class="entry-name">全品种收盘</div><div class="entry-sub" id="st-close">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-rank','post')">
+        <div class="entry-ico">🏆</div>
+        <div class="entry-main"><div class="entry-name">持仓龙虎榜</div><div class="entry-sub" id="st-rank">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-fund','post')">
+        <div class="entry-ico">💰</div>
+        <div class="entry-main"><div class="entry-name">资金沉淀</div><div class="entry-sub" id="st-fund">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+      <div class="entry-item" onclick="openModule('card-outlook','post')">
+        <div class="entry-ico">🔭</div>
+        <div class="entry-main"><div class="entry-name">明日关注</div><div class="entry-sub" id="st-outlook">点击查看</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+    </div>
   </div>
 
   <!-- 国内期货期权复盘专栏(新增: 完整交易日复盘, 收盘后定稿) -->
@@ -1172,13 +1276,14 @@ body { padding-top: 150px; padding-bottom: 16px; }
 <!-- ========== 策略框架 ========== -->
 <section class="tab-pane" id="tab-strategy" data-page-node-id="0gHoW5Zeu0aCqd0RdG2qom">
 
-  <div class="module-nav" id="strategy-nav" data-page-node-id="mD49JPVbGzRl1cVOqDUBb7">
-    <div class="mn-item" onclick="gotoCard('card-hedge')" data-page-node-id="bFCbjqp5h5GVx2tJF2IABM">套保决策</div>
-    <div class="mn-item" data-cat="spec" onclick="filterStrategyActive('spec')" data-page-node-id="strNavSpec">投机</div>
-    <div class="mn-item" data-cat="hedge" onclick="filterStrategyActive('hedge')" data-page-node-id="strNavHedge">套保</div>
-    <div class="mn-item" data-cat="arb" onclick="filterStrategyActive('arb')" data-page-node-id="strNavArb">套利</div>
-    <div class="mn-item" data-cat="opt" onclick="filterStrategyActive('opt')" data-page-node-id="strNavOpt">期权</div>
-    <div class="mn-item active" data-cat="all" onclick="filterStrategyActive('all')" data-page-node-id="strNavAll">全部</div>
+  <div class="home-view" id="home-strategy">
+    <div class="entry-list">
+      <div class="entry-item" onclick="openModule('card-hedge','strategy')">
+        <div class="entry-ico">🛡️</div>
+        <div class="entry-main"><div class="entry-name">企业套保决策</div><div class="entry-sub" id="st-hedge">期货 vs 期权，现在套不套</div></div>
+        <div class="entry-arrow">›</div>
+      </div>
+    </div>
   </div>
 
   <!-- 企业套保决策(V3.2 自动: 突破状态+基差分位+波动率+事件) -->
@@ -1877,6 +1982,7 @@ function onQuotesLoaded() {
   renderFutureSignals();
   renderLiquidate();
   renderHolidayForeign();
+  renderHome();
   renderFuturesNews();
   renderStrategyMatches();
   renderTechScan();
@@ -3981,6 +4087,70 @@ function switchNews(w) {
   const OFF = 'padding:4px 12px;border:1px solid #2a3142;background:#0f1419;color:#9ca3af;border-radius:13px;font-size:12px;cursor:pointer;white-space:nowrap;';
   cf.style.cssText = onF ? ON : OFF;
   cn.style.cssText = onF ? OFF : ON;
+}
+
+function openModule(id, tab) {
+  if (tab) switchTab(tab, true);
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (id === 'card-rank') ensureRank();
+  if (el.classList.contains('foldable') && el.classList.contains('folded')) toggleCardFold(el.querySelector('.card-header'));
+  if (getComputedStyle(el).display === 'none') el.style.display = '';
+  const title = (el.querySelector('.card-title') || {}).textContent || '';
+  requestAnimationFrame(() => { scrollToEl(el, 8); });
+  showBackBar(title);
+}
+function showBackBar(title){
+  const bar=document.getElementById('back-bar');
+  if(!bar) return;
+  const t=bar.querySelector('.bt'); if(t) t.textContent=title;
+  bar.style.display='flex';
+}
+function backToHome(){
+  const bar=document.getElementById('back-bar');
+  if(bar) bar.style.display='none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setSub(id, txt){
+  const e=document.getElementById(id);
+  if(e) e.textContent = (txt==null||txt==='') ? '点击查看' : txt;
+}
+function renderHome(){
+  const Q=quotesData||{};
+  const today=new Date().toISOString().slice(0,10);
+  const dl=new Date(Date.parse(today+'T00:00:00Z')+7*86400000).toISOString().slice(0,10);
+  // 涨跌榜
+  const mv=(Q.movers)||[];
+  if(mv.length){
+    const up=mv.filter(m=>m.pct>0).sort((a,b)=>b.pct-a.pct)[0];
+    const dn=mv.filter(m=>m.pct<0).sort((a,b)=>a.pct-b.pct)[0];
+    const s=[]; if(up)s.push((up.cn||up.code)+' +'+up.pct.toFixed(1)+'%'); if(dn)s.push((dn.cn||dn.code)+' '+dn.pct.toFixed(1)+'%');
+    setSub('st-movers', s.join(' · '));
+  }
+  // 要闻
+  const nw=(Q.news)||{}; const ncnt=(nw.astock||[]).length+(nw.macro||[]).length+(nw.global||[]).length;
+  setSub('st-news', ncnt? (ncnt+' 条今日') : '暂无');
+  // 重要数据(今天)
+  const cal=(Q.calendar)||[];
+  const te=cal.filter(e=>e.date===today).length;
+  setSub('st-data', te? ('今天 '+te+' 项') : '今天暂无');
+  // 清仓/到期 未来7天
+  let liqN=0;
+  (Q.expiry_alerts||[]).forEach(e=>{if(e.date>=today&&e.date<=dl)liqN++;});
+  (Q.lot_round_alerts||[]).forEach(e=>{const d=e.clear_day||e.ltd; if(d&&d>=today&&d<=dl)liqN++;});
+  (Q.fin_calendar||[]).forEach(e=>{if(e.ltd&&e.ltd>=today&&e.ltd<=dl)liqN++;});
+  setSub('st-liquidate', liqN? ('未来7天 '+liqN+' 项需关注') : '未来7天无');
+  // 长假期
+  const hm=Q.holiday_foreign_meta, hf=Q.holiday_foreign||[];
+  const badge=document.getElementById('badge-holiday');
+  if(hm && hf.length){
+    if(badge){ badge.style.display=''; badge.textContent=hm.label||'假期'; }
+    const mx=hf.reduce((a,b)=>Math.abs(b.pct)>Math.abs(a.pct)?b:a);
+    setSub('st-holiday', (mx.pct>0?'+':'')+mx.pct.toFixed(2)+'% '+(mx.cn||''));
+  } else {
+    if(badge) badge.style.display='none';
+    setSub('st-holiday','假期才有');
+  }
 }
 
 function gotoCard(id) {
