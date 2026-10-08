@@ -4130,6 +4130,9 @@ function showBackBar(title){
   bar.style.display='flex';
 }
 function backToHome(){
+  // 退出详情态: 清 detail-mode/is-active 让总览态(home-view)恢复、卡片隐藏
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('detail-mode'));
+  document.querySelectorAll('.card.is-active').forEach(c => c.classList.remove('is-active'));
   const bar=document.getElementById('back-bar');
   if(bar) bar.style.display='none';
   window.scrollTo({top:0,behavior:'smooth'});
