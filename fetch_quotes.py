@@ -534,7 +534,8 @@ def compute_holiday_foreign(result, today, prev_baseline=None):
         sd = datetime.strptime(s, '%Y-%m-%d').date()
         ed = datetime.strptime(e, '%Y-%m-%d').date()
         if sd <= today_d <= ed + timedelta(days=3):
-            cur = (s, e); ended = False; break
+            # 假期最后一天之前=进行中; 假期结束后(含节后缓冲期)=已结束(最终统计)
+            cur = (s, e); ended = (today_d > ed); break
     if cur is None:
         # 假期刚结束: 展示最近一期的最终统计(节后第 4 天 ~ 第 14 天)
         for (s, e) in _HOLIDAY_RANGES_2026:
@@ -1572,6 +1573,29 @@ def main():
     # A 股指数
     result['astock_indices'] = []
 
+    # 先读旧 quotes.json: 保留多源(tdx/wind/dzh)新闻 + 假期基准价
+    # ⚠️ 必须在「长假期外盘统计」之前读取: 该统计要引用 _prev_holiday_baseline,
+    #    否则会抛 UnboundLocalError 被 except 吞掉 → 假期统计恒为空 (v77 修复)
+    _preserved_multi_source = {'tdx': [], 'wind': [], 'dzh': []}
+    _prev_holiday_baseline = None
+    try:
+        _existing_path = DATA_DIR / 'quotes.json'
+        if os.path.exists(_existing_path):
+            with open(_existing_path, 'r', encoding='utf-8') as _ef:
+                _existing = json.load(_ef)
+                _existing_news = (_existing.get('news') or {})
+                for _src in ('tdx', 'wind', 'dzh'):
+                    _items = _existing_news.get(_src)
+                    if isinstance(_items, list) and _items:
+                        _preserved_multi_source[_src] = _items
+                _prev_holiday_baseline = _existing.get('holiday_foreign_baseline')
+            if any(_preserved_multi_source.values()):
+                print(f'[INFO] 保留多源新闻: tdx={len(_preserved_multi_source["tdx"])} '
+                      f'wind={len(_preserved_multi_source["wind"])} '
+                      f'dzh={len(_preserved_multi_source["dzh"])}')
+    except Exception as _e:
+        print(f'[WARN] 读旧 quotes.json 保留多源失败: {_e}')
+
     # 长假期外盘区间统计(假期窗口内才有效, 非假期返回空)
     try:
         _hf_meta, _hf_items = compute_holiday_foreign(result, datetime.now(), _prev_holiday_baseline)
@@ -1608,27 +1632,7 @@ def main():
 
     _lap('主力合约')
     # 2) 抓新闻(股市/宏观/全球 + 新增:商品期货)
-    # 先读旧 quotes.json,保留多源(tdx/wind/dzh)合并字段,避免自动刷新覆盖
-    _preserved_multi_source = {'tdx': [], 'wind': [], 'dzh': []}
-    _prev_holiday_baseline = None
-    try:
-        _existing_path = DATA_DIR / 'quotes.json'
-        if os.path.exists(_existing_path):
-            with open(_existing_path, 'r', encoding='utf-8') as _ef:
-                _existing = json.load(_ef)
-                _existing_news = (_existing.get('news') or {})
-                for _src in ('tdx', 'wind', 'dzh'):
-                    _items = _existing_news.get(_src)
-                    if isinstance(_items, list) and _items:
-                        _preserved_multi_source[_src] = _items
-                _prev_holiday_baseline = _existing.get('holiday_foreign_baseline')
-            if any(_preserved_multi_source.values()):
-                print(f'[INFO] 保留多源新闻: tdx={len(_preserved_multi_source["tdx"])} '
-                      f'wind={len(_preserved_multi_source["wind"])} '
-                      f'dzh={len(_preserved_multi_source["dzh"])}')
-    except Exception as _e:
-        print(f'[WARN] 读旧 quotes.json 保留多源失败: {_e}')
-
+    # (旧 quotes.json 的多源新闻 / 假期基准价已在上面统一读取)
     print('[INFO] 抓 7×24 新闻(股市/宏观/全球/期货)...')
     result['news'] = {
         'astock':   fetch_news(2516, num=20),  # 股市动态

@@ -43,7 +43,7 @@ def build_hedge_advice(tech_map, basis_items, calendar, cn_fallback=None):
     """
     tech_map:   {code: {pct_1y, atr_pct, trend, cn, last, ...}}
     basis_items:{code: {basis, pct, prc_hist, pos180, hi180, lo180, avg180, days, contract}}
-    返回 {code: {cn, price_pct, basis_prc, atr_pct, trend, contract,
+    返回 {code: {cn, price_pos, basis_prc, atr_pct, trend, contract,
                  buyer:  {action, ratio, why, urgency},
                  seller: {action, ratio, why, urgency},
                  tool:   '期货'/'期权'/'期货为主,期权护尾部',
@@ -128,7 +128,7 @@ def build_hedge_advice(tech_map, basis_items, calendar, cn_fallback=None):
         out[code] = {
             'cn': tech_map[code].get('cn') or cn_fallback.get(code, code),
             'contract': b.get('contract', ''),
-            'price_pct': round(price_pct, 1),
+            'price_pos': price_pos,
             'basis_prc': round(basis_prc, 1),
             'atr_pct': atr_pct,
             'trend': t.get('trend', ''),

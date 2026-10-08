@@ -163,6 +163,11 @@ body { padding-top: 150px; padding-bottom: 16px; }
 }
 .data-table td:first-child { text-align: left; font-weight: 500; }
 .data-table tr:hover { background: #1f2536; }
+/* 固定列宽表格: 表头与数据严格对齐(列宽由 colgroup 决定, 不受内容长短影响) */
+.data-table.dt-fixed { table-layout: fixed; }
+.data-table.dt-fixed th, .data-table.dt-fixed td {
+  white-space: normal; overflow-wrap: anywhere; word-break: break-word;
+}
 
 /* ===== 涨跌幅色 ===== */
 .up { color: #ef4444; }       /* 中国市场：涨=红 */
@@ -940,9 +945,12 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <span class="card-tag auto">自动</span>
   </div>
   <div class="table-wrap">
-    <table class="data-table" id="holiday-foreign-table">
-      <thead><tr><th>外盘品种</th><th style="text-align:right;">假期前收盘</th><th style="text-align:right;">当前</th><th style="text-align:right;">累计涨跌幅</th><th>国内对应(板)</th><th>预判</th></tr></thead>
-      <tbody id="holiday-foreign-body"><tr><td colspan="6" class="empty-state">加载中…</td></tr></tbody>
+    <table class="data-table dt-fixed" id="holiday-foreign-table">
+      <colgroup>
+        <col style="width:21%"><col style="width:18%"><col style="width:18%"><col style="width:20%"><col style="width:23%">
+      </colgroup>
+      <thead><tr><th>外盘品种</th><th style="text-align:right;">节前收盘</th><th style="text-align:right;">当前</th><th style="text-align:right;">累计涨跌幅</th><th style="text-align:right;">国内对应</th></tr></thead>
+      <tbody id="holiday-foreign-body"></tbody>
     </table>
   </div>
   <div class="save-note" id="holiday-foreign-note"></div>
@@ -4130,42 +4138,127 @@ function setSub(id, txt){
   const e=document.getElementById(id);
   if(e) e.textContent = (txt==null||txt==='') ? '点击查看' : txt;
 }
+/* 本地日期 yyyy-mm-dd(避免 toISOString 的 UTC 偏移) */
+function _ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+/* 首页实时状态: 用数据本身说明"这里有什么"(不使用"怎么看"类文字说明) */
 function renderHome(){
-  const Q=quotesData||{};
-  const today=new Date().toISOString().slice(0,10);
-  const dl=new Date(Date.parse(today+'T00:00:00Z')+7*86400000).toISOString().slice(0,10);
-  // 涨跌榜
-  const mv=(Q.movers)||[];
-  if(mv.length){
-    const up=mv.filter(m=>m.pct>0).sort((a,b)=>b.pct-a.pct)[0];
-    const dn=mv.filter(m=>m.pct<0).sort((a,b)=>a.pct-b.pct)[0];
-    const s=[]; if(up)s.push((up.cn||up.code)+' +'+up.pct.toFixed(1)+'%'); if(dn)s.push((dn.cn||dn.code)+' '+dn.pct.toFixed(1)+'%');
-    setSub('st-movers', s.join(' · '));
-  }
-  // 要闻
-  const nw=(Q.news)||{}; const ncnt=(nw.astock||[]).length+(nw.macro||[]).length+(nw.global||[]).length;
-  setSub('st-news', ncnt? (ncnt+' 条今日') : '暂无');
-  // 重要数据(今天)
-  const cal=(Q.calendar)||[];
-  const te=cal.filter(e=>e.date===today).length;
-  setSub('st-data', te? ('今天 '+te+' 项') : '今天暂无');
-  // 清仓/到期 未来7天
-  let liqN=0;
-  (Q.expiry_alerts||[]).forEach(e=>{if(e.date>=today&&e.date<=dl)liqN++;});
-  (Q.lot_round_alerts||[]).forEach(e=>{const d=e.clear_day||e.ltd; if(d&&d>=today&&d<=dl)liqN++;});
-  (Q.fin_calendar||[]).forEach(e=>{if(e.ltd&&e.ltd>=today&&e.ltd<=dl)liqN++;});
-  setSub('st-liquidate', liqN? ('未来7天 '+liqN+' 项需关注') : '未来7天无');
-  // 长假期
-  const hm=Q.holiday_foreign_meta, hf=Q.holiday_foreign||[];
-  const badge=document.getElementById('badge-holiday');
-  if(hm && hf.length){
-    if(badge){ badge.style.display=''; badge.textContent=hm.label||'假期'; }
-    const mx=hf.reduce((a,b)=>Math.abs(b.pct)>Math.abs(a.pct)?b:a);
-    setSub('st-holiday', (mx.pct>0?'+':'')+mx.pct.toFixed(2)+'% '+(mx.cn||''));
-  } else {
-    if(badge) badge.style.display='none';
-    setSub('st-holiday','假期才有');
-  }
+  try{
+    const Q=quotesData||{};
+    const now=new Date(), today=_ymd(now);
+    const dl=_ymd(new Date(now.getTime()+7*86400000));
+    const cats=Q.categories||{};
+    const rv=Q.review||{};
+    const cal=Q.calendar||[];
+    const fu=cal.filter(e=>e.date>=today&&e.date<=dl).length;
+
+    // 涨跌榜(取全市场涨跌幅榜首位)
+    const mv=(rv.movers)||(Q.movers)||[];
+    if(mv.length){
+      const up=mv.filter(m=>m.pct>0).sort((a,b)=>b.pct-a.pct)[0];
+      const dn=mv.filter(m=>m.pct<0).sort((a,b)=>a.pct-b.pct)[0];
+      const s=[]; if(up)s.push((up.cn||up.code)+' +'+up.pct.toFixed(2)+'%'); if(dn)s.push((dn.cn||dn.code)+' '+dn.pct.toFixed(2)+'%');
+      setSub('st-movers', s.join(' · '));
+    }
+    // 买卖信号
+    const fsig=Q.future_signals||[];
+    if(fsig.length){
+      const t0=fsig[0];
+      setSub('st-signals', fsig.length+' 个 · '+(t0.cn||t0.code)+' '+(t0.pct>0?'+':'')+Number(t0.pct).toFixed(2)+'%');
+    }
+    // 技术面扫描
+    const tech=Q.tech||{}; const tks=Object.keys(tech);
+    if(tks.length){
+      let hi=0,lo=0,sq=0;
+      tks.forEach(k=>{const b=tech[k].breakout||''; if(b==='near_high')hi++; else if(b==='near_low')lo++; else if(b==='squeeze')sq++;});
+      setSub('st-tech', tks.length+' 品种 · 近高 '+hi+' · 近低 '+lo+(sq?(' · 压缩 '+sq):''));
+    }
+    // 多因子评分
+    const mfi=(Q.multi_factor&&Q.multi_factor.items)||{}; const mks=Object.keys(mfi);
+    if(mks.length){
+      let bull=0,bear=0;
+      mks.forEach(k=>{const b=mfi[k].bias||''; if(b.indexOf('多')>=0)bull++; else if(b.indexOf('空')>=0)bear++;});
+      setSub('st-mf', mks.length+' 品种 · 偏多 '+bull+' · 偏空 '+bear);
+    }
+    // 行情报价(全部合约数)
+    let nc=0; Object.keys(cats).forEach(k=>{nc+=(cats[k]||[]).length;});
+    if(nc) setSub('st-quotes', nc+' 个合约 · 实时价');
+    // 外围/外盘
+    const ovN=(cats.overseas||[]).length, asN=(Q.astock_indices||[]).length;
+    if(ovN||asN) setSub('st-outer', '外盘 '+ovN+' · A股指数 '+asN);
+    // 要闻
+    const nw=Q.news||{};
+    const ncnt=(nw.astock||[]).length+(nw.macro||[]).length+(nw.global||[]).length+(nw.futures||[]).length;
+    setSub('st-news', ncnt?(ncnt+' 条'):'暂无');
+    // 重要数据/事件
+    const te=cal.filter(e=>e.date===today).length;
+    setSub('st-data', te?('今天 '+te+' 项'):(fu?('未来7天 '+fu+' 项'):'近期无'));
+    // 清仓/到期速览
+    let liqN=0;
+    (Q.expiry_alerts||[]).forEach(e=>{if(e.date>=today&&e.date<=dl)liqN++;});
+    (Q.lot_round_alerts||[]).forEach(e=>{const d=e.clear_day||e.ltd; if(d&&d>=today&&d<=dl)liqN++;});
+    (Q.fin_calendar||[]).forEach(e=>{if(e.ltd&&e.ltd>=today&&e.ltd<=dl)liqN++;});
+    ((Q.option_expiry&&Q.option_expiry.items)||[]).forEach(e=>{if(e.expiry&&e.expiry>=today&&e.expiry<=dl)liqN++;});
+    setSub('st-liquidate', liqN?('未来7天 '+liqN+' 项需关注'):'未来7天无');
+    // 长假期外盘
+    const hm=Q.holiday_foreign_meta, hf=Q.holiday_foreign||[];
+    const badge=document.getElementById('badge-holiday');
+    if(hm && hf.length){
+      if(badge){ badge.style.display=''; badge.textContent=hm.label||'假期'; }
+      const mx=hf.reduce((a,b)=>Math.abs(b.pct)>Math.abs(a.pct)?b:a);
+      setSub('st-holiday', (mx.pct>0?'+':'')+mx.pct.toFixed(2)+'% '+(mx.cn||''));
+    } else {
+      if(badge) badge.style.display='none';
+      setSub('st-holiday','非假期窗口');
+    }
+    // 期权信号(合约数 + 最近到期)
+    const oe=(Q.option_expiry&&Q.option_expiry.items)||[];
+    if(oe.length){
+      const s0=oe.slice().sort((a,b)=>(a.days||9999)-(b.days||9999))[0];
+      setSub('st-opts', oe.length+' 个合约 · 最近 '+(s0.cn||'')+' '+(s0.days||'')+'天');
+    }
+    // 期限结构(月差最大)
+    const tm=Q.term||{}; const tmks=Object.keys(tm);
+    if(tmks.length){
+      let best=null;
+      tmks.forEach(k=>{const g=tm[k].gap_pct; if(g!=null&&(!best||Math.abs(g)>Math.abs(best.g)))best={g:g,cn:tm[k].cn};});
+      setSub('st-term', tmks.length+' 品种'+(best?(' · 月差最大 '+best.cn+' '+best.g.toFixed(2)+'%'):''));
+    }
+    // 基差(现货分位最高)
+    const bi=(Q.basis&&Q.basis.items)||{}; const bks=Object.keys(bi);
+    if(bks.length){
+      let hb=null;
+      bks.forEach(k=>{const p=bi[k].prc_hist; if(p!=null&&(!hb||p>hb.p))hb={p:p,cn:bi[k].cn};});
+      setSub('st-basis', bks.length+' 品种'+(hb?(' · 分位最高 '+hb.cn+' '+Math.round(hb.p)+'%'):''));
+    }
+    // 跨品种价差(取已渲染表格行数)
+    const spTb=document.getElementById('spread-table-body');
+    if(spTb && spTb.textContent.indexOf('计算中')<0){ const n=spTb.querySelectorAll('tr').length; if(n) setSub('st-spread', n+' 组价差'); }
+    // 品种机会总览(取已渲染计数)
+    const oppC=document.getElementById('opp-count');
+    if(oppC){ const t=(oppC.textContent||'').trim(); if(t&&t!=='--') setSub('st-opp', t); }
+    // 复盘专栏
+    if(Q.trading_day_cn) setSub('st-post-review', Q.trading_day_cn+' 复盘');
+    // 涨跌归因
+    if(rv.n_up!=null) setSub('st-review', rv.n_up+' 涨 '+rv.n_down+' 跌'+(rv.n_big?(' · '+rv.n_big+' 个超3%'):''));
+    // 全品种收盘
+    if(nc) setSub('st-close', nc+' 个合约');
+    // 持仓龙虎榜
+    const rm=Q.rank_meta||{};
+    if(rm.date) setSub('st-rank', String(rm.date).slice(5)+' · '+(rm.count?(rm.count+' 条'):'已生成'));
+    // 资金沉淀(取已渲染表格行数)
+    const fundCard=document.getElementById('card-fund');
+    if(fundCard){ const ftb=fundCard.querySelector('tbody'); if(ftb&&ftb.children.length) setSub('st-fund', ftb.children.length+' 个品种'); }
+    // 明日关注
+    if(cal.length) setSub('st-outlook', fu?('14天内 '+fu+' 项重要数据'):'近期无重要数据');
+    // 企业套保决策
+    const hg=Q.hedge||{}; const hks=Object.keys(hg);
+    if(hks.length){
+      let top=null;
+      hks.forEach(k=>{const u=hg[k].urgency||0; if(!top||u>top.u)top={u:u,o:hg[k]};});
+      setSub('st-hedge', hks.length+' 品种'+(top&&top.u>=3?(' · '+top.o.cn+' 紧迫'):''));
+    }
+  }catch(e){ console.warn('[renderHome]', e); }
 }
 
 function gotoCard(id) {
@@ -5277,9 +5370,16 @@ function updateTimeDisplay() {
     status.style.color = '#9ca3af';
   }
 
+  // 「交易日 / 主力合约切换窗口」: 原独立元素随引导卡移除, 现全部 null-safe,
+  // 并把更重要的「主力合约切换窗口」直接并入头部交易状态(始终可见)
   const tradingDays = ['周一','周二','周三','周四','周五'];
-  document.getElementById('today-trading').textContent = (dow >= 1 && dow <= 5) ? '交易日' : '非交易日';
-  document.getElementById('main-switch').textContent = (d >= 15 && d <= 20) ? '⚠ 主力合约切换窗口期' : '主力合约稳定';
+  const todayTradingEl = document.getElementById('today-trading');
+  if (todayTradingEl) todayTradingEl.textContent = (dow >= 1 && dow <= 5) ? '交易日' : '非交易日';
+  const mainSwitchEl = document.getElementById('main-switch');
+  if (mainSwitchEl) mainSwitchEl.textContent = (d >= 15 && d <= 20) ? '⚠ 主力合约切换窗口期' : '主力合约稳定';
+  if (status && dow >= 1 && dow <= 5 && d >= 15 && d <= 20) {
+    status.textContent += ' · ⚠主力切换期';
+  }
 
   // 今日重要数据/事件(从 quotesData.calendar 取)
   const eventsEl = document.getElementById('today-events');
@@ -5318,15 +5418,19 @@ function refreshAll() {
    初始化
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  fitHeader();
-  bindLocalInputs();
-  loadCalendarHints();
-  updateTimeDisplay();
-  setInterval(updateTimeDisplay, 1000);
-
-  // 首次加载
+  // ⚠️ 必须先加载数据: 任何 UI 初始化异常都不得阻断数据加载 (v77 修复)
   loadQuotes();
   loadEvents();
+
+  try {
+    fitHeader();
+    bindLocalInputs();
+    loadCalendarHints();
+    updateTimeDisplay();
+    setInterval(updateTimeDisplay, 1000);
+  } catch (e) {
+    console.warn('[init] UI 初始化异常(已忽略, 不影响数据):', e);
+  }
 
   // V2.6: 服务端 15 分钟自动刷新;客户端监测服务端 lastRefreshAt,有变才重渲
   // V32: 纯静态托管(无 /api/status)时降级为轮询 data/meta.json,只比较更新时间,流量极小
@@ -5493,32 +5597,37 @@ function renderHolidayForeign(){
   if(!box) return;
   const Q=quotesData||{};
   const meta=Q.holiday_foreign_meta, items=Q.holiday_foreign||[];
-  if(!meta || !items.length){ box.style.display='none'; return; }
+  const tb=document.getElementById('holiday-foreign-body');
+  const note=document.getElementById('holiday-foreign-note');
+  if(!meta || !items.length){
+    box.style.display='none';
+    if(tb) tb.innerHTML='<tr><td colspan="5" class="empty-state">当前非长假期窗口，暂无统计</td></tr>';
+    if(note) note.textContent='';
+    return;
+  }
   box.style.display='';
   const _t=box.querySelector('.card-title');
   if(_t) _t.textContent='📈 长假期外盘区间统计'+(meta.label?(' · '+meta.label):'');
-  const sub=document.getElementById('holiday-foreign-sub');
-  if(sub) sub.textContent='假期外盘累计涨跌幅（基准 '+meta.baseline_date+'，'+meta.start+' ~ '+meta.end+'）';
-  const tb=document.getElementById('holiday-foreign-body');
   let h='';
   items.forEach(function(it){
     const up=it.pct>0, dn=it.pct<0;
     const cls=up?'up':(dn?'down':'flat');
     const sign=up?'+':'';
-    const dom=it.domestic? (it.domestic+' ±'+it.limit+'%') : '—';
-    const flag=it.touch? '<span class="liq-act imminent">或触板</span>' : '';
+    let dom='—';
+    if(it.domestic){
+      dom=it.domestic+' ±'+it.limit+'%';
+      if(it.touch) dom+=' <span style="color:#ef4444;">触板</span>';
+    }
     h+='<tr>'
       +'<td>'+it.cn+'</td>'
-      +'<td style="text-align:right;">'+it.base+'</td>'
-      +'<td style="text-align:right;">'+it.last+'</td>'
-      +'<td style="text-align:right;" class="'+cls+'">'+sign+it.pct.toFixed(2)+'%</td>'
+      +'<td>'+it.base+'</td>'
+      +'<td>'+it.last+'</td>'
+      +'<td class="'+cls+'">'+sign+it.pct.toFixed(2)+'%</td>'
       +'<td>'+dom+'</td>'
-      +'<td>'+flag+'</td>'
       +'</tr>';
   });
-  tb.innerHTML=h;
-  const note=document.getElementById('holiday-foreign-note');
-  if(note) note.textContent='📌 '+meta.note;
+  if(tb) tb.innerHTML=h;
+  if(note) note.textContent='📌 基准 '+meta.baseline_date+'（'+meta.start+' ~ '+meta.end+'）· '+meta.note;
 }
 
 function renderLiquidate(){
