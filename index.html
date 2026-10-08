@@ -5647,8 +5647,8 @@ function renderLiquidate(){
   ((Q.option_expiry&&Q.option_expiry.items)||[]).forEach(e=>add(e.expiry,'期权',e.exchange,'期权到期',e.cn||e.code,e.contract,e.level,e.code));
   // ③ 自然人清仓: 上期所/能源中心有「取整」+「取零」两节点, 其余直接取零
   (Q.lot_round_alerts||[]).forEach(e=>{
-    if(e.round_day && e.round_day!==e.clear_day) add(e.round_day,'期货',e.exchange,'取整',e.cn||e.code,e.contract,e.level,e.code,e.round_lots);
-    add(e.clear_day||e.ltd,'期货',e.exchange,'清仓',e.cn||e.code,e.contract,e.level,e.code);
+    if(e.round_day && e.round_day!==e.clear_day) add(e.round_day,'期货',e.exchange,'自然人取整',e.cn||e.code,e.contract,e.level,e.code,e.round_lots);
+    add(e.clear_day||e.ltd,'期货',e.exchange,'自然人清仓',e.cn||e.code,e.contract,e.level,e.code);
   });
   // ④ 金融期货(股指/国债)到期 + 国债自然人清仓
   (Q.fin_calendar||[]).forEach(e=>{
@@ -5663,7 +5663,7 @@ function renderLiquidate(){
   const dhead=d=>{const t=new Date(d+'T00:00:00'); return d+'（周'+WD[t.getDay()]+'）';};
   const PRI={imminent:1,caution:2,warn:3,soon:4};
   const LVCLS=l=>(PRI[l]?l:'soon');
-  const ACTORD=['取整','清仓','主力到期','股指到期','国债到期','国债清仓','期权到期'];
+  const ACTORD=['自然人取整','自然人清仓','主力到期','股指到期','国债到期','国债清仓','期权到期'];
   const exName={CFFEX:'中金所',CZCE:'郑商所',DCE:'大商所',GFEX:'广期所',INE:'能源中心',SHFE:'上期所'};
   const exMap={'上期所':'SHFE','上海期货交易所':'SHFE','能源中心':'INE','上海国际能源交易中心':'INE','大商所':'DCE','大连商品交易所':'DCE','郑商所':'CZCE','郑州商品交易所':'CZCE','广期所':'GFEX','广州期货交易所':'GFEX','中金所':'CFFEX','中国金融期货交易所':'CFFEX'};
   const exCode=k=>exMap[k]||k;
@@ -5701,7 +5701,7 @@ function renderLiquidate(){
         acts.forEach(act=>{
           const o=ex[act];
           const mkNames=arr=>arr.map(i=>i.title+(i.contract?' <span class="liq-ct">'+i.contract+'</span>':'')).join('、');
-          if(act==='取整' && o.items.some(i=>i.lots)){
+          if(act==='自然人取整' && o.items.some(i=>i.lots)){
             const g={}; o.items.forEach(i=>{const k=i.lots||0;(g[k]=g[k]||[]).push(i);});
             const parts=Object.keys(g).map(Number).sort((a,b)=>b-a).map(k=>'<span class="liq-lots">'+k+' 手倍数</span>'+mkNames(g[k]));
             html+='<div class="tl-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+parts.join('<span class="liq-sep">｜</span>')+'</div>';
