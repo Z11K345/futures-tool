@@ -816,6 +816,17 @@ body { padding-top: 150px; padding-bottom: 16px; }
 .liq-ct{color:#8b95a5;font-size:11px}
 .liq-lots{display:inline-block;padding:0 6px;border-radius:8px;font-size:10.5px;font-weight:600;background:rgba(74,158,255,.16);color:#8fc0ff;margin-right:5px;vertical-align:1px}
 .liq-sep{color:#3f4653;margin:0 7px}
+/* v80: 清仓/到期速览 —— 品种+合约 对齐成列（交易所官网口径，便于逐个核对） */
+.liq-line{display:block;font-size:12.5px;color:#cbd5e1;line-height:1.6;margin:5px 0}
+.liq-line>.liq-act{margin:0 0 3px 0}
+.liq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));column-gap:12px;row-gap:1px}
+.liq-it{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0;padding:.5px 0}
+.liq-it .liq-nm{color:#dbe3ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.liq-it .liq-ct{color:#8b95a5;font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
+.liq-rows{display:flex;flex-direction:column;gap:3px}
+.liq-lots-row{display:flex;align-items:flex-start;gap:8px}
+.liq-lots-row>.liq-lots{flex:none;min-width:60px;text-align:center;margin:0}
+.liq-lots-row>.liq-grid{flex:1;min-width:0}
 </style>
 <div class="card" id="card-edu">
   <div class="card-header">
@@ -5700,13 +5711,13 @@ function renderLiquidate(){
         html+='<div class="liq-ex"><div class="liq-ex-h">'+exTitle(exk)+'</div><div class="liq-ex-body">';
         acts.forEach(act=>{
           const o=ex[act];
-          const mkNames=arr=>arr.map(i=>i.title+(i.contract?' <span class="liq-ct">'+i.contract+'</span>':'')).join('、');
+          const mkNames=arr=>'<div class="liq-grid">'+arr.map(i=>'<span class="liq-it"><span class="liq-nm">'+i.title+'</span>'+(i.contract?'<span class="liq-ct">'+i.contract+'</span>':'')+'</span>').join('')+'</div>';
           if(act==='自然人取整' && o.items.some(i=>i.lots)){
             const g={}; o.items.forEach(i=>{const k=i.lots||0;(g[k]=g[k]||[]).push(i);});
-            const parts=Object.keys(g).map(Number).sort((a,b)=>b-a).map(k=>'<span class="liq-lots">'+k+' 手倍数</span>'+mkNames(g[k]));
-            html+='<div class="tl-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+parts.join('<span class="liq-sep">｜</span>')+'</div>';
+            const rows=Object.keys(g).map(Number).sort((a,b)=>b-a).map(k=>'<div class="liq-lots-row"><span class="liq-lots">'+k+' 手倍数</span>'+mkNames(g[k])+'</div>').join('');
+            html+='<div class="liq-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span><div class="liq-rows">'+rows+'</div></div>';
           } else {
-            html+='<div class="tl-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+mkNames(o.items)+'</div>';
+            html+='<div class="liq-line"><span class="liq-act '+LVCLS(o.level)+'">'+act+'</span>'+mkNames(o.items)+'</div>';
           }
         });
         html+='</div></div>';
