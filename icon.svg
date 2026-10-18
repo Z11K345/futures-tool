@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1f2e"/>
+      <stop offset="100%" stop-color="#0f1419"/>
+    </linearGradient>
+    <linearGradient id="up" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#fb7185"/>
+    </linearGradient>
+    <linearGradient id="down" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#4ade80"/>
+    </linearGradient>
+  </defs>
+  <!-- 背景 -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- 边框装饰 -->
+  <rect x="20" y="20" width="472" height="472" rx="80" fill="none" stroke="#2a3142" stroke-width="2"/>
+
+  <!-- K线图元素 -->
+  <!-- 主涨蜡烛 -->
+  <rect x="80" y="180" width="40" height="140" fill="url(#up)"/>
+  <line x1="100" y1="140" x2="100" y2="360" stroke="#ef4444" stroke-width="6"/>
+
+  <!-- 跌蜡烛 -->
+  <rect x="160" y="240" width="40" height="100" fill="url(#down)"/>
+  <line x1="180" y1="200" x2="180" y2="380" stroke="#22c55e" stroke-width="6"/>
+
+  <!-- 涨蜡烛 -->
+  <rect x="240" y="160" width="40" height="160" fill="url(#up)"/>
+  <line x1="260" y1="120" x2="260" y2="360" stroke="#ef4444" stroke-width="6"/>
+
+  <!-- 跌蜡烛 -->
+  <rect x="320" y="200" width="40" height="120" fill="url(#down)"/>
+  <line x1="340" y1="160" x2="340" y2="360" stroke="#22c55e" stroke-width="6"/>
+
+  <!-- 涨蜡烛（最大） -->
+  <rect x="400" y="120" width="40" height="200" fill="url(#up)"/>
+  <line x1="420" y1="80" x2="420" y2="380" stroke="#ef4444" stroke-width="6"/>
+
+  <!-- 顶部品牌标识 -->
+  <text x="256" y="80" text-anchor="middle" font-family="sans-serif" font-size="32" font-weight="700" fill="#e5e7eb">期市日盘</text>
+
+  <!-- 底部装饰条 -->
+  <rect x="100" y="430" width="312" height="4" rx="2" fill="#4a9eff"/>
+</svg>
