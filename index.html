@@ -106,7 +106,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
 }
 
 /* ===== 主内容区 ===== */
-.tab-pane { display: none; padding: 12px; }
+.tab-pane { max-width: 880px; margin: 0 auto; display: none; padding: 12px; }
 .tab-pane.active { display: block; }
 
 /* ===== 卡片 ===== */
@@ -897,6 +897,8 @@ body { padding-top: 150px; padding-bottom: 16px; }
     <span class="fold-arrow">▸</span>
   </div>
   <div style="margin-bottom: 8px;" data-page-node-id="iJcW6sSsLiEUnYeCsaBUlX">
+  <input id="quotes-search" type="text" placeholder="搜索品种 / 代码，如：螺纹、黄金、rb、cu" oninput="renderQuotes()"
+    style="background:#141a26;color:#e5e7eb;border:1px solid #2a3142;padding:7px 10px;border-radius:4px;font-size:12.5px;width:100%;margin-bottom:6px;outline:none;">
   <select id="category-select" onchange="renderQuotes()" style="background:#141a26;color:#e5e7eb;border:1px solid #2a3142;padding:6px 8px;border-radius:4px;font-size:12px;width:100%;" data-page-node-id="LHXIJHWAA7f0Cef984458k">
   <option value="all" data-page-node-id="IiVy8XyY3EBhcv9j2AK8cc">全部</option>
   <option value="metal" data-page-node-id="mV5DJyNAzS5MD21AppyS0Z">有色金属</option>
@@ -3768,7 +3770,15 @@ function renderQuotes() {
   const sel = document.getElementById('category-select');
   const cat = sel ? sel.value : 'all';
   const all = flatAll().filter(q => q.cat !== 'overseas');
-  let list = cat === 'all' ? all : all.filter(q => q.cat === cat);
+  // 搜索：输入关键词时忽略分类下拉，全局匹配品种名/代码（如"螺纹"→螺纹钢、"rb"→RB0）
+  const si = document.getElementById('quotes-search');
+  const q = ((si && si.value) || '').trim().toLowerCase();
+  let list;
+  if (q) {
+    list = all.filter(x => ((x.cn_name || '') + (x.name || '') + (x.code || '')).toLowerCase().includes(q));
+  } else {
+    list = cat === 'all' ? all : all.filter(q => q.cat === cat);
+  }
   // V2.8: 应用表头排序
   const stq = sortState.quotes;
   if (stq.field) list = sortBy(list, stq.field, stq.dir);
@@ -3776,7 +3786,7 @@ function renderQuotes() {
   const tbody = document.querySelector('#quotes-table tbody');
   if (!tbody) return;
   if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无数据</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${q ? '未找到与「' + si.value.trim() + '」匹配的品种，试试品种名或代码' : '暂无数据'}</td></tr>`;
     return;
   }
   tbody.innerHTML = list.map(q => {
