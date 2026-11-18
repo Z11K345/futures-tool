@@ -160,6 +160,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   text-align: right;
   border-bottom: 1px solid #1f2536;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .data-table td:first-child { text-align: left; font-weight: 500; }
 .data-table tr:hover { background: #1f2536; }
@@ -729,8 +730,13 @@ body { padding-top: 150px; padding-bottom: 16px; }
   <span class="card-title" data-page-node-id="q2m8Kt6apQCKGPYhtGKkB3">🔥 涨跌幅榜</span>
   <span class="card-tag live" data-page-node-id="5bZhdfncIlU7sbTopZUajc">实时</span>
   </div>
-  <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteMovers">盘中按实时价与持仓量排行，随盘面变化；收盘后即为当日最终排名。</div>
-  <div class="table-wrap" data-page-node-id="AARsAw0X6tQM0nwSeQdwHN">
+  <div style="font-size:10.5px;color:#6b7280;margin:-2px 0 6px;line-height:1.5;" data-page-node-id="noteMovers">按盘中实时价排名，收盘后即为当日最终排名。</div>
+  <div id="movers-view" style="display:flex;gap:6px;margin-bottom:6px;" data-page-node-id="moversView">
+    <span class="mn-item active" data-mv="chart" onclick="setMoversView('chart')">图表</span>
+    <span class="mn-item" data-mv="table" onclick="setMoversView('table')">明细</span>
+  </div>
+  <div id="movers-chart" style="height:340px;"></div>
+  <div class="table-wrap" id="movers-table-wrap" style="display:none;" data-page-node-id="AARsAw0X6tQM0nwSeQdwHN">
   <table class="data-table" id="movers-table" data-page-node-id="UXcdE1NEkowGqbmzFG4Te2">
   <thead data-page-node-id="XK1rqat8kNIHcupAq65vG7">
   <tr data-page-node-id="DsplwI09QC6N7Y0FkVmI8d"><th class="sortable" data-sort="movers" data-field="cn_name" data-page-node-id="p0eBvoNnr8MggJMPPFeLed">品种<span class="sort-icon" data-page-node-id="hBrYsvrQFXc4E9XU6Kv0BC"></span></th><th class="sortable" data-sort="movers" data-field="last" data-page-node-id="zhnP2q3UNLvnFwDmNABwWp">最新<span class="sort-icon" data-page-node-id="ch8pcbAiujT8zM2lCbUeFF"></span></th><th class="sortable" data-sort="movers" data-field="pct" data-page-node-id="FlPR5gJE52D3tTBmOwEN3h">涨跌幅<span class="sort-icon" data-page-node-id="8odoJeqDzDMdaL3xsnwA2Y"></span></th><th class="sortable" data-sort="movers" data-field="oi" data-page-node-id="Fxo9MBbCKusK7n1F7ObpIb">持仓量<span class="sort-icon" data-page-node-id="bfrLuXQ7LyijhGDSHFynwt"></span></th></tr>
@@ -909,7 +915,7 @@ body { padding-top: 150px; padding-bottom: 16px; }
   </select>
   </div>
   <div style="font-size:11px;color:#6b7280;margin:0 0 6px;line-height:1.5;" data-page-node-id="B079GsuQ20aj9p6PCvMhFV">
-  品种后灰色标签为该品种<b style="color:#8b95a5;" data-page-node-id="zfTSDwcxNkV50zGacbGEiT">当前主力合约</b>（按各月份合约持仓量自动判定，换月时自动更新），价格/涨跌/持仓/成交量均取该合约真实数据。
+  品种后灰色标签为<b style="color:#8b95a5;" data-page-node-id="zfTSDwcxNkV50zGacbGEiT">当前主力合约</b>（按持仓量自动判定、换月自动切换），表中价格与数据均取自该合约。
   </div>
   <div class="table-wrap" data-page-node-id="JU48MFNo1kycu6VFwFzAkl">
   <table class="data-table" id="quotes-table" data-page-node-id="TYYokXrqoCzVaIA9gc3ZAD">
@@ -1707,9 +1713,10 @@ body { padding-top: 150px; padding-bottom: 16px; }
 
 <div class="risk-note" data-page-node-id="FDLhSuu8jqN4pAGJtZHbvG">
   投资有风险，入市需谨慎。本工具仅作信息整理与框架参考，不构成任何投资建议。<br data-page-node-id="JslZJG8jYCk7wN2aEZoyda">
-  行情数据由 fetch_quotes.py 抓取并打包为 data/quotes.json。新浪本身无缓存(脚本实测 0.8 秒拉完)，延迟取决于调度频率 — 建议每 60 秒跑一次(下方"自动刷新"开关启用后由 Service Worker 周期性拉取，最快 60 秒一刷)。
+  行情数据定时更新，开启「自动刷新」后最快约 1 分钟同步一次；列表页显示的时间即当前数据时点。
 </div>
 
+<script src="lib/echarts.min.js?v=551"></script>
 <script>
 /* ============================================================
    实时行情层（已停用 - 新浪 hq.sinajs.cn 不支持 JSONP/CORS）
@@ -3866,6 +3873,75 @@ function renderOverseas() {
 /* ============================================================
    渲染：盘中涨跌幅榜（盘中关注区）
    ============================================================ */
+/* 涨跌幅榜视图切换：图表 / 明细 */
+let moversViewMode = 'chart';
+let moversChart = null;
+function setMoversView(mode) {
+  moversViewMode = mode;
+  document.querySelectorAll('#movers-view .mn-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.mv === mode));
+  const chartEl = document.getElementById('movers-chart');
+  const wrapEl = document.getElementById('movers-table-wrap');
+  if (chartEl) chartEl.style.display = mode === 'chart' ? '' : 'none';
+  if (wrapEl) wrapEl.style.display = mode === 'table' ? '' : 'none';
+  if (mode === 'chart' && moversChart) moversChart.resize();
+  renderMovers();
+}
+
+/* 涨跌幅榜 ECharts 条形图（红涨绿跌，点条看品种详情） */
+function renderMoversChart(sorted) {
+  const el = document.getElementById('movers-chart');
+  if (!el || typeof echarts === 'undefined') return;
+  if (!moversChart) {
+    moversChart = echarts.init(el);
+    moversChart.on('click', p => { if (p.data && p.data.code) showVarietyDetail(p.data.code); });
+    window.addEventListener('resize', () => moversChart && moversChart.resize());
+    // 卡片折叠时容器 0×0，展开后自动重绘
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => { if (moversChart && el.clientWidth > 0) moversChart.resize(); }).observe(el);
+    }
+  }
+  // sorted: 涨跌幅绝对值最大的 12 个；图表按涨跌幅从高到低排（涨在上、跌在下）
+  const items = sorted.slice().sort((a, b) => parseFloat(b.pct) - parseFloat(a.pct));
+  const names = items.map(q => q.cn_name);
+  const vals = items.map(q => parseFloat(q.pct) || 0);
+  moversChart.setOption({
+    grid: { left: 4, right: 44, top: 8, bottom: 4, containLabel: true },
+    tooltip: {
+      trigger: 'item', confine: true,
+      formatter: p => `${p.data.label}<br/>最新 ${p.data.last}　<b style="color:${p.data.color}">${p.data.pctTxt}</b>`
+    },
+    xAxis: {
+      type: 'value', axisLabel: { formatter: '{value}%', color: '#6b7280', fontSize: 10 },
+      splitLine: { lineStyle: { color: '#232936' } }
+    },
+    yAxis: {
+      type: 'category', data: names, inverse: false,
+      axisLabel: { color: '#cbd5e1', fontSize: 11 },
+      axisLine: { lineStyle: { color: '#2a3142' } }, axisTick: { show: false }
+    },
+    series: [{
+      type: 'bar', barWidth: '55%',
+      data: items.map(q => {
+        const v = parseFloat(q.pct) || 0;
+        const c = v > 0 ? '#e0533d' : v < 0 ? '#2dbd6e' : '#6b7280';
+        return {
+          value: v, itemStyle: { color: c, borderRadius: v >= 0 ? [0, 3, 3, 0] : [3, 0, 0, 3] },
+          code: q.code, label: `${q.cn_name} ${q.contract_full || ''}`.trim(),
+          last: q.last, pctTxt: (v > 0 ? '+' : '') + v.toFixed(2) + '%', color: c,
+          label: { position: v >= 0 ? 'right' : 'left' }
+        };
+      }),
+      label: {
+        show: true, position: 'right', fontSize: 10, fontFamily: 'ui-monospace,Menlo,Consolas',
+        formatter: p => p.data.pctTxt, color: '#cbd5e1'
+      },
+      markLine: { silent: true, symbol: 'none', label: { show: false },
+        lineStyle: { color: '#4b5563', type: 'solid', width: 1 }, data: [{ xAxis: 0 }] }
+    }]
+  });
+}
+
 function renderMovers() {
   const all = flatAll().filter(q => q.cat !== 'overseas' && !q.paused);
   // V2.8: 有排序状态按表头排,否则默认按涨跌幅绝对值
@@ -3875,6 +3951,7 @@ function renderMovers() {
   else sorted = all.slice().sort((a, b) => Math.abs(parseFloat(b.pct)) - Math.abs(parseFloat(a.pct))).slice(0, 12);
   const tbody = document.querySelector('#movers-table tbody');
   if (!tbody) return;
+  if (moversViewMode === 'chart') { renderMoversChart(sorted); }
   if (sorted.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无数据</td></tr>';
     return;
