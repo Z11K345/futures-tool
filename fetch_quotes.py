@@ -335,6 +335,46 @@ KEY_CALENDAR_2026 = [
     {'date': '2026-10-17', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
     {'date': '2026-10-24', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
     {'date': '2026-10-31', 'time': '03:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    # ---- 2026 年 11-12 月 (2026-11-19 补齐; 来源: BLS/Fed/USDA/BEA 官方日程) ----
+    # ⚠️ 美国 11/1 起进入冬令时(EST=UTC-5): 8:30 ET=北京 21:30, 2pm ET=北京次日 03:00,
+    #    CFTC 周五 15:30 ET=北京周六 04:30, EIA 周三 10:30 ET=北京 23:30, USDA 12:00 ET=北京次日 01:00
+    {'date': '2026-11-19', 'time': '03:00', 'name': '美联储 10 月货币政策纪要', 'impact': 'high', 'cat': 'us_rate'},
+    {'date': '2026-11-06', 'time': '21:30', 'name': '美国 10 月非农就业', 'impact': 'high', 'cat': 'us_macro'},
+    {'date': '2026-11-10', 'time': '21:30', 'name': '美国 10 月 CPI', 'impact': 'high', 'cat': 'us_macro'},
+    {'date': '2026-11-13', 'time': '21:30', 'name': '美国 10 月 PPI', 'impact': 'medium', 'cat': 'us_macro'},
+    {'date': '2026-11-10', 'time': '01:00', 'name': 'USDA 11 月供需报告(WASDE)', 'impact': 'high', 'cat': 'usda'},
+    {'date': '2026-11-10', 'time': '12:00', 'name': 'MPOB 10 月报告', 'impact': 'medium', 'cat': 'mpob'},
+    {'date': '2026-11-20', 'time': '09:15', 'name': '中国 11 月 LPR 报价', 'impact': 'medium', 'cat': 'cn_macro'},
+    {'date': '2026-11-25', 'time': '21:30', 'name': '美国 10 月 PCE', 'impact': 'medium', 'cat': 'us_macro'},
+    {'date': '2026-11-30', 'time': '09:30', 'name': '中国 11 月 官方制造业 PMI', 'impact': 'high', 'cat': 'cn_macro'},
+    # EIA 原油库存(每周三 10:30 ET; 冬令时北京 23:30)
+    {'date': '2026-11-04', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-11-11', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-11-18', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-11-25', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-12-02', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-12-09', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-12-16', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-12-23', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    {'date': '2026-12-30', 'time': '23:30', 'name': 'EIA 原油库存周报', 'impact': 'medium', 'cat': 'us_energy'},
+    # CFTC 持仓报告(每周五 15:30 ET; 冬令时北京周六 04:30)
+    {'date': '2026-11-07', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-11-14', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-11-21', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-11-28', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-12-05', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-12-12', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-12-19', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    {'date': '2026-12-26', 'time': '04:30', 'name': 'CFTC 持仓报告(COT)', 'impact': 'medium', 'cat': 'cftc'},
+    # 12 月
+    {'date': '2026-12-04', 'time': '21:30', 'name': '美国 11 月非农就业', 'impact': 'high', 'cat': 'us_macro'},
+    {'date': '2026-12-10', 'time': '03:00', 'name': '美联储利率决议(12月会议,含点阵图)', 'impact': 'high', 'cat': 'us_rate'},
+    {'date': '2026-12-10', 'time': '21:30', 'name': '美国 11 月 CPI', 'impact': 'high', 'cat': 'us_macro'},
+    {'date': '2026-12-15', 'time': '21:30', 'name': '美国 11 月 PPI', 'impact': 'medium', 'cat': 'us_macro'},
+    {'date': '2026-12-10', 'time': '01:00', 'name': 'USDA 12 月供需报告(WASDE)', 'impact': 'high', 'cat': 'usda'},
+    {'date': '2026-12-10', 'time': '12:00', 'name': 'MPOB 11 月报告', 'impact': 'medium', 'cat': 'mpob'},
+    {'date': '2026-12-21', 'time': '09:15', 'name': '中国 12 月 LPR 报价', 'impact': 'medium', 'cat': 'cn_macro'},
+    {'date': '2026-12-31', 'time': '09:30', 'name': '中国 12 月 官方制造业 PMI', 'impact': 'high', 'cat': 'cn_macro'},
 ]
 
 # ============================================================
